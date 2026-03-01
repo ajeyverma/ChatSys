@@ -1,0 +1,559 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <title>ChatSys — Primary Server</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap"
+        rel="stylesheet" />
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: #0b0b18;
+            color: #e2e8f0;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            user-select: none;
+        }
+
+        /* Title Bar */
+        .titlebar {
+            height: 42px;
+            background: #07070f;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 16px;
+            -webkit-app-region: drag;
+            border-bottom: 1px solid #1a1a30;
+            flex-shrink: 0;
+        }
+
+        .titlebar-left {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .tb-role-badge {
+            font-size: 11px;
+            font-weight: 600;
+            background: rgba(34, 197, 94, .15);
+            color: #22c55e;
+            padding: 3px 10px;
+            border-radius: 20px;
+            letter-spacing: .6px;
+        }
+
+        .titlebar-title {
+            font-size: 12px;
+            color: #475569;
+        }
+
+        .titlebar-btns {
+            display: flex;
+            gap: 8px;
+            -webkit-app-region: no-drag;
+        }
+
+        .tb-btn {
+            width: 13px;
+            height: 13px;
+            border-radius: 50%;
+            border: none;
+            cursor: pointer;
+        }
+
+        .tb-btn.close {
+            background: #ff5f57;
+        }
+
+        .tb-btn.min {
+            background: #febc2e;
+        }
+
+        /* Layout */
+        .layout {
+            flex: 1;
+            display: grid;
+            grid-template-columns: 280px 1fr;
+            overflow: hidden;
+        }
+
+        /* Sidebar */
+        .sidebar {
+            background: #0d0d1f;
+            border-right: 1px solid #1a1a30;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .sidebar-header {
+            padding: 20px 18px 14px;
+            border-bottom: 1px solid #1a1a30;
+        }
+
+        .status-card {
+            background: #111128;
+            border: 1px solid #1e1e3a;
+            border-radius: 12px;
+            padding: 16px;
+        }
+
+        .status-row {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 12px;
+        }
+
+        .pulse-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: #22c55e;
+            flex-shrink: 0;
+            box-shadow: 0 0 8px #22c55e;
+        }
+
+        .pulse-dot.active {
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+
+            0%,
+            100% {
+                box-shadow: 0 0 4px #22c55e;
+            }
+
+            50% {
+                box-shadow: 0 0 14px #22c55e, 0 0 4px #22c55e;
+            }
+        }
+
+        .status-label {
+            font-size: 13px;
+            font-weight: 600;
+            color: #f1f5f9;
+        }
+
+        .status-sub {
+            font-size: 11px;
+            color: #64748b;
+            margin-top: 2px;
+        }
+
+        .stats-row {
+            display: flex;
+            gap: 10px;
+            margin-top: 12px;
+        }
+
+        .stat {
+            flex: 1;
+            background: #0b0b18;
+            border-radius: 8px;
+            padding: 8px 10px;
+            text-align: center;
+        }
+
+        .stat-val {
+            font-size: 18px;
+            font-weight: 700;
+            color: #6366f1;
+        }
+
+        .stat-lbl {
+            font-size: 9px;
+            color: #64748b;
+            text-transform: uppercase;
+            letter-spacing: .6px;
+        }
+
+        /* Heartbeat row */
+        .hb-row {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            margin-top: 10px;
+            background: #0b0b18;
+            border-radius: 8px;
+            padding: 7px 10px;
+        }
+
+        .hb-icon {
+            font-size: 13px;
+        }
+
+        .hb-text {
+            font-size: 11px;
+            color: #64748b;
+        }
+
+        .hb-count {
+            font-size: 11px;
+            font-weight: 600;
+            color: #6366f1;
+            margin-left: auto;
+        }
+
+        /* Client List */
+        .section-title {
+            font-size: 10px;
+            font-weight: 600;
+            color: #475569;
+            text-transform: uppercase;
+            letter-spacing: .8px;
+            padding: 14px 18px 8px;
+        }
+
+        .client-list {
+            flex: 1;
+            overflow-y: auto;
+            padding: 0 10px 10px;
+        }
+
+        .client-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 9px 10px;
+            border-radius: 8px;
+            background: #111128;
+            margin-bottom: 6px;
+            border: 1px solid #1e1e3a;
+        }
+
+        .client-avatar {
+            width: 30px;
+            height: 30px;
+            border-radius: 8px;
+            background: linear-gradient(135deg, #6366f1, #8b5cf6);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 13px;
+            font-weight: 700;
+            color: #fff;
+            flex-shrink: 0;
+        }
+
+        .client-name {
+            font-size: 12px;
+            font-weight: 500;
+            color: #e2e8f0;
+        }
+
+        .client-ip {
+            font-size: 10px;
+            color: #64748b;
+        }
+
+        .no-clients {
+            text-align: center;
+            color: #374151;
+            font-size: 12px;
+            padding: 24px 12px;
+        }
+
+        /* Broadcast */
+        .broadcast-area {
+            padding: 12px 18px;
+            border-top: 1px solid #1a1a30;
+        }
+
+        .broadcast-area label {
+            font-size: 10px;
+            color: #64748b;
+            font-weight: 500;
+            display: block;
+            margin-bottom: 6px;
+            text-transform: uppercase;
+            letter-spacing: .6px;
+        }
+
+        .broadcast-row {
+            display: flex;
+            gap: 8px;
+        }
+
+        .broadcast-row input {
+            flex: 1;
+            background: #0b0b18;
+            border: 1px solid #2d2d4e;
+            border-radius: 8px;
+            padding: 8px 10px;
+            color: #e2e8f0;
+            font-size: 12px;
+            outline: none;
+            font-family: 'Inter', sans-serif;
+        }
+
+        .broadcast-row input:focus {
+            border-color: #6366f1;
+        }
+
+        .btn-broadcast {
+            background: #1e3a5f;
+            border: none;
+            border-radius: 8px;
+            padding: 8px 14px;
+            color: #93c5fd;
+            font-size: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            white-space: nowrap;
+            font-family: 'Inter', sans-serif;
+        }
+
+        .btn-broadcast:hover {
+            background: #1e40af;
+        }
+
+        /* Log Panel */
+        .log-panel {
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .log-header {
+            padding: 20px 20px 14px;
+            border-bottom: 1px solid #1a1a30;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .log-header h2 {
+            font-size: 14px;
+            font-weight: 600;
+            color: #f1f5f9;
+        }
+
+        .btn-clear {
+            background: none;
+            border: 1px solid #1e1e3a;
+            border-radius: 6px;
+            padding: 4px 10px;
+            color: #64748b;
+            font-size: 11px;
+            cursor: pointer;
+            font-family: 'Inter', sans-serif;
+        }
+
+        .btn-clear:hover {
+            border-color: #374151;
+            color: #94a3b8;
+        }
+
+        .log-body {
+            flex: 1;
+            overflow-y: auto;
+            padding: 12px 20px;
+            font-family: 'JetBrains Mono', 'Courier New', monospace;
+            font-size: 11.5px;
+            line-height: 1.7;
+        }
+
+        .log-entry {
+            padding: 2px 0;
+            border-bottom: 1px solid #12122080;
+            color: #94a3b8;
+        }
+
+        .log-entry .ts {
+            color: #374151;
+            margin-right: 8px;
+        }
+
+        .log-entry.info .ts {
+            color: #6366f1;
+        }
+
+        .log-entry.warn {
+            color: #fbbf24;
+        }
+
+        .log-entry.err {
+            color: #f87171;
+        }
+
+        /* Scrollbar */
+        ::-webkit-scrollbar {
+            width: 4px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: #2d2d4e;
+            border-radius: 2px;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="titlebar">
+        <div class="titlebar-left">
+            <span class="tb-role-badge">PRIMARY SERVER</span>
+            <span class="titlebar-title">Active Coordinator Node</span>
+        </div>
+        <div class="titlebar-btns">
+            <button class="tb-btn min" onclick="api.send('win-minimize',{})"></button>
+            <button class="tb-btn close" onclick="api.send('win-close',{})"></button>
+        </div>
+    </div>
+
+    <div class="layout">
+        <!-- Sidebar -->
+        <div class="sidebar">
+            <div class="sidebar-header">
+                <div class="status-card">
+                    <div class="status-row">
+                        <div class="pulse-dot active" id="status-dot"></div>
+                        <div>
+                            <div class="status-label" id="status-text">ACTIVE</div>
+                            <div class="status-sub" id="status-sub">Listening on port 65432</div>
+                        </div>
+                    </div>
+                    <div class="stats-row">
+                        <div class="stat">
+                            <div class="stat-val" id="stat-clients">0</div>
+                            <div class="stat-lbl">Clients</div>
+                        </div>
+                        <div class="stat">
+                            <div class="stat-val" id="stat-msgs">0</div>
+                            <div class="stat-lbl">Messages</div>
+                        </div>
+                    </div>
+                    <div class="hb-row">
+                        <span class="hb-icon">💓</span>
+                        <span class="hb-text">Heartbeats sent</span>
+                        <span class="hb-count" id="stat-hb">0</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="section-title">Connected Clients</div>
+            <div class="client-list" id="client-list">
+                <div class="no-clients" id="no-clients">No clients connected</div>
+            </div>
+
+            <div class="broadcast-area">
+                <label>Broadcast System Message</label>
+                <div class="broadcast-row">
+                    <input type="text" id="broadcast-input" placeholder="Type announcement..." />
+                    <button class="btn-broadcast" onclick="broadcast()">Send</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Log Panel -->
+        <div class="log-panel">
+            <div class="log-header">
+                <h2>📋 Server Log</h2>
+                <button class="btn-clear" onclick="clearLog()">Clear</button>
+            </div>
+            <div class="log-body" id="log-body"></div>
+        </div>
+    </div>
+
+    <script>
+        const clients = {};
+        let msgCount = 0;
+
+        function addLog(line, type = 'info') {
+            const body = document.getElementById('log-body');
+            const el = document.createElement('div');
+            el.className = `log-entry ${type}`;
+            el.innerHTML = `<span class="ts">&gt;</span> ${escapeHtml(line)}`;
+            body.appendChild(el);
+            body.scrollTop = body.scrollHeight;
+        }
+
+        function escapeHtml(s) {
+            return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+        }
+
+        function clearLog() {
+            document.getElementById('log-body').innerHTML = '';
+        }
+
+        function broadcast() {
+            const input = document.getElementById('broadcast-input');
+            const text = input.value.trim();
+            if (!text) return;
+            api.send('server-broadcast', { text });
+            input.value = '';
+            addLog(`[BROADCAST] ${text}`, 'warn');
+        }
+
+        function renderClients() {
+            const list = document.getElementById('client-list');
+            const noClients = document.getElementById('no-clients');
+            const keys = Object.keys(clients);
+            document.getElementById('stat-clients').textContent = keys.length;
+            if (keys.length === 0) {
+                noClients.style.display = 'block';
+                const items = list.querySelectorAll('.client-item');
+                items.forEach(i => i.remove());
+                return;
+            }
+            noClients.style.display = 'none';
+            // Rebuild
+            list.querySelectorAll('.client-item').forEach(i => i.remove());
+            for (const [key, info] of Object.entries(clients)) {
+                const el = document.createElement('div');
+                el.className = 'client-item';
+                el.innerHTML = `
+          <div class="client-avatar">${info.username.charAt(0).toUpperCase()}</div>
+          <div><div class="client-name">${escapeHtml(info.username)}</div><div class="client-ip">${escapeHtml(info.address)}</div></div>`;
+                list.appendChild(el);
+            }
+        }
+
+        // IPC listeners
+        api.on('log', (line) => addLog(line));
+        api.on('status', (data) => {
+            document.getElementById('status-text').textContent = data.status || 'ACTIVE';
+            if (data.port) document.getElementById('status-sub').textContent = `Listening on port ${data.port}`;
+        });
+        api.on('client-connected', (data) => {
+            clients[data.username] = data;
+            renderClients();
+            addLog(`✅ ${data.username} connected from ${data.address}`, 'info');
+        });
+        api.on('client-disconnected', (data) => {
+            delete clients[data.username];
+            renderClients();
+            addLog(`🔴 ${data.username} disconnected`, 'warn');
+        });
+        api.on('message-relayed', (data) => {
+            msgCount = data.count;
+            document.getElementById('stat-msgs').textContent = msgCount;
+        });
+        api.on('heartbeat-sent', (data) => {
+            document.getElementById('stat-hb').textContent = data.count;
+        });
+        api.on('error', (data) => addLog(`ERROR: ${data.message}`, 'err'));
+
+        document.getElementById('broadcast-input').addEventListener('keydown', e => {
+            if (e.key === 'Enter') broadcast();
+        });
+    </script>
+</body>
+
+</html>

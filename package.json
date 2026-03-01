@@ -1,0 +1,26 @@
+{
+  "name": "chatsys",
+  "version": "1.0.0",
+  "description": "Fault-Tolerant GUI-Based LAN Communication System with Automatic Failover",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron .",
+    "build": "electron-builder"
+  },
+  "devDependencies": {
+    "electron": "^29.0.0",
+    "electron-builder": "^24.9.1"
+  },
+  "build": {
+    "appId": "com.chatsys.app",
+    "productName": "ChatSys",
+    "win": {
+      "target": "nsis"
+    },
+    "directories": {
+      "output": "dist"
+    }
+  },
+  "author": "",
+  "license": "MIT"
+}

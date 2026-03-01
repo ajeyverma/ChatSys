@@ -1,0 +1,559 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <title>ChatSys — Backup Server</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap"
+        rel="stylesheet" />
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: #0b0b18;
+            color: #e2e8f0;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            user-select: none;
+        }
+
+        .titlebar {
+            height: 42px;
+            background: #07070f;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 16px;
+            -webkit-app-region: drag;
+            border-bottom: 1px solid #1a1a30;
+            flex-shrink: 0;
+        }
+
+        .titlebar-left {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .tb-role-badge {
+            font-size: 11px;
+            font-weight: 600;
+            background: rgba(59, 130, 246, .15);
+            color: #3b82f6;
+            padding: 3px 10px;
+            border-radius: 20px;
+            letter-spacing: .6px;
+        }
+
+        .titlebar-title {
+            font-size: 12px;
+            color: #475569;
+        }
+
+        .titlebar-btns {
+            display: flex;
+            gap: 8px;
+            -webkit-app-region: no-drag;
+        }
+
+        .tb-btn {
+            width: 13px;
+            height: 13px;
+            border-radius: 50%;
+            border: none;
+            cursor: pointer;
+        }
+
+        .tb-btn.close {
+            background: #ff5f57;
+        }
+
+        .tb-btn.min {
+            background: #febc2e;
+        }
+
+        .layout {
+            flex: 1;
+            display: grid;
+            grid-template-columns: 320px 1fr;
+            overflow: hidden;
+        }
+
+        /* Sidebar */
+        .sidebar {
+            background: #0d0d1f;
+            border-right: 1px solid #1a1a30;
+            display: flex;
+            flex-direction: column;
+            gap: 0;
+            overflow-y: auto;
+            padding: 20px 18px;
+        }
+
+        /* Big status ring */
+        .status-ring-wrap {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 24px 0 20px;
+        }
+
+        .status-ring {
+            width: 130px;
+            height: 130px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-direction: column;
+            border: 3px solid #1e1e3a;
+            position: relative;
+            transition: all .5s ease;
+        }
+
+        .status-ring.standby {
+            border-color: #3b82f6;
+            box-shadow: 0 0 24px rgba(59, 130, 246, .2);
+        }
+
+        .status-ring.promoting {
+            border-color: #f59e0b;
+            box-shadow: 0 0 24px rgba(245, 158, 11, .3);
+            animation: spin-ring 1s linear infinite;
+        }
+
+        .status-ring.active {
+            border-color: #22c55e;
+            box-shadow: 0 0 28px rgba(34, 197, 94, .3);
+        }
+
+        @keyframes spin-ring {
+            from {
+                box-shadow: 0 0 24px rgba(245, 158, 11, .2), -6px 0 0 0 #f59e0b;
+            }
+
+            to {
+                box-shadow: 0 0 28px rgba(245, 158, 11, .4), 6px 0 0 0 #f59e0b;
+            }
+        }
+
+        .ring-icon {
+            font-size: 32px;
+            margin-bottom: 4px;
+        }
+
+        .ring-label {
+            font-size: 13px;
+            font-weight: 700;
+            letter-spacing: 1px;
+        }
+
+        .ring-label.standby {
+            color: #3b82f6;
+        }
+
+        .ring-label.promoting {
+            color: #f59e0b;
+        }
+
+        .ring-label.active {
+            color: #22c55e;
+        }
+
+        .ring-sub {
+            font-size: 10px;
+            color: #64748b;
+            margin-top: 2px;
+        }
+
+        /* Heartbeat monitor */
+        .section {
+            background: #111128;
+            border: 1px solid #1e1e3a;
+            border-radius: 12px;
+            padding: 14px;
+            margin-bottom: 12px;
+        }
+
+        .section-lbl {
+            font-size: 10px;
+            color: #64748b;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: .7px;
+            margin-bottom: 10px;
+        }
+
+        .hb-visualizer {
+            display: flex;
+            align-items: flex-end;
+            gap: 3px;
+            height: 36px;
+            margin-bottom: 10px;
+        }
+
+        .hb-bar {
+            width: 10px;
+            border-radius: 3px 3px 0 0;
+            background: #1e1e3a;
+            transition: height .3s ease, background .3s ease;
+        }
+
+        .hb-bar.lit {
+            background: #3b82f6;
+        }
+
+        .info-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 6px;
+        }
+
+        .info-label {
+            font-size: 11px;
+            color: #64748b;
+        }
+
+        .info-val {
+            font-size: 11px;
+            font-weight: 600;
+            color: #e2e8f0;
+        }
+
+        .countdown-bar-wrap {
+            height: 4px;
+            background: #1a1a30;
+            border-radius: 2px;
+            overflow: hidden;
+            margin-top: 8px;
+        }
+
+        .countdown-bar {
+            height: 100%;
+            width: 100%;
+            background: #3b82f6;
+            border-radius: 2px;
+            transition: width .5s linear, background .5s;
+        }
+
+        .countdown-bar.warning {
+            background: #f59e0b;
+        }
+
+        .countdown-bar.danger {
+            background: #ef4444;
+        }
+
+        /* Clients after promotion */
+        .client-list-post {
+            display: none;
+        }
+
+        .client-list-post .client-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 7px 9px;
+            border-radius: 7px;
+            background: #0b0b18;
+            margin-bottom: 5px;
+        }
+
+        .client-avatar {
+            width: 26px;
+            height: 26px;
+            border-radius: 6px;
+            background: linear-gradient(135deg, #3b82f6, #6366f1);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 11px;
+            font-weight: 700;
+            color: #fff;
+        }
+
+        .client-name {
+            font-size: 11px;
+            color: #e2e8f0;
+        }
+
+        /* Log Panel */
+        .log-panel {
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .log-header {
+            padding: 20px 20px 14px;
+            border-bottom: 1px solid #1a1a30;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .log-header h2 {
+            font-size: 14px;
+            font-weight: 600;
+            color: #f1f5f9;
+        }
+
+        .btn-clear {
+            background: none;
+            border: 1px solid #1e1e3a;
+            border-radius: 6px;
+            padding: 4px 10px;
+            color: #64748b;
+            font-size: 11px;
+            cursor: pointer;
+            font-family: 'Inter', sans-serif;
+        }
+
+        .btn-clear:hover {
+            border-color: #374151;
+            color: #94a3b8;
+        }
+
+        .log-body {
+            flex: 1;
+            overflow-y: auto;
+            padding: 12px 20px;
+            font-family: 'JetBrains Mono', 'Courier New', monospace;
+            font-size: 11.5px;
+            line-height: 1.7;
+        }
+
+        .log-entry {
+            padding: 2px 0;
+            color: #94a3b8;
+            border-bottom: 1px solid #12122080;
+        }
+
+        .log-entry.warn {
+            color: #fbbf24;
+        }
+
+        .log-entry.success {
+            color: #4ade80;
+        }
+
+        .log-entry.err {
+            color: #f87171;
+        }
+
+        ::-webkit-scrollbar {
+            width: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: #2d2d4e;
+            border-radius: 2px;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="titlebar">
+        <div class="titlebar-left">
+            <span class="tb-role-badge">BACKUP SERVER</span>
+            <span class="titlebar-title">Standby Monitor Node</span>
+        </div>
+        <div class="titlebar-btns">
+            <button class="tb-btn min" onclick="api.send('win-minimize',{})"></button>
+            <button class="tb-btn close" onclick="api.send('win-close',{})"></button>
+        </div>
+    </div>
+
+    <div class="layout">
+        <!-- Sidebar -->
+        <div class="sidebar">
+            <!-- Status Ring -->
+            <div class="status-ring-wrap">
+                <div class="status-ring standby" id="status-ring">
+                    <span class="ring-icon" id="ring-icon">🛡️</span>
+                    <span class="ring-label standby" id="ring-label">STANDBY</span>
+                    <span class="ring-sub" id="ring-sub">Monitoring Primary</span>
+                </div>
+            </div>
+
+            <!-- Heartbeat Monitor -->
+            <div class="section">
+                <div class="section-lbl">💓 Heartbeat Monitor</div>
+                <div class="hb-visualizer" id="hb-viz">
+                    <div class="hb-bar" id="b0"></div>
+                    <div class="hb-bar" id="b1"></div>
+                    <div class="hb-bar" id="b2"></div>
+                    <div class="hb-bar" id="b3"></div>
+                    <div class="hb-bar" id="b4"></div>
+                    <div class="hb-bar" id="b5"></div>
+                    <div class="hb-bar" id="b6"></div>
+                    <div class="hb-bar" id="b7"></div>
+                    <div class="hb-bar" id="b8"></div>
+                    <div class="hb-bar" id="b9"></div>
+                </div>
+                <div class="info-row"><span class="info-label">Heartbeats Received</span><span class="info-val"
+                        id="hb-count">0</span></div>
+                <div class="info-row"><span class="info-label">Last Heartbeat</span><span class="info-val"
+                        id="last-hb">—</span></div>
+                <div class="info-row"><span class="info-label">Known Clients</span><span class="info-val"
+                        id="known-clients">0</span></div>
+                <div class="countdown-bar-wrap">
+                    <div class="countdown-bar" id="countdown-bar"></div>
+                </div>
+            </div>
+
+            <!-- Post-promotion client list -->
+            <div class="section client-list-post" id="client-list-post">
+                <div class="section-lbl">🟢 Active Clients (Promoted)</div>
+                <div id="client-list-items"></div>
+            </div>
+        </div>
+
+        <!-- Log -->
+        <div class="log-panel">
+            <div class="log-header">
+                <h2>📋 Backup Log</h2>
+                <button class="btn-clear" onclick="clearLog()">Clear</button>
+            </div>
+            <div class="log-body" id="log-body"></div>
+        </div>
+    </div>
+
+    <script>
+        let hbCount = 0;
+        let lastHbTime = null;
+        const TIMEOUT_MS = 10000;
+        const bars = Array.from({ length: 10 }, (_, i) => document.getElementById(`b${i}`));
+        let barIdx = 0;
+        let countdownInterval = null;
+        const postClients = {};
+
+        function pulse() {
+            // Light up next bar
+            bars.forEach((b, i) => {
+                b.classList.remove('lit');
+                b.style.height = '8px';
+            });
+            const h = 10 + Math.random() * 26;
+            bars[barIdx % 10].classList.add('lit');
+            bars[barIdx % 10].style.height = h + 'px';
+            barIdx++;
+        }
+
+        function updateCountdown() {
+            if (!lastHbTime) return;
+            const elapsed = Date.now() - lastHbTime;
+            const pct = Math.max(0, 100 - (elapsed / TIMEOUT_MS) * 100);
+            const bar = document.getElementById('countdown-bar');
+            bar.style.width = pct + '%';
+            if (pct < 25) bar.className = 'countdown-bar danger';
+            else if (pct < 50) bar.className = 'countdown-bar warning';
+            else bar.className = 'countdown-bar';
+        }
+
+        function startCountdownTick() {
+            clearInterval(countdownInterval);
+            countdownInterval = setInterval(updateCountdown, 250);
+        }
+
+        function setRole(role) {
+            const ring = document.getElementById('status-ring');
+            const icon = document.getElementById('ring-icon');
+            const label = document.getElementById('ring-label');
+            const sub = document.getElementById('ring-sub');
+            ring.className = 'status-ring ' + role;
+            label.className = 'ring-label ' + role;
+            if (role === 'standby') { icon.textContent = '🛡️'; label.textContent = 'STANDBY'; sub.textContent = 'Monitoring Primary'; }
+            else if (role === 'promoting') { icon.textContent = '⚡'; label.textContent = 'PROMOTING'; sub.textContent = 'Taking over...'; }
+            else if (role === 'active') { icon.textContent = '🖥️'; label.textContent = 'ACTIVE'; sub.textContent = 'Now Running as Primary'; }
+            else if (role === 'demoting') { icon.textContent = '🔄'; label.textContent = 'DEMOTING'; sub.textContent = 'Returning to Standby...'; }
+        }
+
+        function addLog(line, type = '') {
+            const body = document.getElementById('log-body');
+            const el = document.createElement('div');
+            el.className = 'log-entry ' + type;
+            el.textContent = line;
+            body.appendChild(el);
+            body.scrollTop = body.scrollHeight;
+        }
+
+        function clearLog() { document.getElementById('log-body').innerHTML = ''; }
+
+        function escapeHtml(s) { return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); }
+
+        // IPC
+        api.on('log', line => addLog(line));
+        api.on('heartbeat', data => {
+            hbCount = data.count;
+            lastHbTime = data.ts;
+            document.getElementById('hb-count').textContent = hbCount;
+            document.getElementById('last-hb').textContent = new Date(data.ts).toLocaleTimeString();
+            pulse();
+            startCountdownTick();
+        });
+        api.on('state-sync', data => {
+            document.getElementById('known-clients').textContent = data.clientCount;
+        });
+        api.on('timeout-detected', () => {
+            addLog('⚠️ TIMEOUT: Primary not responding! Initiating promotion...', 'warn');
+            setRole('promoting');
+            clearInterval(countdownInterval);
+            document.getElementById('countdown-bar').style.width = '0%';
+        });
+        api.on('status', data => {
+            const roleMap = { STANDBY: 'standby', PROMOTING: 'promoting', ACTIVE: 'active', DEMOTING: 'demoting' };
+            setRole(roleMap[data.role] || 'standby');
+            if (data.role === 'ACTIVE') {
+                addLog(`✅ NOW ACTIVE as Primary on port ${data.port}`, 'success');
+                document.getElementById('client-list-post').style.display = 'block';
+            }
+        });
+        api.on('demoted', () => {
+            addLog('✅ Demoted back to STANDBY. Monitoring primary heartbeats...', 'success');
+            // Reset post-promotion client list
+            Object.keys(postClients).forEach(k => delete postClients[k]);
+            document.getElementById('client-list-post').style.display = 'none';
+            document.getElementById('client-list-items').innerHTML = '';
+            // Reset heartbeat counter display
+            hbCount = 0;
+            lastHbTime = null;
+            document.getElementById('hb-count').textContent = '0';
+            document.getElementById('last-hb').textContent = '—';
+            document.getElementById('countdown-bar').style.width = '100%';
+            clearInterval(countdownInterval);
+        });
+        api.on('client-connected', (data) => {
+            postClients[data.username] = data;
+            renderPostClients();
+        });
+        api.on('client-disconnected', (data) => {
+            delete postClients[data.username];
+            renderPostClients();
+        });
+        api.on('error', data => addLog('ERROR: ' + data.message, 'err'));
+
+        function renderPostClients() {
+            const container = document.getElementById('client-list-items');
+            container.innerHTML = '';
+            for (const [key, info] of Object.entries(postClients)) {
+                const el = document.createElement('div');
+                el.className = 'client-item';
+                el.innerHTML = `<div class="client-avatar">${escapeHtml(info.username.charAt(0).toUpperCase())}</div><div class="client-name">${escapeHtml(info.username)}</div>`;
+                container.appendChild(el);
+            }
+            document.getElementById('known-clients').textContent = Object.keys(postClients).length;
+        }
+    </script>
+</body>
+
+</html>
