@@ -1,6 +1,8 @@
 // Message type constants and packet helpers
 const TYPES = {
     MSG_CHAT: 'CHAT',
+    MSG_DM: 'DM',
+    MSG_CLIENT_LIST: 'CLIENT_LIST',
     MSG_HEARTBEAT: 'HB',
     MSG_ANNOUNCE_PRIMARY: 'NEW_PRIMARY',
     MSG_PRIMARY_RECOVERED: 'PRIMARY_RECOVERED',

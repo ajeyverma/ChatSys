@@ -4,8 +4,6 @@
 <head>
     <meta charset="UTF-8" />
     <title>ChatSys — Primary Server</title>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap"
-        rel="stylesheet" />
     <style>
         * {
             margin: 0;
@@ -528,9 +526,28 @@
         // IPC listeners
         api.on('log', (line) => addLog(line));
         api.on('status', (data) => {
-            document.getElementById('status-text').textContent = data.status || 'ACTIVE';
+            const dot = document.getElementById('status-dot');
+            const label = document.getElementById('status-text');
+            if (data.status === 'ACTIVE') {
+                dot.style.background = '#22c55e';
+                dot.style.boxShadow = '0 0 8px #22c55e';
+                label.textContent = 'ACTIVE';
+                label.style.color = '#22c55e';
+            } else if (data.status === 'RECOVERING') {
+                dot.style.background = '#f59e0b';
+                dot.style.boxShadow = '0 0 8px #f59e0b';
+                label.textContent = 'RECOVERING…';
+                label.style.color = '#f59e0b';
+                addLog('⏳ Backup holds the port. Recovery signal sent. Waiting to reclaim...', 'warn');
+            } else if (data.status === 'STARTING') {
+                dot.style.background = '#6366f1';
+                dot.style.boxShadow = '0 0 8px #6366f1';
+                label.textContent = 'STARTING';
+                label.style.color = '#94a3b8';
+            }
             if (data.port) document.getElementById('status-sub').textContent = `Listening on port ${data.port}`;
         });
+
         api.on('client-connected', (data) => {
             clients[data.username] = data;
             renderClients();
