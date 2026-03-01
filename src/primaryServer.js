@@ -66,33 +66,48 @@ class PrimaryServer {
                         this.msgCount++;
                         const sender = clientInfo ? clientInfo.username : 'Unknown';
                         const packet = proto.pack(proto.MSG_CHAT, {
-                            from: sender,
-                            text: msg.payload.text,
-                            ts: Date.now()
+                            from: sender, text: msg.payload.text, ts: Date.now()
                         });
                         this._broadcast(packet, socket);
                         this._log(`[MSG] ${sender}: ${msg.payload.text}`);
                         this._emit('message-relayed', { from: sender, text: msg.payload.text, count: this.msgCount });
+                        // Emit to server GUI live feed
+                        this._emit('chat-message', { from: sender, text: msg.payload.text, ts: Date.now() });
+
+                    } else if (msg.type === proto.MSG_IMAGE) {
+                        // Image message: broadcast or DM-route
+                        const sender = clientInfo ? clientInfo.username : 'Unknown';
+                        const { to, data, filename, mimeType } = msg.payload;
+                        const imgPacket = proto.pack(proto.MSG_IMAGE, {
+                            from: sender, to: to || null,
+                            data, filename, mimeType, ts: Date.now()
+                        });
+                        if (to) {
+                            // Private image
+                            const recipientSock = this.userMap.get(to);
+                            if (recipientSock && !recipientSock.destroyed) recipientSock.write(imgPacket);
+                            if (!socket.destroyed) socket.write(imgPacket);
+                            this._log(`[IMG-DM] ${sender} → ${to}: ${filename}`);
+                        } else {
+                            // Group image
+                            this._broadcast(imgPacket, socket);
+                            if (!socket.destroyed) socket.write(imgPacket); // echo to sender
+                            this._log(`[IMG] ${sender}: ${filename}`);
+                        }
+                        this._emit('chat-message', { from: sender, image: true, filename, ts: Date.now() });
 
                     } else if (msg.type === proto.MSG_DM) {
-                        // Route private message to specific recipient
                         const sender = clientInfo ? clientInfo.username : 'Unknown';
                         const toUser = msg.payload.to;
                         const text = msg.payload.text;
                         const dmPacket = proto.pack(proto.MSG_DM, {
-                            from: sender,
-                            to: toUser,
-                            text,
-                            ts: Date.now()
+                            from: sender, to: toUser, text, ts: Date.now()
                         });
-                        // Send to recipient if online
                         const recipientSock = this.userMap.get(toUser);
-                        if (recipientSock && !recipientSock.destroyed) {
-                            recipientSock.write(dmPacket);
-                        }
-                        // Echo back to sender (so they see their own DM in a DM thread)
+                        if (recipientSock && !recipientSock.destroyed) recipientSock.write(dmPacket);
                         if (!socket.destroyed) socket.write(dmPacket);
                         this._log(`[DM] ${sender} → ${toUser}: ${text}`);
+                        this._emit('dm-message', { from: sender, to: toUser, text, ts: Date.now() });
                     }
                 }
             });
@@ -216,6 +231,44 @@ class PrimaryServer {
         const packet = proto.pack(proto.MSG_SYS, { text, ts: Date.now() });
         this._broadcast(packet, null);
         this._log(`[SYSTEM BROADCAST] ${text}`);
+    }
+
+    /** Server admin sends a chat message (appears as "Server" in clients) */
+    serverSendMessage(text) {
+        if (!text.trim()) return;
+        const packet = proto.pack(proto.MSG_CHAT, { from: '🖥️ Server', text: text.trim(), ts: Date.now() });
+        this._broadcast(packet, null);
+        this._log(`[SERVER-MSG] ${text}`);
+        this._emit('chat-message', { from: '🖥️ Server', text: text.trim(), ts: Date.now(), self: true });
+    }
+
+    /** Server admin DMs a specific client */
+    serverSendDM(toUser, text) {
+        if (!text.trim() || !toUser) return;
+        const recipientSock = this.userMap.get(toUser);
+        if (!recipientSock || recipientSock.destroyed) {
+            this._log(`[DM-FAIL] User ${toUser} not connected.`);
+            return;
+        }
+        const packet = proto.pack(proto.MSG_DM, { from: '🖥️ Server', to: toUser, text: text.trim(), ts: Date.now() });
+        recipientSock.write(packet);
+        this._log(`[SERVER-DM] → ${toUser}: ${text}`);
+        this._emit('dm-message', { from: '🖥️ Server', to: toUser, text: text.trim(), ts: Date.now(), self: true });
+    }
+
+    /** Server admin sends image to all or specific client */
+    serverSendImage(toUser, data, filename, mimeType) {
+        const imgPacket = proto.pack(proto.MSG_IMAGE, {
+            from: '🖥️ Server', to: toUser || null, data, filename, mimeType, ts: Date.now()
+        });
+        if (toUser) {
+            const sock = this.userMap.get(toUser);
+            if (sock && !sock.destroyed) sock.write(imgPacket);
+        } else {
+            this._broadcast(imgPacket, null);
+        }
+        this._log(`[SERVER-IMG] → ${toUser || 'all'}: ${filename}`);
+        this._emit('chat-message', { from: '🖥️ Server', image: true, filename, ts: Date.now(), self: true });
     }
 
     _getLocalIP() {

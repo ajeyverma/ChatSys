@@ -217,6 +217,22 @@ class BackupServer {
                         this._log(`[MSG] ${sender}: ${msg.payload.text}`);
                         this._emit('message-relayed', { from: sender, text: msg.payload.text });
 
+                    } else if (msg.type === proto.MSG_IMAGE) {
+                        const sender = clientInfo ? clientInfo.username : 'Unknown';
+                        const { to, data, filename, mimeType } = msg.payload;
+                        const imgPacket = proto.pack(proto.MSG_IMAGE, {
+                            from: sender, to: to || null, data, filename, mimeType, ts: Date.now()
+                        });
+                        if (to) {
+                            const recipientSock = this.userMap.get(to);
+                            if (recipientSock && !recipientSock.destroyed) recipientSock.write(imgPacket);
+                            if (!socket.destroyed) socket.write(imgPacket);
+                        } else {
+                            this._broadcast(imgPacket, socket);
+                            if (!socket.destroyed) socket.write(imgPacket);
+                        }
+                        this._log(`[IMG] ${sender}: ${filename}`);
+
                     } else if (msg.type === proto.MSG_DM) {
                         const sender = clientInfo ? clientInfo.username : 'Unknown';
                         const toUser = msg.payload.to;

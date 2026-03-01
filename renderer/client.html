@@ -22,7 +22,7 @@
             user-select: none;
         }
 
-        /* ─── Title Bar ─────────────────────────────────────────── */
+        /* ─── Titlebar ────────────────────────────────────────── */
         .titlebar {
             height: 42px;
             background: #07070f;
@@ -121,15 +121,15 @@
             background: #febc2e;
         }
 
-        /* ─── Main Layout ───────────────────────────────────────── */
+        /* ─── App Layout ──────────────────────────────────────── */
         .app-layout {
             flex: 1;
             display: grid;
-            grid-template-columns: 200px 1fr;
+            grid-template-columns: 190px 1fr;
             overflow: hidden;
         }
 
-        /* ─── Users Sidebar ─────────────────────────────────────── */
+        /* ─── Users Sidebar ───────────────────────────────────── */
         .users-sidebar {
             background: #0d0d1f;
             border-right: 1px solid #1a1a30;
@@ -138,8 +138,8 @@
             overflow: hidden;
         }
 
-        .sidebar-header {
-            padding: 14px 14px 10px;
+        .sidebar-hdr {
+            padding: 12px 14px 8px;
             border-bottom: 1px solid #1a1a30;
             font-size: 10px;
             font-weight: 600;
@@ -151,7 +151,7 @@
         .user-list {
             flex: 1;
             overflow-y: auto;
-            padding: 8px 8px;
+            padding: 6px;
         }
 
         .user-item {
@@ -162,7 +162,7 @@
             border-radius: 8px;
             cursor: pointer;
             transition: background .15s;
-            position: relative;
+            border: 1px solid transparent;
         }
 
         .user-item:hover {
@@ -170,11 +170,11 @@
         }
 
         .user-item.active-dm {
-            background: rgba(168, 85, 247, .12);
-            border: 1px solid rgba(168, 85, 247, .25);
+            background: rgba(168, 85, 247, .1);
+            border-color: rgba(168, 85, 247, .25);
         }
 
-        .user-avatar {
+        .u-avatar {
             width: 28px;
             height: 28px;
             border-radius: 8px;
@@ -188,17 +188,17 @@
             flex-shrink: 0;
         }
 
-        .user-name {
+        .u-name {
             font-size: 12px;
             color: #c4c9d4;
             flex: 1;
         }
 
-        .user-name.me {
+        .u-name.me {
             color: #a855f7;
         }
 
-        .unread-badge {
+        .unread-dot {
             width: 16px;
             height: 16px;
             background: #a855f7;
@@ -209,26 +209,26 @@
             display: flex;
             align-items: center;
             justify-content: center;
+            flex-shrink: 0;
         }
 
         .dm-hint {
-            font-size: 9px;
+            font-size: 10px;
             color: #374151;
-            padding: 6px 8px 2px;
+            padding: 8px;
             font-style: italic;
+            text-align: center;
         }
 
-        /* ─── Chat Main ─────────────────────────────────────────── */
+        /* ─── Chat Main ───────────────────────────────────────── */
         .chat-main {
             display: flex;
             flex-direction: column;
             overflow: hidden;
-            position: relative;
         }
 
-        /* chat mode indicator */
-        .chat-mode-bar {
-            padding: 6px 16px;
+        .mode-bar {
+            padding: 6px 14px;
             background: #0d0d1f;
             border-bottom: 1px solid #1a1a30;
             display: flex;
@@ -239,20 +239,20 @@
             flex-shrink: 0;
         }
 
-        .chat-mode-bar .mode-label {
+        .mode-bar .mode-lbl {
             font-weight: 600;
         }
 
-        .chat-mode-bar.dm-mode {
+        .mode-bar.dm {
             background: rgba(168, 85, 247, .07);
             border-bottom-color: rgba(168, 85, 247, .3);
         }
 
-        .chat-mode-bar.dm-mode .mode-label {
+        .mode-bar.dm .mode-lbl {
             color: #a855f7;
         }
 
-        .btn-back-to-group {
+        .btn-back {
             margin-left: auto;
             background: none;
             border: 1px solid #2d2d4e;
@@ -264,7 +264,7 @@
             font-family: inherit;
         }
 
-        .btn-back-to-group:hover {
+        .btn-back:hover {
             border-color: #a855f7;
             color: #a855f7;
         }
@@ -273,7 +273,7 @@
         .messages {
             flex: 1;
             overflow-y: auto;
-            padding: 16px 20px;
+            padding: 14px 18px;
             display: flex;
             flex-direction: column;
             gap: 8px;
@@ -282,7 +282,7 @@
         .msg-wrap {
             display: flex;
             flex-direction: column;
-            max-width: 72%;
+            max-width: 74%;
         }
 
         .msg-wrap.self {
@@ -298,7 +298,7 @@
         .msg-wrap.system {
             align-self: center;
             align-items: center;
-            max-width: 85%;
+            max-width: 90%;
         }
 
         .msg-wrap.dm-self {
@@ -312,7 +312,7 @@
         }
 
         .msg-bubble {
-            padding: 9px 14px;
+            padding: 9px 13px;
             border-radius: 14px;
             font-size: 13px;
             line-height: 1.5;
@@ -337,12 +337,11 @@
             border: 1px solid #252545;
             color: #64748b;
             font-size: 11px;
-            text-align: center;
             border-radius: 20px;
             padding: 4px 14px;
+            text-align: center;
         }
 
-        /* DM bubbles — purple tinted */
         .msg-wrap.dm-self .msg-bubble {
             background: linear-gradient(135deg, #7c3aed, #a855f7);
             color: #fff;
@@ -356,14 +355,11 @@
             border-radius: 14px 14px 14px 4px;
         }
 
-        .dm-indicator {
+        .dm-lbl {
             font-size: 9px;
             color: #a855f7;
             margin-bottom: 2px;
             padding: 0 2px;
-            display: flex;
-            align-items: center;
-            gap: 3px;
         }
 
         .msg-meta {
@@ -381,20 +377,41 @@
             padding: 0 2px;
         }
 
+        /* image bubble */
+        .img-bubble {
+            max-width: 240px;
+            border-radius: 12px;
+            overflow: hidden;
+            cursor: pointer;
+            border: 1px solid #252545;
+        }
+
+        .img-bubble img {
+            width: 100%;
+            display: block;
+        }
+
+        .img-caption {
+            font-size: 10px;
+            color: #64748b;
+            padding: 4px 8px;
+            background: #111128;
+        }
+
         /* welcome */
         .welcome {
-            text-align: center;
-            color: #2d2d4e;
-            padding: 40px 20px;
             flex: 1;
             display: flex;
             flex-direction: column;
             align-items: center;
             justify-content: center;
+            text-align: center;
+            color: #2d2d4e;
+            padding: 30px;
         }
 
         .welcome-icon {
-            font-size: 48px;
+            font-size: 46px;
             margin-bottom: 12px;
         }
 
@@ -403,9 +420,9 @@
             line-height: 1.6;
         }
 
-        /* ─── Input Area ─────────────────────────────────────────── */
+        /* ─── Input Area ──────────────────────────────────────── */
         .input-area {
-            padding: 12px 16px;
+            padding: 10px 14px;
             background: #0d0d1f;
             border-top: 1px solid #1a1a30;
             flex-shrink: 0;
@@ -414,7 +431,7 @@
         .input-row {
             display: flex;
             gap: 8px;
-            align-items: center;
+            align-items: flex-end;
         }
 
         .msg-input {
@@ -422,7 +439,7 @@
             background: #111128;
             border: 1px solid #252545;
             border-radius: 12px;
-            padding: 10px 14px;
+            padding: 10px 13px;
             color: #e2e8f0;
             font-size: 13px;
             font-family: inherit;
@@ -446,6 +463,31 @@
 
         .msg-input:disabled {
             opacity: .4;
+            cursor: not-allowed;
+        }
+
+        .btn-img {
+            width: 40px;
+            height: 40px;
+            border-radius: 12px;
+            background: #161628;
+            border: 1px solid #252545;
+            cursor: pointer;
+            font-size: 18px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+            transition: all .2s;
+        }
+
+        .btn-img:hover {
+            border-color: #6366f1;
+            background: #1e1e3a;
+        }
+
+        .btn-img:disabled {
+            opacity: .3;
             cursor: not-allowed;
         }
 
@@ -477,7 +519,54 @@
             cursor: not-allowed;
         }
 
-        /* ─── Connect Modal ─────────────────────────────────────── */
+        /* image preview bar */
+        .img-preview-bar {
+            display: none;
+            padding: 8px 14px;
+            background: #0d0d1f;
+            border-top: 1px solid #1a1a30;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .img-preview-bar.visible {
+            display: flex;
+        }
+
+        .img-preview-thumb {
+            width: 48px;
+            height: 48px;
+            border-radius: 8px;
+            object-fit: cover;
+            border: 1px solid #252545;
+        }
+
+        .img-preview-name {
+            font-size: 11px;
+            color: #94a3b8;
+            flex: 1;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .btn-cancel-img {
+            background: none;
+            border: 1px solid #374151;
+            border-radius: 6px;
+            padding: 3px 10px;
+            color: #64748b;
+            font-size: 10px;
+            cursor: pointer;
+            font-family: inherit;
+        }
+
+        .btn-cancel-img:hover {
+            border-color: #ef4444;
+            color: #ef4444;
+        }
+
+        /* ─── Modal ───────────────────────────────────────────── */
         .modal-overlay {
             position: fixed;
             inset: 0;
@@ -493,8 +582,8 @@
             background: #161628;
             border: 1px solid #252545;
             border-radius: 18px;
-            padding: 28px;
-            width: 340px;
+            padding: 26px;
+            width: 335px;
             animation: slideUp .2s ease;
         }
 
@@ -519,11 +608,11 @@
         .modal p {
             font-size: 12px;
             color: #64748b;
-            margin-bottom: 20px;
+            margin-bottom: 18px;
         }
 
         .field {
-            margin-bottom: 12px;
+            margin-bottom: 11px;
         }
 
         .field label {
@@ -539,7 +628,7 @@
             background: #0f0f1a;
             border: 1px solid #2d2d4e;
             border-radius: 8px;
-            padding: 10px 12px;
+            padding: 9px 12px;
             color: #e2e8f0;
             font-size: 13px;
             font-family: inherit;
@@ -573,7 +662,28 @@
             opacity: .9;
         }
 
-        /* ─── Scrollbar ─────────────────────────────────────────── */
+        /* image lightbox */
+        .lightbox {
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, .9);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 200;
+            cursor: zoom-out;
+        }
+
+        .lightbox.open {
+            display: flex;
+        }
+
+        .lightbox img {
+            max-width: 90vw;
+            max-height: 90vh;
+            border-radius: 8px;
+        }
+
         ::-webkit-scrollbar {
             width: 4px;
         }
@@ -586,7 +696,15 @@
 </head>
 
 <body>
-    <!-- Title Bar -->
+    <!-- Hidden file input -->
+    <input type="file" id="file-picker" accept="image/*" style="display:none;" />
+
+    <!-- Lightbox -->
+    <div class="lightbox" id="lightbox" onclick="closeLightbox()">
+        <img id="lightbox-img" src="" alt="" />
+    </div>
+
+    <!-- Titlebar -->
     <div class="titlebar">
         <div class="titlebar-left">
             <span class="tb-role-badge">CLIENT</span>
@@ -601,38 +719,40 @@
         </div>
     </div>
 
-    <!-- Main App -->
+    <!-- App -->
     <div class="app-layout">
         <!-- Users Sidebar -->
         <div class="users-sidebar">
-            <div class="sidebar-header">👥 Online Users</div>
+            <div class="sidebar-hdr">👥 Online Users</div>
             <div class="user-list" id="user-list">
-                <div class="dm-hint" id="dm-hint">Connect to see users</div>
+                <div class="dm-hint">Connect to see users</div>
             </div>
         </div>
 
-        <!-- Chat Area -->
+        <!-- Chat -->
         <div class="chat-main">
-            <!-- Mode Indicator Bar -->
-            <div class="chat-mode-bar" id="mode-bar">
-                <span>🌐</span>
-                <span class="mode-label" id="mode-label">Group Chat</span>
+            <div class="mode-bar" id="mode-bar">
+                <span>🌐</span><span class="mode-lbl">Group Chat</span>
             </div>
-
-            <!-- Messages -->
             <div class="messages" id="messages">
                 <div class="welcome" id="welcome">
                     <div class="welcome-icon">🔌</div>
-                    <p>Connect to the server to start chatting.<br />Click a username on the left to send a private
-                        message.</p>
+                    <p>Connect to the server to start chatting.<br />Click a user to send a private message.<br />Use 📎
+                        to share images.</p>
                 </div>
             </div>
-
-            <!-- Input -->
+            <!-- Image preview bar -->
+            <div class="img-preview-bar" id="img-preview-bar">
+                <img class="img-preview-thumb" id="img-preview-thumb" src="" alt="preview" />
+                <span class="img-preview-name" id="img-preview-name"></span>
+                <button class="btn-cancel-img" onclick="cancelImage()">✕ Cancel</button>
+            </div>
             <div class="input-area">
                 <div class="input-row">
+                    <button class="btn-img" id="btn-img" onclick="pickImage()" disabled title="Send image">📎</button>
                     <textarea class="msg-input" id="msg-input"
-                        placeholder="Type a message... (Shift+Enter for new line)" rows="1" disabled></textarea>
+                        placeholder="Type a message... (Enter to send, Shift+Enter for new line)" rows="1"
+                        disabled></textarea>
                     <button class="btn-send" id="btn-send" onclick="sendMsg()" disabled>➤</button>
                 </div>
             </div>
@@ -644,11 +764,10 @@
         <div class="modal">
             <h2>💬 Join Chat</h2>
             <p>Enter your details to connect to the LAN server.</p>
-            <div class="field"><label>Your Username</label><input id="m-username" placeholder="e.g. Alice"
-                    maxlength="24" /></div>
-            <div class="field"><label>Server IP Address</label><input id="m-host" placeholder="e.g. 192.168.1.101"
-                    value="127.0.0.1" /></div>
-            <div class="field"><label>Port</label><input id="m-port" placeholder="65432" value="65432" /></div>
+            <div class="field"><label>Username</label><input id="m-username" placeholder="e.g. Alice" maxlength="24" />
+            </div>
+            <div class="field"><label>Server IP</label><input id="m-host" value="127.0.0.1" /></div>
+            <div class="field"><label>Port</label><input id="m-port" value="65432" /></div>
             <button class="btn-connect" onclick="doConnect()">Connect →</button>
         </div>
     </div>
@@ -656,12 +775,14 @@
     <script>
         let myUsername = '';
         let isConnected = false;
-        let dmTarget = null;          // null = group chat, 'username' = DM mode
-        const unreadCounts = {};      // username -> unread DM count
-        const dmHistories = {};       // username -> [{...msg}]  (stored per-thread)
+        let dmTarget = null;
+        const unreadCounts = {};
+        const dmHistories = {};
+        const groupHistory = [];
         let onlineUsers = [];
+        let pendingImage = null; // { data, filename, mimeType }
 
-        // ─── Connect Modal ──────────────────────────────────────────
+        // ─── Modal ───────────────────────────────────────────────────
         api.on('request-connect-info', () => {
             document.getElementById('modal').style.display = 'flex';
             setTimeout(() => document.getElementById('m-username').focus(), 100);
@@ -678,123 +799,177 @@
             api.send('client-connect', { host, port, username });
         }
 
-        // ─── DM / Group Mode Switch ─────────────────────────────────
+        // ─── Image Picker ─────────────────────────────────────────────
+        function pickImage() {
+            document.getElementById('file-picker').click();
+        }
+
+        document.getElementById('file-picker').addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+            if (file.size > 5 * 1024 * 1024) { alert('Image too large (max 5MB)'); return; }
+            const reader = new FileReader();
+            reader.onload = (ev) => {
+                pendingImage = { data: ev.target.result, filename: file.name, mimeType: file.type };
+                document.getElementById('img-preview-thumb').src = ev.target.result;
+                document.getElementById('img-preview-name').textContent = file.name;
+                document.getElementById('img-preview-bar').classList.add('visible');
+                document.getElementById('msg-input').placeholder = 'Add a caption (optional)...';
+            };
+            reader.readAsDataURL(file);
+            e.target.value = '';
+        });
+
+        function cancelImage() {
+            pendingImage = null;
+            document.getElementById('img-preview-bar').classList.remove('visible');
+            document.getElementById('msg-input').placeholder = dmTarget
+                ? `Message ${dmTarget} privately...`
+                : 'Type a message... (Enter to send, Shift+Enter for new line)';
+        }
+
+        // ─── Send ──────────────────────────────────────────────────────
+        function sendMsg() {
+            const input = document.getElementById('msg-input');
+            const text = input.value.trim();
+            if (!isConnected) return;
+
+            if (pendingImage) {
+                // Send image (with optional text caption)
+                const to = dmTarget || null;
+                api.send('client-send-image', {
+                    to,
+                    data: pendingImage.data,
+                    filename: pendingImage.filename,
+                    mimeType: pendingImage.mimeType
+                });
+                cancelImage();
+                input.value = '';
+                input.style.height = 'auto';
+            } else if (text) {
+                if (dmTarget) {
+                    api.send('client-send-dm', { to: dmTarget, text });
+                } else {
+                    api.send('client-send', { text });
+                    appendGroupMsg({ type: 'chat', from: myUsername, text, ts: Date.now() }, true);
+                }
+                input.value = '';
+                input.style.height = 'auto';
+            }
+        }
+
+        // ─── DM Navigation ────────────────────────────────────────────
         function openDM(username) {
-            if (username === myUsername) return; // can't DM yourself
+            if (username === myUsername) return;
             dmTarget = username;
             unreadCounts[username] = 0;
             renderUserList();
 
-            // Update mode bar
             const bar = document.getElementById('mode-bar');
-            bar.className = 'chat-mode-bar dm-mode';
-            document.getElementById('mode-label').textContent = `🔒 Private: ${username}`;
-            bar.innerHTML = `<span>🔒</span>
-                <span class="mode-label">Private chat with <strong>${escapeHtml(username)}</strong></span>
-                <button class="btn-back-to-group" onclick="openGroupChat()">← Back to Group</button>`;
+            bar.className = 'mode-bar dm';
+            bar.innerHTML = `<span>🔒</span><span class="mode-lbl">Private: <strong>${escH(username)}</strong></span>
+                <button class="btn-back" onclick="openGroup()">← Group Chat</button>`;
 
-            // Update input style
-            document.getElementById('msg-input').className = 'msg-input dm-mode';
-            document.getElementById('msg-input').placeholder = `Message ${username} privately...`;
+            const inp = document.getElementById('msg-input');
+            inp.className = 'msg-input dm-mode';
+            inp.placeholder = `Message ${username} privately...`;
             document.getElementById('btn-send').className = 'btn-send dm-mode';
 
-            // Show DM history for this user
             renderDMHistory(username);
         }
 
-        function openGroupChat() {
+        function openGroup() {
             dmTarget = null;
+            cancelImage();
             const bar = document.getElementById('mode-bar');
-            bar.className = 'chat-mode-bar';
-            bar.innerHTML = '<span>🌐</span><span class="mode-label" id="mode-label">Group Chat</span>';
-
+            bar.className = 'mode-bar';
+            bar.innerHTML = '<span>🌐</span><span class="mode-lbl">Group Chat</span>';
             document.getElementById('msg-input').className = 'msg-input';
-            document.getElementById('msg-input').placeholder = 'Type a message... (Shift+Enter for new line)';
+            document.getElementById('msg-input').placeholder = 'Type a message... (Enter to send, Shift+Enter for new line)';
             document.getElementById('btn-send').className = 'btn-send';
-
             renderUserList();
             renderGroupHistory();
         }
 
-        // ─── Send ───────────────────────────────────────────────────
-        function sendMsg() {
-            const input = document.getElementById('msg-input');
-            const text = input.value.trim();
-            if (!text || !isConnected) return;
-
-            if (dmTarget) {
-                api.send('client-send-dm', { to: dmTarget, text });
-                // We'll see our own DM echoed back from server
-            } else {
-                api.send('client-send', { text });
-                appendGroupMessage({ type: 'chat', from: myUsername, text, ts: Date.now() }, true);
-            }
-            input.value = '';
-            input.style.height = 'auto';
-        }
-
-        // ─── Group history storage ──────────────────────────────────
-        const groupHistory = [];
-        function appendGroupMessage(msg, isSelf = false) {
+        // ─── Render helpers ────────────────────────────────────────────
+        function appendGroupMsg(msg, isSelf = false) {
             groupHistory.push({ msg, isSelf });
-            if (!dmTarget) renderGroupMsg(msg, isSelf);
+            if (!dmTarget) renderGroupMsgEl(msg, isSelf);
         }
 
         function renderGroupHistory() {
-            const container = document.getElementById('messages');
-            container.innerHTML = '';
-            for (const { msg, isSelf } of groupHistory) renderGroupMsg(msg, isSelf);
-            container.scrollTop = container.scrollHeight;
+            const c = document.getElementById('messages');
+            c.innerHTML = '';
+            for (const { msg, isSelf } of groupHistory) renderGroupMsgEl(msg, isSelf);
+            c.scrollTop = c.scrollHeight;
         }
 
-        function renderGroupMsg(msg, isSelf) {
-            const container = document.getElementById('messages');
-            if (dmTarget) return; // Not in group mode, skip rendering
+        function renderGroupMsgEl(msg, isSelf) {
+            if (dmTarget) return;
+            const c = document.getElementById('messages');
             const wrap = document.createElement('div');
             if (msg.type === 'system') {
                 wrap.className = 'msg-wrap system';
-                wrap.innerHTML = `<div class="msg-bubble">${escapeHtml(msg.text)}</div>`;
+                wrap.innerHTML = `<div class="msg-bubble">${escH(msg.text)}</div>`;
             } else {
                 wrap.className = `msg-wrap ${isSelf ? 'self' : 'other'}`;
-                const time = new Date(msg.ts || Date.now()).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-                if (!isSelf) wrap.innerHTML += `<div class="msg-name">${escapeHtml(msg.from)}</div>`;
-                wrap.innerHTML += `<div class="msg-bubble">${escapeHtml(msg.text)}</div>`;
+                const time = fmtTime(msg.ts);
+                if (!isSelf) wrap.innerHTML += `<div class="msg-name">${escH(msg.from)}</div>`;
+                wrap.innerHTML += `<div class="msg-bubble">${escH(msg.text)}</div>`;
                 wrap.innerHTML += `<div class="msg-meta">${time}</div>`;
             }
-            container.appendChild(wrap);
-            container.scrollTop = container.scrollHeight;
+            c.appendChild(wrap);
+            c.scrollTop = c.scrollHeight;
         }
 
         function renderDMHistory(username) {
-            const container = document.getElementById('messages');
-            container.innerHTML = '';
-            const history = dmHistories[username] || [];
-            for (const dm of history) renderDMMsg(dm, true); // force render
-            container.scrollTop = container.scrollHeight;
+            const c = document.getElementById('messages');
+            c.innerHTML = '';
+            for (const dm of (dmHistories[username] || [])) renderDMEl(dm, true);
+            c.scrollTop = c.scrollHeight;
         }
 
-        function renderDMMsg(dm, forceRender = false) {
-            const container = document.getElementById('messages');
-            const isSelf = dm.from === myUsername;
-            const threadUser = isSelf ? dm.to : dm.from;
-            if (!forceRender && dmTarget !== threadUser) return;
+        function renderDMEl(dm, force = false) {
+            const c = document.getElementById('messages');
+            const isSelf = dm.from === myUsername || dm.from === '🖥️ Server' && dm.to === myUsername;
+            const threadUser = isSelf && dm.from !== '🖥️ Server' ? dm.to : dm.from;
+            if (!force && dmTarget !== threadUser) return;
             const wrap = document.createElement('div');
             wrap.className = `msg-wrap ${isSelf ? 'dm-self' : 'dm-other'}`;
-            const time = new Date(dm.ts || Date.now()).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-            if (!isSelf) wrap.innerHTML += `<div class="dm-indicator">🔒 ${escapeHtml(dm.from)}</div>`;
-            else wrap.innerHTML += `<div class="dm-indicator" style="justify-content:flex-end">🔒 to ${escapeHtml(dm.to)}</div>`;
-            wrap.innerHTML += `<div class="msg-bubble">${escapeHtml(dm.text)}</div>`;
+            const time = fmtTime(dm.ts);
+            if (isSelf)
+                wrap.innerHTML += `<div class="dm-lbl" style="justify-content:flex-end">🔒 to ${escH(dm.to)}</div>`;
+            else
+                wrap.innerHTML += `<div class="dm-lbl">🔒 ${escH(dm.from)}</div>`;
+            wrap.innerHTML += `<div class="msg-bubble">${escH(dm.text)}</div>`;
             wrap.innerHTML += `<div class="msg-meta">${time}</div>`;
-            container.appendChild(wrap);
-            container.scrollTop = container.scrollHeight;
+            c.appendChild(wrap);
+            c.scrollTop = c.scrollHeight;
         }
 
-        // ─── Online Users List ──────────────────────────────────────
+        function renderImageEl(img, isSelf) {
+            const c = document.getElementById('messages');
+            const wrapClass = img.to
+                ? (isSelf ? 'dm-self' : 'dm-other')
+                : (isSelf ? 'self' : 'other');
+            const wrap = document.createElement('div');
+            wrap.className = `msg-wrap ${wrapClass}`;
+            const time = fmtTime(img.ts);
+            if (!isSelf) wrap.innerHTML += `<div class="msg-name">${escH(img.from)}</div>`;
+            wrap.innerHTML += `
+                <div class="img-bubble" onclick="openLightbox('${img.data}')">
+                    <img src="${img.data}" alt="${escH(img.filename)}" loading="lazy"/>
+                    <div class="img-caption">📎 ${escH(img.filename)}</div>
+                </div>
+                <div class="msg-meta">${time}</div>`;
+            c.appendChild(wrap);
+            c.scrollTop = c.scrollHeight;
+        }
+
+        // ─── User List ─────────────────────────────────────────────────
         function renderUserList() {
             const list = document.getElementById('user-list');
-            const hint = document.getElementById('dm-hint');
             list.innerHTML = '';
-
             if (!isConnected || onlineUsers.length === 0) {
                 const h = document.createElement('div');
                 h.className = 'dm-hint';
@@ -802,66 +977,58 @@
                 list.appendChild(h);
                 return;
             }
-
-            // Sort: me first, then others
             const sorted = [myUsername, ...onlineUsers.filter(u => u !== myUsername)];
-            for (const username of sorted) {
-                if (!onlineUsers.includes(username) && username === myUsername) {
-                    // Show self even if not in list yet
-                }
+            for (const u of sorted) {
+                if (!onlineUsers.includes(u)) continue;
                 const item = document.createElement('div');
-                item.className = 'user-item' + (dmTarget === username ? ' active-dm' : '');
-                item.onclick = () => username !== myUsername && openDM(username);
-
-                const initial = username.charAt(0).toUpperCase();
-                const unread = unreadCounts[username] || 0;
+                item.className = 'user-item' + (dmTarget === u ? ' active-dm' : '');
+                item.onclick = () => u !== myUsername && openDM(u);
+                const unread = unreadCounts[u] || 0;
                 item.innerHTML = `
-                    <div class="user-avatar">${escapeHtml(initial)}</div>
-                    <span class="user-name${username === myUsername ? ' me' : ''}">${escapeHtml(username)}${username === myUsername ? ' (you)' : ''}</span>
-                    ${unread > 0 ? `<div class="unread-badge">${unread}</div>` : ''}
-                `;
+                    <div class="u-avatar">${escH(u.charAt(0).toUpperCase())}</div>
+                    <span class="u-name${u === myUsername ? ' me' : ''}">${escH(u)}${u === myUsername ? ' (you)' : ''}</span>
+                    ${unread > 0 ? `<div class="unread-dot">${unread}</div>` : ''}`;
                 list.appendChild(item);
             }
         }
 
-        // ─── Status ─────────────────────────────────────────────────
+        // ─── Status ───────────────────────────────────────────────────
         function setStatus(status, host, port) {
             const dot = document.getElementById('status-dot');
-            const text = document.getElementById('status-text');
+            const txt = document.getElementById('status-text');
             dot.className = 'status-dot';
-            const input = document.getElementById('msg-input');
-            const sendBtn = document.getElementById('btn-send');
+            const inp = document.getElementById('msg-input');
+            const btn = document.getElementById('btn-send');
+            const imgBtn = document.getElementById('btn-img');
             if (status === 'Connected') {
-                dot.classList.add('connected');
-                text.textContent = `${host}:${port}`;
-                isConnected = true;
-                input.disabled = false;
-                sendBtn.disabled = false;
+                dot.classList.add('connected'); txt.textContent = `${host}:${port}`;
+                isConnected = true; inp.disabled = false; btn.disabled = false; imgBtn.disabled = false;
             } else if (status.startsWith('Reconnecting') || status === 'Connecting...') {
-                dot.classList.add('reconnecting');
-                text.textContent = status;
-                isConnected = false;
-                input.disabled = true;
-                sendBtn.disabled = true;
+                dot.classList.add('reconnecting'); txt.textContent = status;
+                isConnected = false; inp.disabled = true; btn.disabled = true; imgBtn.disabled = true;
             } else {
-                dot.classList.add('disconnected');
-                text.textContent = status || 'Disconnected';
-                isConnected = false;
-                input.disabled = true;
-                sendBtn.disabled = true;
+                dot.classList.add('disconnected'); txt.textContent = status || 'Disconnected';
+                isConnected = false; inp.disabled = true; btn.disabled = true; imgBtn.disabled = true;
             }
         }
 
-        function escapeHtml(s) {
-            if (typeof s !== 'string') return '';
-            return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+        // ─── Lightbox ─────────────────────────────────────────────────
+        function openLightbox(src) {
+            document.getElementById('lightbox-img').src = src;
+            document.getElementById('lightbox').classList.add('open');
+        }
+        function closeLightbox() {
+            document.getElementById('lightbox').classList.remove('open');
         }
 
-        // ─── IPC Listeners ──────────────────────────────────────────
+        // ─── Helpers ──────────────────────────────────────────────────
+        function escH(s) { if (typeof s !== 'string') return ''; return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); }
+        function fmtTime(ts) { return new Date(ts || Date.now()).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }); }
+
+        // ─── IPC ──────────────────────────────────────────────────────
         api.on('message', (msg) => {
-            const isSelf = (msg.type === 'chat' && msg.from === myUsername);
-            if (!isSelf) appendGroupMessage(msg, false);
-            // If we're in DM mode, still store but don't render group messages
+            const isSelf = msg.type === 'chat' && msg.from === myUsername;
+            if (!isSelf) appendGroupMsg(msg, false);
         });
 
         api.on('status', (data) => setStatus(data.status, data.host, data.port));
@@ -872,44 +1039,42 @@
         });
 
         api.on('dm', (dm) => {
-            // Store in DM history
             const threadUser = dm.from === myUsername ? dm.to : dm.from;
             if (!dmHistories[threadUser]) dmHistories[threadUser] = [];
             dmHistories[threadUser].push(dm);
-
             if (dmTarget === threadUser) {
-                // Currently viewing this DM thread — render immediately
-                renderDMMsg(dm);
+                renderDMEl(dm);
             } else if (dm.from !== myUsername) {
-                // Unread DM from another user
                 unreadCounts[threadUser] = (unreadCounts[threadUser] || 0) + 1;
                 renderUserList();
-                // Show subtle system notification in group chat
-                appendGroupMessage({
-                    type: 'system',
-                    text: `📨 New private message from ${dm.from}`,
-                    ts: Date.now()
-                });
+                appendGroupMsg({ type: 'system', text: `📨 New private message from ${dm.from}`, ts: Date.now() });
             }
         });
 
-        api.on('failover', (data) => {
-            appendGroupMessage({ type: 'system', text: `⚡ Failover! Switching to ${data.host}:${data.port}`, ts: Date.now() });
+        api.on('image', (img) => {
+            const isSelf = img.from === myUsername;
+            // If DM image, store in thread
+            if (img.to) {
+                const threadUser = isSelf ? img.to : img.from;
+                if (dmTarget === threadUser) renderImageEl(img, isSelf);
+                else if (!isSelf) {
+                    unreadCounts[threadUser] = (unreadCounts[threadUser] || 0) + 1;
+                    renderUserList();
+                    appendGroupMsg({ type: 'system', text: `📎 Image from ${img.from} (private)`, ts: img.ts });
+                }
+            } else {
+                // Group image
+                if (!dmTarget) renderImageEl(img, isSelf);
+            }
         });
 
-        api.on('ack', (data) => {
-            appendGroupMessage({ type: 'system', text: `✅ ${data.message}`, ts: Date.now() });
-        });
+        api.on('failover', (data) => appendGroupMsg({ type: 'system', text: `⚡ Failover! Switching to ${data.host}:${data.port}`, ts: Date.now() }));
+        api.on('ack', (data) => appendGroupMsg({ type: 'system', text: `✅ ${data.message}`, ts: Date.now() }));
 
-        // ─── Textarea Auto-Grow + Enter to Send ─────────────────────
-        const input = document.getElementById('msg-input');
-        input.addEventListener('keydown', (e) => {
-            if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMsg(); }
-        });
-        input.addEventListener('input', () => {
-            input.style.height = 'auto';
-            input.style.height = Math.min(input.scrollHeight, 80) + 'px';
-        });
+        // ─── Input behavior ───────────────────────────────────────────
+        const inp = document.getElementById('msg-input');
+        inp.addEventListener('keydown', (e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMsg(); } });
+        inp.addEventListener('input', () => { inp.style.height = 'auto'; inp.style.height = Math.min(inp.scrollHeight, 80) + 'px'; });
     </script>
 </body>
 

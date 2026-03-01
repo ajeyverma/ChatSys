@@ -387,7 +387,249 @@
             color: #f87171;
         }
 
-        /* Scrollbar */
+        /* === Messaging Console === */
+        .panel-tabs {
+            display: flex;
+            border-bottom: 1px solid #1a1a30;
+            flex-shrink: 0;
+        }
+
+        .panel-tab {
+            flex: 1;
+            padding: 9px 0;
+            font-size: 11px;
+            font-weight: 600;
+            color: #475569;
+            text-align: center;
+            cursor: pointer;
+            border-bottom: 2px solid transparent;
+            transition: all .2s;
+        }
+
+        .panel-tab.active {
+            color: #6366f1;
+            border-bottom-color: #6366f1;
+        }
+
+        .panel-content {
+            flex: 1;
+            overflow: hidden;
+            display: none;
+            flex-direction: column;
+        }
+
+        .panel-content.active {
+            display: flex;
+        }
+
+        /* chat feed */
+        .feed {
+            flex: 1;
+            overflow-y: auto;
+            padding: 12px 14px;
+            display: flex;
+            flex-direction: column;
+            gap: 7px;
+        }
+
+        .feed-msg {
+            display: flex;
+            flex-direction: column;
+            max-width: 75%;
+        }
+
+        .feed-msg.srv {
+            align-self: flex-end;
+            align-items: flex-end;
+        }
+
+        .feed-msg.client {
+            align-self: flex-start;
+            align-items: flex-start;
+        }
+
+        .feed-msg.sys {
+            align-self: center;
+            align-items: center;
+            max-width: 90%;
+        }
+
+        .feed-bubble {
+            padding: 8px 12px;
+            border-radius: 12px;
+            font-size: 12px;
+            line-height: 1.5;
+            word-break: break-word;
+        }
+
+        .feed-msg.srv .feed-bubble {
+            background: linear-gradient(135deg, #22c55e, #16a34a);
+            color: #fff;
+            border-radius: 12px 12px 4px 12px;
+        }
+
+        .feed-msg.client .feed-bubble {
+            background: #161628;
+            border: 1px solid #252545;
+            color: #e2e8f0;
+            border-radius: 12px 12px 12px 4px;
+        }
+
+        .feed-msg.sys .feed-bubble {
+            background: #111128;
+            border: 1px solid #252545;
+            color: #64748b;
+            font-size: 11px;
+            border-radius: 20px;
+            padding: 4px 14px;
+            text-align: center;
+        }
+
+        .feed-img {
+            max-width: 180px;
+            border-radius: 10px;
+            overflow: hidden;
+            cursor: pointer;
+            border: 1px solid #252545;
+        }
+
+        .feed-img img {
+            width: 100%;
+            display: block;
+        }
+
+        .feed-name {
+            font-size: 10px;
+            color: #94a3b8;
+            margin-bottom: 2px;
+            font-weight: 600;
+            padding: 0 2px;
+        }
+
+        .feed-meta {
+            font-size: 9px;
+            color: #475569;
+            margin-top: 2px;
+            padding: 0 2px;
+        }
+
+        /* console send area */
+        .console-area {
+            padding: 10px 14px;
+            background: #0d0d1f;
+            border-top: 1px solid #1a1a30;
+            flex-shrink: 0;
+        }
+
+        .console-target {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            margin-bottom: 6px;
+        }
+
+        .console-target label {
+            font-size: 10px;
+            color: #64748b;
+            white-space: nowrap;
+        }
+
+        .console-target select {
+            flex: 1;
+            background: #111128;
+            border: 1px solid #252545;
+            border-radius: 6px;
+            padding: 4px 8px;
+            color: #e2e8f0;
+            font-size: 11px;
+            font-family: inherit;
+            outline: none;
+        }
+
+        .console-row {
+            display: flex;
+            gap: 6px;
+            align-items: flex-end;
+        }
+
+        .console-input {
+            flex: 1;
+            background: #111128;
+            border: 1px solid #252545;
+            border-radius: 10px;
+            padding: 8px 12px;
+            color: #e2e8f0;
+            font-size: 12px;
+            font-family: inherit;
+            outline: none;
+            resize: none;
+            max-height: 60px;
+        }
+
+        .console-input:focus {
+            border-color: #22c55e;
+        }
+
+        .btn-console-img {
+            width: 34px;
+            height: 34px;
+            border-radius: 8px;
+            background: #161628;
+            border: 1px solid #252545;
+            cursor: pointer;
+            font-size: 15px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+
+        .btn-console-img:hover {
+            border-color: #22c55e;
+        }
+
+        .btn-console-send {
+            height: 34px;
+            padding: 0 14px;
+            border-radius: 8px;
+            background: linear-gradient(135deg, #22c55e, #16a34a);
+            border: none;
+            color: #fff;
+            font-size: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            font-family: inherit;
+            white-space: nowrap;
+            flex-shrink: 0;
+        }
+
+        .btn-console-send:hover {
+            opacity: .9;
+        }
+
+        /* clickable client item */
+        .client-item {
+            cursor: pointer;
+        }
+
+        .client-item:hover {
+            background: #1a1a30;
+        }
+
+        .client-item .dm-btn {
+            font-size: 9px;
+            color: #6366f1;
+            margin-left: auto;
+            padding: 2px 6px;
+            border: 1px solid #2d2d4e;
+            border-radius: 4px;
+            display: none;
+        }
+
+        .client-item:hover .dm-btn {
+            display: block;
+        }
+
         ::-webkit-scrollbar {
             width: 4px;
         }
@@ -459,19 +701,58 @@
             </div>
         </div>
 
-        <!-- Log Panel -->
-        <div class="log-panel">
-            <div class="log-header">
-                <h2>📋 Server Log</h2>
-                <button class="btn-clear" onclick="clearLog()">Clear</button>
+        <!-- Main Panel (tabbed: Log + Chat Feed) -->
+        <div class="log-panel" style="display:flex;flex-direction:column;">
+            <!-- Hidden image input for server -->
+            <input type="file" id="srv-file-picker" accept="image/*" style="display:none;" />
+
+            <!-- Tabs -->
+            <div class="panel-tabs">
+                <div class="panel-tab active" id="tab-log" onclick="switchTab('log')">📋 Server Log</div>
+                <div class="panel-tab" id="tab-chat" onclick="switchTab('chat')">💬 Chat Console</div>
             </div>
-            <div class="log-body" id="log-body"></div>
+
+            <!-- Log Tab -->
+            <div class="panel-content active" id="pane-log" style="flex-direction:column;">
+                <div class="log-header">
+                    <h2>📋 Server Log</h2>
+                    <button class="btn-clear" onclick="clearLog()">Clear</button>
+                </div>
+                <div class="log-body" id="log-body"></div>
+            </div>
+
+            <!-- Chat Console Tab -->
+            <div class="panel-content" id="pane-chat" style="flex-direction:column;">
+                <div class="feed" id="chat-feed"></div>
+                <div class="console-area">
+                    <div class="console-target">
+                        <label>To:</label>
+                        <select id="dm-target-select">
+                            <option value="">Everyone (Group)</option>
+                        </select>
+                    </div>
+                    <div class="console-row">
+                        <button class="btn-console-img" title="Send image" onclick="srvPickImage()">📎</button>
+                        <textarea class="console-input" id="console-input" placeholder="Type message as Server..."
+                            rows="1"></textarea>
+                        <button class="btn-console-send" onclick="serverSend()">Send ➤</button>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 
     <script>
         const clients = {};
         let msgCount = 0;
+        let srvPendingImage = null;
+
+        function switchTab(tab) {
+            document.getElementById('tab-log').classList.toggle('active', tab === 'log');
+            document.getElementById('tab-chat').classList.toggle('active', tab === 'chat');
+            document.getElementById('pane-log').classList.toggle('active', tab === 'log');
+            document.getElementById('pane-chat').classList.toggle('active', tab === 'chat');
+        }
 
         function addLog(line, type = 'info') {
             const body = document.getElementById('log-body');
@@ -499,51 +780,123 @@
             addLog(`[BROADCAST] ${text}`, 'warn');
         }
 
+        // ─── Server Admin Send ──────────────────────────────────────
+        function serverSend() {
+            const text = document.getElementById('console-input').value.trim();
+            const to = document.getElementById('dm-target-select').value;
+
+            if (srvPendingImage) {
+                api.send('server-send-image', {
+                    to: to || null,
+                    data: srvPendingImage.data,
+                    filename: srvPendingImage.filename,
+                    mimeType: srvPendingImage.mimeType
+                });
+                srvPendingImage = null;
+                document.getElementById('console-input').placeholder = 'Type message as Server...';
+            } else if (text) {
+                if (to) {
+                    api.send('server-send-dm', { to, text });
+                } else {
+                    api.send('server-send-msg', { text });
+                }
+            }
+            document.getElementById('console-input').value = '';
+        }
+
+        function srvPickImage() {
+            document.getElementById('srv-file-picker').click();
+        }
+
+        document.getElementById('srv-file-picker').addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+            if (file.size > 5 * 1024 * 1024) { alert('Image too large (max 5MB)'); return; }
+            const reader = new FileReader();
+            reader.onload = (ev) => {
+                srvPendingImage = { data: ev.target.result, filename: file.name, mimeType: file.type };
+                document.getElementById('console-input').placeholder = `📎 ${file.name} (add caption optional)`;
+            };
+            reader.readAsDataURL(file);
+            e.target.value = '';
+        });
+
+        // ─── Chat Feed Render ───────────────────────────────────────
+        function addFeedMsg(data) {
+            const feed = document.getElementById('chat-feed');
+            const isSrv = data.from === '🖥️ Server';
+            const wrap = document.createElement('div');
+            if (data.system) {
+                wrap.className = 'feed-msg sys';
+                wrap.innerHTML = `<div class="feed-bubble">${escapeHtml(data.text)}</div>`;
+            } else if (data.image) {
+                wrap.className = `feed-msg ${isSrv ? 'srv' : 'client'}`;
+                if (!isSrv) wrap.innerHTML += `<div class="feed-name">${escapeHtml(data.from)}</div>`;
+                wrap.innerHTML += `<div class="feed-img"><img src="${data.imgData}" /></div><div class="feed-meta">${fmtTime(data.ts)} · 📎 ${escapeHtml(data.filename)}</div>`;
+            } else {
+                wrap.className = `feed-msg ${isSrv ? 'srv' : 'client'}`;
+                if (!isSrv) wrap.innerHTML += `<div class="feed-name">${escapeHtml(data.from)}</div>`;
+                wrap.innerHTML += `<div class="feed-bubble">${escapeHtml(data.text)}</div><div class="feed-meta">${fmtTime(data.ts)}</div>`;
+            }
+            feed.appendChild(wrap);
+            feed.scrollTop = feed.scrollHeight;
+        }
+
+        function fmtTime(ts) { return new Date(ts || Date.now()).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }); }
+
+        function updateDMSelect(keys) {
+            const sel = document.getElementById('dm-target-select');
+            const cur = sel.value;
+            sel.innerHTML = '<option value="">Everyone (Group)</option>';
+            for (const k of keys) sel.innerHTML += `<option value="${escapeHtml(k)}"${k === cur ? ' selected' : ''}>${escapeHtml(k)}</option>`;
+        }
+
+        // ─── Client List Render ─────────────────────────────────────
         function renderClients() {
             const list = document.getElementById('client-list');
             const noClients = document.getElementById('no-clients');
             const keys = Object.keys(clients);
             document.getElementById('stat-clients').textContent = keys.length;
+            updateDMSelect(keys);
             if (keys.length === 0) {
                 noClients.style.display = 'block';
-                const items = list.querySelectorAll('.client-item');
-                items.forEach(i => i.remove());
+                list.querySelectorAll('.client-item').forEach(i => i.remove());
                 return;
             }
             noClients.style.display = 'none';
-            // Rebuild
             list.querySelectorAll('.client-item').forEach(i => i.remove());
             for (const [key, info] of Object.entries(clients)) {
                 const el = document.createElement('div');
                 el.className = 'client-item';
+                el.title = `Click to DM ${info.username}`;
+                el.onclick = () => {
+                    switchTab('chat');
+                    document.getElementById('dm-target-select').value = info.username;
+                    document.getElementById('console-input').focus();
+                };
                 el.innerHTML = `
-          <div class="client-avatar">${info.username.charAt(0).toUpperCase()}</div>
-          <div><div class="client-name">${escapeHtml(info.username)}</div><div class="client-ip">${escapeHtml(info.address)}</div></div>`;
+                    <div class="client-avatar">${info.username.charAt(0).toUpperCase()}</div>
+                    <div><div class="client-name">${escapeHtml(info.username)}</div><div class="client-ip">${escapeHtml(info.address)}</div></div>
+                    <span class="dm-btn">DM</span>`;
                 list.appendChild(el);
             }
         }
 
-        // IPC listeners
+        // ─── IPC Listeners ──────────────────────────────────────────
         api.on('log', (line) => addLog(line));
         api.on('status', (data) => {
             const dot = document.getElementById('status-dot');
             const label = document.getElementById('status-text');
             if (data.status === 'ACTIVE') {
-                dot.style.background = '#22c55e';
-                dot.style.boxShadow = '0 0 8px #22c55e';
-                label.textContent = 'ACTIVE';
-                label.style.color = '#22c55e';
+                dot.style.background = '#22c55e'; dot.style.boxShadow = '0 0 8px #22c55e';
+                label.textContent = 'ACTIVE'; label.style.color = '#22c55e';
             } else if (data.status === 'RECOVERING') {
-                dot.style.background = '#f59e0b';
-                dot.style.boxShadow = '0 0 8px #f59e0b';
-                label.textContent = 'RECOVERING…';
-                label.style.color = '#f59e0b';
+                dot.style.background = '#f59e0b'; dot.style.boxShadow = '0 0 8px #f59e0b';
+                label.textContent = 'RECOVERING…'; label.style.color = '#f59e0b';
                 addLog('⏳ Backup holds the port. Recovery signal sent. Waiting to reclaim...', 'warn');
             } else if (data.status === 'STARTING') {
-                dot.style.background = '#6366f1';
-                dot.style.boxShadow = '0 0 8px #6366f1';
-                label.textContent = 'STARTING';
-                label.style.color = '#94a3b8';
+                dot.style.background = '#6366f1'; dot.style.boxShadow = '0 0 8px #6366f1';
+                label.textContent = 'STARTING'; label.style.color = '#94a3b8';
             }
             if (data.port) document.getElementById('status-sub').textContent = `Listening on port ${data.port}`;
         });
@@ -552,11 +905,20 @@
             clients[data.username] = data;
             renderClients();
             addLog(`✅ ${data.username} connected from ${data.address}`, 'info');
+            addFeedMsg({ system: true, text: `${data.username} joined`, ts: Date.now() });
         });
         api.on('client-disconnected', (data) => {
             delete clients[data.username];
             renderClients();
             addLog(`🔴 ${data.username} disconnected`, 'warn');
+            addFeedMsg({ system: true, text: `${data.username} left`, ts: Date.now() });
+        });
+        api.on('chat-message', (data) => {
+            addFeedMsg(data);
+            if (!data.self) { msgCount++; document.getElementById('stat-msgs').textContent = msgCount; }
+        });
+        api.on('dm-message', (data) => {
+            addFeedMsg({ ...data, text: `🔒 [DM→${data.to}] ${data.text}` });
         });
         api.on('message-relayed', (data) => {
             msgCount = data.count;
@@ -567,9 +929,8 @@
         });
         api.on('error', (data) => addLog(`ERROR: ${data.message}`, 'err'));
 
-        document.getElementById('broadcast-input').addEventListener('keydown', e => {
-            if (e.key === 'Enter') broadcast();
-        });
+        document.getElementById('broadcast-input').addEventListener('keydown', e => { if (e.key === 'Enter') broadcast(); });
+        document.getElementById('console-input').addEventListener('keydown', e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); serverSend(); } });
     </script>
 </body>
 

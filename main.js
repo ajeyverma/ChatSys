@@ -103,6 +103,23 @@ ipcMain.on('client-send-dm', (event, { to, text }) => {
     if (activeClient) activeClient.sendDM(to, text);
 });
 
+ipcMain.on('client-send-image', (event, { to, data, filename, mimeType }) => {
+    if (activeClient) activeClient.sendImage(to, data, filename, mimeType);
+});
+
+// ─── IPC: Primary Admin Messaging ─────────────────────────────────────────────
+ipcMain.on('server-send-msg', (event, { text }) => {
+    if (activeServer && activeServer.serverSendMessage) activeServer.serverSendMessage(text);
+});
+
+ipcMain.on('server-send-dm', (event, { to, text }) => {
+    if (activeServer && activeServer.serverSendDM) activeServer.serverSendDM(to, text);
+});
+
+ipcMain.on('server-send-image', (event, { to, data, filename, mimeType }) => {
+    if (activeServer && activeServer.serverSendImage) activeServer.serverSendImage(to, data, filename, mimeType);
+});
+
 // ─── IPC: Primary Actions ─────────────────────────────────────────────────────
 ipcMain.on('server-broadcast', (event, { text }) => {
     if (activeServer && activeServer.broadcastSystemMessage) {

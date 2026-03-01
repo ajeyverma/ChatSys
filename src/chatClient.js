@@ -147,6 +147,17 @@ class ChatClient {
             case proto.MSG_CLIENT_LIST:
                 this._emit('client-list', { users: msg.payload.users || [] });
                 break;
+
+            case proto.MSG_IMAGE:
+                this._emit('image', {
+                    from: msg.payload.from,
+                    to: msg.payload.to || null,
+                    data: msg.payload.data,
+                    filename: msg.payload.filename,
+                    mimeType: msg.payload.mimeType,
+                    ts: msg.payload.ts || Date.now()
+                });
+                break;
         }
     }
 
@@ -181,6 +192,13 @@ class ChatClient {
     sendDM(to, text) {
         if (!this.connected || !text.trim() || !to) return;
         this.socket.write(proto.pack(proto.MSG_DM, { to, text: text.trim() }));
+    }
+
+    sendImage(to, data, filename, mimeType) {
+        if (!this.connected) return;
+        this.socket.write(proto.pack(proto.MSG_IMAGE, {
+            to: to || null, data, filename, mimeType
+        }));
     }
 
     disconnect() {
