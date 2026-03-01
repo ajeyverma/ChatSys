@@ -18,11 +18,12 @@ class BackupServer {
         this.watchdogTimer = null;
         this.lastHeartbeat = null;
         this.hbCount = 0;
-        this.role = 'STANDBY';   // STANDBY | PROMOTING | ACTIVE
-        this.knownClients = [];  // from STATE_SYNC: [{ username, address }]
+        this.role = 'STANDBY';
+        this.knownClients = [];
         this.primaryHost = null;
         this.primaryPort = cfg.PRIMARY_PORT;
-        this.clients = new Map(); // active connections after promotion
+        this.clients = new Map();
+        this.userMap = new Map();  // username -> socket for DM routing
     }
 
     start() {
@@ -202,10 +203,12 @@ class BackupServer {
                         const username = (msg.payload.username || 'Unknown').substring(0, cfg.MAX_USERNAME_LEN);
                         clientInfo = { username, address: socket.remoteAddress };
                         this.clients.set(socket, clientInfo);
+                        this.userMap.set(username, socket);
                         this._log(`[PROMOTED] ${username} reconnected.`);
                         this._emit('client-connected', { username, count: this.clients.size });
                         socket.write(proto.pack(proto.MSG_ACK, { ok: true, message: 'Connected to Promoted Backup (now Primary)' }));
                         this._broadcast(proto.pack(proto.MSG_SYS, { text: `${username} has rejoined.` }), null);
+                        this._broadcastClientList();
 
                     } else if (msg.type === proto.MSG_CHAT) {
                         const sender = clientInfo ? clientInfo.username : 'Unknown';
@@ -213,6 +216,18 @@ class BackupServer {
                         this._broadcast(packet, socket);
                         this._log(`[MSG] ${sender}: ${msg.payload.text}`);
                         this._emit('message-relayed', { from: sender, text: msg.payload.text });
+
+                    } else if (msg.type === proto.MSG_DM) {
+                        const sender = clientInfo ? clientInfo.username : 'Unknown';
+                        const toUser = msg.payload.to;
+                        const dmPacket = proto.pack(proto.MSG_DM, {
+                            from: sender, to: toUser,
+                            text: msg.payload.text, ts: Date.now()
+                        });
+                        const recipientSock = this.userMap.get(toUser);
+                        if (recipientSock && !recipientSock.destroyed) recipientSock.write(dmPacket);
+                        if (!socket.destroyed) socket.write(dmPacket);
+                        this._log(`[DM] ${sender} → ${toUser}: ${msg.payload.text}`);
                     }
                 }
             });
@@ -220,8 +235,10 @@ class BackupServer {
             socket.on('close', () => {
                 if (clientInfo) {
                     this.clients.delete(socket);
+                    this.userMap.delete(clientInfo.username);
                     this._emit('client-disconnected', { username: clientInfo.username, count: this.clients.size });
                     this._broadcast(proto.pack(proto.MSG_SYS, { text: `${clientInfo.username} has left.` }), null);
+                    this._broadcastClientList();
                 }
             });
 
@@ -238,6 +255,13 @@ class BackupServer {
             this._log(`TCP error during promotion: ${err.message}`);
             this._emit('error', { message: err.message });
         });
+    }
+
+    _broadcastClientList() {
+        const users = [];
+        for (const [, info] of this.clients) users.push(info.username);
+        const packet = proto.pack(proto.MSG_CLIENT_LIST, { users });
+        this._broadcast(packet, null);
     }
 
     _broadcast(packet, excludeSocket) {

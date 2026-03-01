@@ -134,6 +134,19 @@ class ChatClient {
             case proto.MSG_ACK:
                 this._emit('ack', { message: msg.payload.message });
                 break;
+
+            case proto.MSG_DM:
+                this._emit('dm', {
+                    from: msg.payload.from,
+                    to: msg.payload.to,
+                    text: msg.payload.text,
+                    ts: msg.payload.ts || Date.now()
+                });
+                break;
+
+            case proto.MSG_CLIENT_LIST:
+                this._emit('client-list', { users: msg.payload.users || [] });
+                break;
         }
     }
 
@@ -163,6 +176,11 @@ class ChatClient {
     sendMessage(text) {
         if (!this.connected || !text.trim()) return;
         this.socket.write(proto.pack(proto.MSG_CHAT, { text: text.trim() }));
+    }
+
+    sendDM(to, text) {
+        if (!this.connected || !text.trim() || !to) return;
+        this.socket.write(proto.pack(proto.MSG_DM, { to, text: text.trim() }));
     }
 
     disconnect() {

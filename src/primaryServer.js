@@ -14,6 +14,7 @@ class PrimaryServer {
         this.win = mainWindow;
         this.backupHost = backupHost || '127.0.0.1';
         this.clients = new Map();       // socket -> { username, address }
+        this.userMap = new Map();       // username -> socket  (for DM routing)
         this.tcpServer = null;
         this.udpSocket = null;
         this.heartbeatTimer = null;
@@ -52,12 +53,14 @@ class PrimaryServer {
                         const address = socket.remoteAddress;
                         clientInfo = { username, address };
                         this.clients.set(socket, clientInfo);
+                        this.userMap.set(username, socket);
                         this._log(`${username} joined from ${address}`);
                         this._emit('client-connected', { username, address, count: this.clients.size });
                         this._broadcast(proto.pack(proto.MSG_SYS, {
                             text: `${username} has joined the chat.`
                         }), null);
                         socket.write(proto.pack(proto.MSG_ACK, { ok: true, message: 'Connected to Primary Server' }));
+                        this._broadcastClientList();
 
                     } else if (msg.type === proto.MSG_CHAT) {
                         this.msgCount++;
@@ -70,6 +73,26 @@ class PrimaryServer {
                         this._broadcast(packet, socket);
                         this._log(`[MSG] ${sender}: ${msg.payload.text}`);
                         this._emit('message-relayed', { from: sender, text: msg.payload.text, count: this.msgCount });
+
+                    } else if (msg.type === proto.MSG_DM) {
+                        // Route private message to specific recipient
+                        const sender = clientInfo ? clientInfo.username : 'Unknown';
+                        const toUser = msg.payload.to;
+                        const text = msg.payload.text;
+                        const dmPacket = proto.pack(proto.MSG_DM, {
+                            from: sender,
+                            to: toUser,
+                            text,
+                            ts: Date.now()
+                        });
+                        // Send to recipient if online
+                        const recipientSock = this.userMap.get(toUser);
+                        if (recipientSock && !recipientSock.destroyed) {
+                            recipientSock.write(dmPacket);
+                        }
+                        // Echo back to sender (so they see their own DM in a DM thread)
+                        if (!socket.destroyed) socket.write(dmPacket);
+                        this._log(`[DM] ${sender} → ${toUser}: ${text}`);
                     }
                 }
             });
@@ -77,11 +100,13 @@ class PrimaryServer {
             socket.on('close', () => {
                 if (clientInfo) {
                     this.clients.delete(socket);
+                    this.userMap.delete(clientInfo.username);
                     this._log(`${clientInfo.username} disconnected.`);
                     this._emit('client-disconnected', { username: clientInfo.username, count: this.clients.size });
                     this._broadcast(proto.pack(proto.MSG_SYS, {
                         text: `${clientInfo.username} has left the chat.`
                     }), null);
+                    this._broadcastClientList();
                 }
             });
 
@@ -169,6 +194,14 @@ class PrimaryServer {
                 this.udpSocket.send(packet, 0, packet.length, cfg.HEARTBEAT_PORT, this.backupHost);
             }
         }, cfg.STATE_SYNC_INTERVAL);
+    }
+
+    _broadcastClientList() {
+        const users = [];
+        for (const [, info] of this.clients) users.push(info.username);
+        const packet = proto.pack(proto.MSG_CLIENT_LIST, { users });
+        this._broadcast(packet, null);
+        this._emit('client-list', { users });
     }
 
     _broadcast(packet, excludeSocket) {

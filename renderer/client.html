@@ -9,10 +9,10 @@
             margin: 0;
             padding: 0;
             box-sizing: border-box;
+            font-family: 'Inter', 'Segoe UI', system-ui, sans-serif;
         }
 
         body {
-            font-family: 'Inter', sans-serif;
             background: #0b0b18;
             color: #e2e8f0;
             height: 100vh;
@@ -22,7 +22,7 @@
             user-select: none;
         }
 
-        /* Titlebar */
+        /* ─── Title Bar ─────────────────────────────────────────── */
         .titlebar {
             height: 42px;
             background: #07070f;
@@ -121,22 +121,162 @@
             background: #febc2e;
         }
 
-        /* Chat Layout */
-        .chat-layout {
+        /* ─── Main Layout ───────────────────────────────────────── */
+        .app-layout {
             flex: 1;
+            display: grid;
+            grid-template-columns: 200px 1fr;
+            overflow: hidden;
+        }
+
+        /* ─── Users Sidebar ─────────────────────────────────────── */
+        .users-sidebar {
+            background: #0d0d1f;
+            border-right: 1px solid #1a1a30;
             display: flex;
             flex-direction: column;
             overflow: hidden;
         }
 
-        /* Messages */
+        .sidebar-header {
+            padding: 14px 14px 10px;
+            border-bottom: 1px solid #1a1a30;
+            font-size: 10px;
+            font-weight: 600;
+            color: #475569;
+            text-transform: uppercase;
+            letter-spacing: .8px;
+        }
+
+        .user-list {
+            flex: 1;
+            overflow-y: auto;
+            padding: 8px 8px;
+        }
+
+        .user-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 7px 8px;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: background .15s;
+            position: relative;
+        }
+
+        .user-item:hover {
+            background: #161628;
+        }
+
+        .user-item.active-dm {
+            background: rgba(168, 85, 247, .12);
+            border: 1px solid rgba(168, 85, 247, .25);
+        }
+
+        .user-avatar {
+            width: 28px;
+            height: 28px;
+            border-radius: 8px;
+            background: linear-gradient(135deg, #6366f1, #8b5cf6);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 11px;
+            font-weight: 700;
+            color: #fff;
+            flex-shrink: 0;
+        }
+
+        .user-name {
+            font-size: 12px;
+            color: #c4c9d4;
+            flex: 1;
+        }
+
+        .user-name.me {
+            color: #a855f7;
+        }
+
+        .unread-badge {
+            width: 16px;
+            height: 16px;
+            background: #a855f7;
+            border-radius: 50%;
+            font-size: 9px;
+            font-weight: 700;
+            color: #fff;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .dm-hint {
+            font-size: 9px;
+            color: #374151;
+            padding: 6px 8px 2px;
+            font-style: italic;
+        }
+
+        /* ─── Chat Main ─────────────────────────────────────────── */
+        .chat-main {
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            position: relative;
+        }
+
+        /* chat mode indicator */
+        .chat-mode-bar {
+            padding: 6px 16px;
+            background: #0d0d1f;
+            border-bottom: 1px solid #1a1a30;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 11px;
+            color: #64748b;
+            flex-shrink: 0;
+        }
+
+        .chat-mode-bar .mode-label {
+            font-weight: 600;
+        }
+
+        .chat-mode-bar.dm-mode {
+            background: rgba(168, 85, 247, .07);
+            border-bottom-color: rgba(168, 85, 247, .3);
+        }
+
+        .chat-mode-bar.dm-mode .mode-label {
+            color: #a855f7;
+        }
+
+        .btn-back-to-group {
+            margin-left: auto;
+            background: none;
+            border: 1px solid #2d2d4e;
+            border-radius: 6px;
+            padding: 3px 10px;
+            color: #64748b;
+            font-size: 10px;
+            cursor: pointer;
+            font-family: inherit;
+        }
+
+        .btn-back-to-group:hover {
+            border-color: #a855f7;
+            color: #a855f7;
+        }
+
+        /* messages */
         .messages {
             flex: 1;
             overflow-y: auto;
-            padding: 20px 24px;
+            padding: 16px 20px;
             display: flex;
             flex-direction: column;
-            gap: 10px;
+            gap: 8px;
         }
 
         .msg-wrap {
@@ -158,11 +298,21 @@
         .msg-wrap.system {
             align-self: center;
             align-items: center;
-            max-width: 80%;
+            max-width: 85%;
+        }
+
+        .msg-wrap.dm-self {
+            align-self: flex-end;
+            align-items: flex-end;
+        }
+
+        .msg-wrap.dm-other {
+            align-self: flex-start;
+            align-items: flex-start;
         }
 
         .msg-bubble {
-            padding: 10px 14px;
+            padding: 9px 14px;
             border-radius: 14px;
             font-size: 13px;
             line-height: 1.5;
@@ -189,13 +339,37 @@
             font-size: 11px;
             text-align: center;
             border-radius: 20px;
-            padding: 5px 14px;
+            padding: 4px 14px;
+        }
+
+        /* DM bubbles — purple tinted */
+        .msg-wrap.dm-self .msg-bubble {
+            background: linear-gradient(135deg, #7c3aed, #a855f7);
+            color: #fff;
+            border-radius: 14px 14px 4px 14px;
+        }
+
+        .msg-wrap.dm-other .msg-bubble {
+            background: rgba(168, 85, 247, .12);
+            border: 1px solid rgba(168, 85, 247, .3);
+            color: #e2e8f0;
+            border-radius: 14px 14px 14px 4px;
+        }
+
+        .dm-indicator {
+            font-size: 9px;
+            color: #a855f7;
+            margin-bottom: 2px;
+            padding: 0 2px;
+            display: flex;
+            align-items: center;
+            gap: 3px;
         }
 
         .msg-meta {
             font-size: 10px;
             color: #475569;
-            margin-top: 3px;
+            margin-top: 2px;
             padding: 0 2px;
         }
 
@@ -207,9 +381,31 @@
             padding: 0 2px;
         }
 
-        /* Input area */
+        /* welcome */
+        .welcome {
+            text-align: center;
+            color: #2d2d4e;
+            padding: 40px 20px;
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .welcome-icon {
+            font-size: 48px;
+            margin-bottom: 12px;
+        }
+
+        .welcome p {
+            font-size: 13px;
+            line-height: 1.6;
+        }
+
+        /* ─── Input Area ─────────────────────────────────────────── */
         .input-area {
-            padding: 16px 20px;
+            padding: 12px 16px;
             background: #0d0d1f;
             border-top: 1px solid #1a1a30;
             flex-shrink: 0;
@@ -217,7 +413,7 @@
 
         .input-row {
             display: flex;
-            gap: 10px;
+            gap: 8px;
             align-items: center;
         }
 
@@ -226,10 +422,10 @@
             background: #111128;
             border: 1px solid #252545;
             border-radius: 12px;
-            padding: 12px 16px;
+            padding: 10px 14px;
             color: #e2e8f0;
             font-size: 13px;
-            font-family: 'Inter', sans-serif;
+            font-family: inherit;
             outline: none;
             resize: none;
             transition: border-color .2s;
@@ -240,24 +436,36 @@
             border-color: #6366f1;
         }
 
+        .msg-input.dm-mode {
+            border-color: rgba(168, 85, 247, .4);
+        }
+
+        .msg-input.dm-mode:focus {
+            border-color: #a855f7;
+        }
+
         .msg-input:disabled {
             opacity: .4;
             cursor: not-allowed;
         }
 
         .btn-send {
-            width: 44px;
-            height: 44px;
+            width: 40px;
+            height: 40px;
             border-radius: 12px;
             background: linear-gradient(135deg, #6366f1, #8b5cf6);
             border: none;
             cursor: pointer;
-            font-size: 18px;
+            font-size: 16px;
             display: flex;
             align-items: center;
             justify-content: center;
             flex-shrink: 0;
             transition: opacity .2s;
+        }
+
+        .btn-send.dm-mode {
+            background: linear-gradient(135deg, #7c3aed, #a855f7);
         }
 
         .btn-send:hover {
@@ -269,11 +477,11 @@
             cursor: not-allowed;
         }
 
-        /* Modal overlay */
+        /* ─── Connect Modal ─────────────────────────────────────── */
         .modal-overlay {
             position: fixed;
             inset: 0;
-            background: rgba(0, 0, 0, .7);
+            background: rgba(0, 0, 0, .75);
             display: flex;
             align-items: center;
             justify-content: center;
@@ -285,7 +493,7 @@
             background: #161628;
             border: 1px solid #252545;
             border-radius: 18px;
-            padding: 28px 28px 24px;
+            padding: 28px;
             width: 340px;
             animation: slideUp .2s ease;
         }
@@ -314,11 +522,11 @@
             margin-bottom: 20px;
         }
 
-        .modal .field {
+        .field {
             margin-bottom: 12px;
         }
 
-        .modal .field label {
+        .field label {
             font-size: 11px;
             color: #64748b;
             display: block;
@@ -326,7 +534,7 @@
             font-weight: 500;
         }
 
-        .modal .field input {
+        .field input {
             width: 100%;
             background: #0f0f1a;
             border: 1px solid #2d2d4e;
@@ -334,16 +542,16 @@
             padding: 10px 12px;
             color: #e2e8f0;
             font-size: 13px;
-            font-family: 'Inter', sans-serif;
+            font-family: inherit;
             outline: none;
             transition: border-color .2s;
         }
 
-        .modal .field input:focus {
+        .field input:focus {
             border-color: #6366f1;
         }
 
-        .modal .field input.err {
+        .field input.err {
             border-color: #ef4444;
         }
 
@@ -357,7 +565,7 @@
             font-size: 13px;
             font-weight: 600;
             cursor: pointer;
-            font-family: 'Inter', sans-serif;
+            font-family: inherit;
             transition: opacity .2s;
         }
 
@@ -365,7 +573,7 @@
             opacity: .9;
         }
 
-        /* Scrollbar */
+        /* ─── Scrollbar ─────────────────────────────────────────── */
         ::-webkit-scrollbar {
             width: 4px;
         }
@@ -374,32 +582,11 @@
             background: #2d2d4e;
             border-radius: 2px;
         }
-
-        /* Welcome */
-        .welcome {
-            text-align: center;
-            color: #2d2d4e;
-            padding: 40px 20px;
-            flex: 1;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-        }
-
-        .welcome-icon {
-            font-size: 48px;
-            margin-bottom: 12px;
-        }
-
-        .welcome p {
-            font-size: 13px;
-            line-height: 1.6;
-        }
     </style>
 </head>
 
 <body>
+    <!-- Title Bar -->
     <div class="titlebar">
         <div class="titlebar-left">
             <span class="tb-role-badge">CLIENT</span>
@@ -414,8 +601,46 @@
         </div>
     </div>
 
+    <!-- Main App -->
+    <div class="app-layout">
+        <!-- Users Sidebar -->
+        <div class="users-sidebar">
+            <div class="sidebar-header">👥 Online Users</div>
+            <div class="user-list" id="user-list">
+                <div class="dm-hint" id="dm-hint">Connect to see users</div>
+            </div>
+        </div>
+
+        <!-- Chat Area -->
+        <div class="chat-main">
+            <!-- Mode Indicator Bar -->
+            <div class="chat-mode-bar" id="mode-bar">
+                <span>🌐</span>
+                <span class="mode-label" id="mode-label">Group Chat</span>
+            </div>
+
+            <!-- Messages -->
+            <div class="messages" id="messages">
+                <div class="welcome" id="welcome">
+                    <div class="welcome-icon">🔌</div>
+                    <p>Connect to the server to start chatting.<br />Click a username on the left to send a private
+                        message.</p>
+                </div>
+            </div>
+
+            <!-- Input -->
+            <div class="input-area">
+                <div class="input-row">
+                    <textarea class="msg-input" id="msg-input"
+                        placeholder="Type a message... (Shift+Enter for new line)" rows="1" disabled></textarea>
+                    <button class="btn-send" id="btn-send" onclick="sendMsg()" disabled>➤</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- Connect Modal -->
-    <div class="modal-overlay" id="modal">
+    <div class="modal-overlay" id="modal" style="display:none;">
         <div class="modal">
             <h2>💬 Join Chat</h2>
             <p>Enter your details to connect to the LAN server.</p>
@@ -428,28 +653,18 @@
         </div>
     </div>
 
-    <div class="chat-layout">
-        <div class="messages" id="messages">
-            <div class="welcome" id="welcome">
-                <div class="welcome-icon">🔌</div>
-                <p>Connect to the server to start chatting.<br />Messages will appear here.</p>
-            </div>
-        </div>
-        <div class="input-area">
-            <div class="input-row">
-                <textarea class="msg-input" id="msg-input" placeholder="Type a message..." rows="1" disabled></textarea>
-                <button class="btn-send" id="btn-send" onclick="sendMsg()" disabled>➤</button>
-            </div>
-        </div>
-    </div>
-
     <script>
         let myUsername = '';
         let isConnected = false;
+        let dmTarget = null;          // null = group chat, 'username' = DM mode
+        const unreadCounts = {};      // username -> unread DM count
+        const dmHistories = {};       // username -> [{...msg}]  (stored per-thread)
+        let onlineUsers = [];
 
-        // Triggered by main.js after window loads
+        // ─── Connect Modal ──────────────────────────────────────────
         api.on('request-connect-info', () => {
             document.getElementById('modal').style.display = 'flex';
+            setTimeout(() => document.getElementById('m-username').focus(), 100);
         });
 
         function doConnect() {
@@ -463,20 +678,79 @@
             api.send('client-connect', { host, port, username });
         }
 
+        // ─── DM / Group Mode Switch ─────────────────────────────────
+        function openDM(username) {
+            if (username === myUsername) return; // can't DM yourself
+            dmTarget = username;
+            unreadCounts[username] = 0;
+            renderUserList();
+
+            // Update mode bar
+            const bar = document.getElementById('mode-bar');
+            bar.className = 'chat-mode-bar dm-mode';
+            document.getElementById('mode-label').textContent = `🔒 Private: ${username}`;
+            bar.innerHTML = `<span>🔒</span>
+                <span class="mode-label">Private chat with <strong>${escapeHtml(username)}</strong></span>
+                <button class="btn-back-to-group" onclick="openGroupChat()">← Back to Group</button>`;
+
+            // Update input style
+            document.getElementById('msg-input').className = 'msg-input dm-mode';
+            document.getElementById('msg-input').placeholder = `Message ${username} privately...`;
+            document.getElementById('btn-send').className = 'btn-send dm-mode';
+
+            // Show DM history for this user
+            renderDMHistory(username);
+        }
+
+        function openGroupChat() {
+            dmTarget = null;
+            const bar = document.getElementById('mode-bar');
+            bar.className = 'chat-mode-bar';
+            bar.innerHTML = '<span>🌐</span><span class="mode-label" id="mode-label">Group Chat</span>';
+
+            document.getElementById('msg-input').className = 'msg-input';
+            document.getElementById('msg-input').placeholder = 'Type a message... (Shift+Enter for new line)';
+            document.getElementById('btn-send').className = 'btn-send';
+
+            renderUserList();
+            renderGroupHistory();
+        }
+
+        // ─── Send ───────────────────────────────────────────────────
         function sendMsg() {
             const input = document.getElementById('msg-input');
             const text = input.value.trim();
             if (!text || !isConnected) return;
-            api.send('client-send', { text });
-            appendMessage({ type: 'chat', from: myUsername, text, ts: Date.now() }, true);
+
+            if (dmTarget) {
+                api.send('client-send-dm', { to: dmTarget, text });
+                // We'll see our own DM echoed back from server
+            } else {
+                api.send('client-send', { text });
+                appendGroupMessage({ type: 'chat', from: myUsername, text, ts: Date.now() }, true);
+            }
             input.value = '';
             input.style.height = 'auto';
         }
 
-        function appendMessage(msg, isSelf = false) {
-            const container = document.getElementById('messages');
-            const wrap = document.createElement('div');
+        // ─── Group history storage ──────────────────────────────────
+        const groupHistory = [];
+        function appendGroupMessage(msg, isSelf = false) {
+            groupHistory.push({ msg, isSelf });
+            if (!dmTarget) renderGroupMsg(msg, isSelf);
+        }
 
+        function renderGroupHistory() {
+            const container = document.getElementById('messages');
+            container.innerHTML = '';
+            for (const { msg, isSelf } of groupHistory) renderGroupMsg(msg, isSelf);
+            container.scrollTop = container.scrollHeight;
+        }
+
+        function renderGroupMsg(msg, isSelf) {
+            const container = document.getElementById('messages');
+            if (dmTarget) return; // Not in group mode, skip rendering
+            const wrap = document.createElement('div');
             if (msg.type === 'system') {
                 wrap.className = 'msg-wrap system';
                 wrap.innerHTML = `<div class="msg-bubble">${escapeHtml(msg.text)}</div>`;
@@ -487,33 +761,94 @@
                 wrap.innerHTML += `<div class="msg-bubble">${escapeHtml(msg.text)}</div>`;
                 wrap.innerHTML += `<div class="msg-meta">${time}</div>`;
             }
-
             container.appendChild(wrap);
             container.scrollTop = container.scrollHeight;
         }
 
+        function renderDMHistory(username) {
+            const container = document.getElementById('messages');
+            container.innerHTML = '';
+            const history = dmHistories[username] || [];
+            for (const dm of history) renderDMMsg(dm, true); // force render
+            container.scrollTop = container.scrollHeight;
+        }
+
+        function renderDMMsg(dm, forceRender = false) {
+            const container = document.getElementById('messages');
+            const isSelf = dm.from === myUsername;
+            const threadUser = isSelf ? dm.to : dm.from;
+            if (!forceRender && dmTarget !== threadUser) return;
+            const wrap = document.createElement('div');
+            wrap.className = `msg-wrap ${isSelf ? 'dm-self' : 'dm-other'}`;
+            const time = new Date(dm.ts || Date.now()).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+            if (!isSelf) wrap.innerHTML += `<div class="dm-indicator">🔒 ${escapeHtml(dm.from)}</div>`;
+            else wrap.innerHTML += `<div class="dm-indicator" style="justify-content:flex-end">🔒 to ${escapeHtml(dm.to)}</div>`;
+            wrap.innerHTML += `<div class="msg-bubble">${escapeHtml(dm.text)}</div>`;
+            wrap.innerHTML += `<div class="msg-meta">${time}</div>`;
+            container.appendChild(wrap);
+            container.scrollTop = container.scrollHeight;
+        }
+
+        // ─── Online Users List ──────────────────────────────────────
+        function renderUserList() {
+            const list = document.getElementById('user-list');
+            const hint = document.getElementById('dm-hint');
+            list.innerHTML = '';
+
+            if (!isConnected || onlineUsers.length === 0) {
+                const h = document.createElement('div');
+                h.className = 'dm-hint';
+                h.textContent = isConnected ? 'No other users online' : 'Connect to see users';
+                list.appendChild(h);
+                return;
+            }
+
+            // Sort: me first, then others
+            const sorted = [myUsername, ...onlineUsers.filter(u => u !== myUsername)];
+            for (const username of sorted) {
+                if (!onlineUsers.includes(username) && username === myUsername) {
+                    // Show self even if not in list yet
+                }
+                const item = document.createElement('div');
+                item.className = 'user-item' + (dmTarget === username ? ' active-dm' : '');
+                item.onclick = () => username !== myUsername && openDM(username);
+
+                const initial = username.charAt(0).toUpperCase();
+                const unread = unreadCounts[username] || 0;
+                item.innerHTML = `
+                    <div class="user-avatar">${escapeHtml(initial)}</div>
+                    <span class="user-name${username === myUsername ? ' me' : ''}">${escapeHtml(username)}${username === myUsername ? ' (you)' : ''}</span>
+                    ${unread > 0 ? `<div class="unread-badge">${unread}</div>` : ''}
+                `;
+                list.appendChild(item);
+            }
+        }
+
+        // ─── Status ─────────────────────────────────────────────────
         function setStatus(status, host, port) {
             const dot = document.getElementById('status-dot');
             const text = document.getElementById('status-text');
             dot.className = 'status-dot';
+            const input = document.getElementById('msg-input');
+            const sendBtn = document.getElementById('btn-send');
             if (status === 'Connected') {
                 dot.classList.add('connected');
                 text.textContent = `${host}:${port}`;
                 isConnected = true;
-                document.getElementById('msg-input').disabled = false;
-                document.getElementById('btn-send').disabled = false;
-            } else if (status.startsWith('Reconnecting')) {
+                input.disabled = false;
+                sendBtn.disabled = false;
+            } else if (status.startsWith('Reconnecting') || status === 'Connecting...') {
                 dot.classList.add('reconnecting');
                 text.textContent = status;
                 isConnected = false;
-                document.getElementById('msg-input').disabled = true;
-                document.getElementById('btn-send').disabled = true;
+                input.disabled = true;
+                sendBtn.disabled = true;
             } else {
                 dot.classList.add('disconnected');
-                text.textContent = status;
+                text.textContent = status || 'Disconnected';
                 isConnected = false;
-                document.getElementById('msg-input').disabled = true;
-                document.getElementById('btn-send').disabled = true;
+                input.disabled = true;
+                sendBtn.disabled = true;
             }
         }
 
@@ -522,20 +857,51 @@
             return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
         }
 
-        // IPC
+        // ─── IPC Listeners ──────────────────────────────────────────
         api.on('message', (msg) => {
             const isSelf = (msg.type === 'chat' && msg.from === myUsername);
-            if (!isSelf) appendMessage(msg, false);
-        });
-        api.on('status', (data) => setStatus(data.status, data.host, data.port));
-        api.on('failover', (data) => {
-            appendMessage({ type: 'system', text: `⚡ Failover! Switching to new Primary at ${data.host}:${data.port}`, ts: Date.now() });
-        });
-        api.on('ack', (data) => {
-            appendMessage({ type: 'system', text: `✅ ${data.message}`, ts: Date.now() });
+            if (!isSelf) appendGroupMessage(msg, false);
+            // If we're in DM mode, still store but don't render group messages
         });
 
-        // Textarea auto-grow + Enter to send
+        api.on('status', (data) => setStatus(data.status, data.host, data.port));
+
+        api.on('client-list', (data) => {
+            onlineUsers = data.users || [];
+            renderUserList();
+        });
+
+        api.on('dm', (dm) => {
+            // Store in DM history
+            const threadUser = dm.from === myUsername ? dm.to : dm.from;
+            if (!dmHistories[threadUser]) dmHistories[threadUser] = [];
+            dmHistories[threadUser].push(dm);
+
+            if (dmTarget === threadUser) {
+                // Currently viewing this DM thread — render immediately
+                renderDMMsg(dm);
+            } else if (dm.from !== myUsername) {
+                // Unread DM from another user
+                unreadCounts[threadUser] = (unreadCounts[threadUser] || 0) + 1;
+                renderUserList();
+                // Show subtle system notification in group chat
+                appendGroupMessage({
+                    type: 'system',
+                    text: `📨 New private message from ${dm.from}`,
+                    ts: Date.now()
+                });
+            }
+        });
+
+        api.on('failover', (data) => {
+            appendGroupMessage({ type: 'system', text: `⚡ Failover! Switching to ${data.host}:${data.port}`, ts: Date.now() });
+        });
+
+        api.on('ack', (data) => {
+            appendGroupMessage({ type: 'system', text: `✅ ${data.message}`, ts: Date.now() });
+        });
+
+        // ─── Textarea Auto-Grow + Enter to Send ─────────────────────
         const input = document.getElementById('msg-input');
         input.addEventListener('keydown', (e) => {
             if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMsg(); }

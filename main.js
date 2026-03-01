@@ -99,6 +99,10 @@ ipcMain.on('client-send', (event, { text }) => {
     if (activeClient) activeClient.sendMessage(text);
 });
 
+ipcMain.on('client-send-dm', (event, { to, text }) => {
+    if (activeClient) activeClient.sendDM(to, text);
+});
+
 // ─── IPC: Primary Actions ─────────────────────────────────────────────────────
 ipcMain.on('server-broadcast', (event, { text }) => {
     if (activeServer && activeServer.broadcastSystemMessage) {
