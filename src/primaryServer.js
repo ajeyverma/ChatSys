@@ -135,9 +135,6 @@ class PrimaryServer {
                     this.userMap.delete(clientInfo.username);
                     this._log(`${clientInfo.username} disconnected.`);
                     this._emit('client-disconnected', { username: clientInfo.username, count: this.clients.size });
-                    this._broadcast(proto.pack(proto.MSG_SYS, {
-                        text: `${clientInfo.username} has left the chat.`
-                    }), null);
                     this._broadcastClientList();
                 }
             });
@@ -308,10 +305,16 @@ class PrimaryServer {
         this.running = false;
         clearInterval(this.heartbeatTimer);
         clearInterval(this.stateSyncTimer);
-        if (this.udpSocket) this.udpSocket.close();
-        if (this.tcpServer) this.tcpServer.close();
+        if (this.udpSocket) {
+            try { this.udpSocket.close(); } catch (e) { }
+            this.udpSocket = null;
+        }
+        if (this.tcpServer) {
+            try { this.tcpServer.close(); } catch (e) { }
+            this.tcpServer = null;
+        }
         for (const [sock] of this.clients) {
-            sock.destroy();
+            try { sock.destroy(); } catch (e) { }
         }
         this.clients.clear();
         this._log('Primary Server stopped.');

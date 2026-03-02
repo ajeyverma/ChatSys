@@ -59,30 +59,37 @@ ipcMain.on('client-launch', (event, { username, host, port }) => {
     roleWin.webContents.once('did-finish-load', () => {
         const ChatClient = require('./src/chatClient');
         activeClient = new ChatClient(roleWin);
-        
+
         // Listen for internal event when connection is refused (meaning no server)
         activeClient.on('server-not-found', () => {
             console.log(`[Main] No server found at ${host}:${port}. Booting local back-end...`);
-            
+
             // Start the PrimaryServer headlessly in the background
             const PrimaryServer = require('./src/primaryServer');
             // Provide a dummy window for the UI emitting so it doesn't crash on `_emit`
-            const dummyWin = { webContents: { send: () => {} }, isDestroyed: () => false };
-            
-            activeServer = new PrimaryServer(dummyWin, '127.0.0.1'); 
-            activeServer.start();
+            const dummyWin = {
+                webContents: {
+                    send: (evt, data) => {
+                        if (evt === 'status' && data.status === 'ACTIVE') {
+                            // Notify the client that it has successfully automatically become the host
+                            roleWin.webContents.send('message', {
+                                type: 'system',
+                                text: '🚀 No server detected. Auto-hosting network locally!',
+                                ts: Date.now()
+                            });
+                        }
+                    }
+                },
+                isDestroyed: () => false
+            };
 
-            // Notify the client that it has automatically become the host
-            roleWin.webContents.send('message', {
-                type: 'system',
-                text: '🚀 No server detected. Auto-hosting network locally!',
-                ts: Date.now()
-            });
+            activeServer = new PrimaryServer(dummyWin, '127.0.0.1');
+            activeServer.start();
 
             // Re-attempt client connection after starting local server
             setTimeout(() => {
                 activeClient.connect(host, parseInt(port), username);
-            }, 500); 
+            }, 500);
         });
 
         // Trigger immediate connection. ChatClient now handles its own status emitting

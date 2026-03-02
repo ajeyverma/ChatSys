@@ -23,10 +23,13 @@ class ChatClient extends EventEmitter {
     }
 
     connect(host, port, username) {
+        if (this.reconnectTimer) clearTimeout(this.reconnectTimer);
         this.currentHost = host;
         this.currentPort = port;
         this.username = username;
         this.retryCount = 0;
+        this.reconnecting = false;
+        this.redirecting = false;
         this._emit('set-username', username);
         this._doConnect();
     }
@@ -123,11 +126,6 @@ class ChatClient extends EventEmitter {
                 }
                 this._log(`New Primary announced: ${newHost}:${newPort}. Redirecting...`);
                 this._emit('failover', { host: newHost, port: newPort });
-                this._emit('message', {
-                    type: 'system',
-                    text: `⚡ Server failover! Reconnecting to new primary at ${newHost}:${newPort}...`,
-                    ts: Date.now()
-                });
                 this.currentHost = newHost;
                 this.currentPort = newPort;
                 this.retryCount = 0;
@@ -172,7 +170,6 @@ class ChatClient extends EventEmitter {
     _scheduleReconnect() {
         if (this.retryCount >= cfg.RECONNECT_ATTEMPTS) {
             this._emit('status', { status: 'Disconnected', host: this.currentHost, port: this.currentPort });
-            this._emit('message', { type: 'system', text: '❌ Could not reconnect. Attempting auto-host failover...', ts: Date.now() });
             this.emit('server-not-found');
             return;
         }
@@ -181,13 +178,9 @@ class ChatClient extends EventEmitter {
         this.retryCount++;
         const delay = cfg.RECONNECT_DELAY * this.retryCount;
         this._emit('status', { status: `Reconnecting (${this.retryCount}/${cfg.RECONNECT_ATTEMPTS})...`, host: this.currentHost, port: this.currentPort });
-        this._emit('message', {
-            type: 'system',
-            text: `🔄 Reconnecting... attempt ${this.retryCount}/${cfg.RECONNECT_ATTEMPTS}`,
-            ts: Date.now()
-        });
 
-        setTimeout(() => {
+        if (this.reconnectTimer) clearTimeout(this.reconnectTimer);
+        this.reconnectTimer = setTimeout(() => {
             this.reconnecting = false;
             this._doConnect();
         }, delay);
@@ -211,6 +204,7 @@ class ChatClient extends EventEmitter {
     }
 
     disconnect() {
+        if (this.reconnectTimer) clearTimeout(this.reconnectTimer);
         this.reconnecting = true; // prevent auto-reconnect
         if (this.socket) {
             this.socket.removeAllListeners();

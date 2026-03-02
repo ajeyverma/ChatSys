@@ -1175,7 +1175,6 @@
                 } else if (dm.from !== myUsername) {
                     unreadCounts[threadUser] = (unreadCounts[threadUser] || 0) + 1;
                     renderUserList();
-                    appendGroupMsg({ type: 'system', text: `📨 New private message from ${dm.from}`, ts: Date.now() });
                 }
             });
 
@@ -1192,7 +1191,6 @@
                     else if (!isSelf) {
                         unreadCounts[threadUser] = (unreadCounts[threadUser] || 0) + 1;
                         renderUserList();
-                        appendGroupMsg({ type: 'system', text: `📎 Image from ${img.from} (private)`, ts: img.ts });
                     }
                 } else {
                     // Group image
@@ -1200,9 +1198,6 @@
                     if (!dmTarget) renderImageEl(img, isSelf);
                 }
             });
-
-            api.on('failover', (data) => appendGroupMsg({ type: 'system', text: `⚡ Failover! Switching to ${data.host}:${data.port}`, ts: Date.now() }));
-            api.on('ack', (data) => appendGroupMsg({ type: 'system', text: `✅ ${data.message}`, ts: Date.now() }));
 
             // ─── Input behavior ───────────────────────────────────────────
             const inp = document.getElementById('msg-input');
