@@ -1,1 +1,9 @@
 /node_modules   
+```ignore
+/dist
+.env
+*.log
+.vscode/
+.idea/
+.DS_Store
+```
