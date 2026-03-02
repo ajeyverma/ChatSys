@@ -27,6 +27,7 @@ class ChatClient extends EventEmitter {
         this.currentPort = port;
         this.username = username;
         this.retryCount = 0;
+        this._emit('set-username', username);
         this._doConnect();
     }
 
