@@ -29,7 +29,8 @@
             display: flex;
             align-items: center;
             justify-content: space-between;
-            padding: 0 16px;
+            padding-left: 16px;
+            padding-right: 0;
             -webkit-app-region: drag;
             border-bottom: 1px solid #1a1a30;
             flex-shrink: 0;
@@ -101,24 +102,40 @@
 
         .titlebar-btns {
             display: flex;
-            gap: 8px;
+            height: 100%;
             -webkit-app-region: no-drag;
         }
 
-        .tb-btn {
-            width: 13px;
-            height: 13px;
-            border-radius: 50%;
-            border: none;
+        .win-btn {
+            width: 46px;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
             cursor: pointer;
+            transition: background 0.15s;
         }
 
-        .tb-btn.close {
-            background: #ff5f57;
+        .win-btn svg {
+            width: 10px;
+            height: 10px;
+            fill: #94a3b8;
         }
 
-        .tb-btn.min {
-            background: #febc2e;
+        .win-btn:hover {
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        .win-btn:hover svg {
+            fill: #e2e8f0;
+        }
+
+        .win-btn.win-close:hover {
+            background: #e81123;
+        }
+
+        .win-btn.win-close:hover svg {
+            fill: #ffffff;
         }
 
         /* ─── App Layout ──────────────────────────────────────── */
@@ -668,10 +685,10 @@
             inset: 0;
             background: rgba(0, 0, 0, .9);
             display: none;
+            flex-direction: column;
             align-items: center;
             justify-content: center;
             z-index: 200;
-            cursor: zoom-out;
         }
 
         .lightbox.open {
@@ -680,8 +697,35 @@
 
         .lightbox img {
             max-width: 90vw;
-            max-height: 90vh;
+            max-height: 80vh;
             border-radius: 8px;
+            object-fit: contain;
+        }
+
+        .lb-controls {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .lb-btn {
+            background: rgba(255, 255, 255, 0.1);
+            color: #fff;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            padding: 8px 16px;
+            border-radius: 8px;
+            cursor: pointer;
+            text-decoration: none;
+            font-size: 13px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            transition: background 0.2s;
+            font-family: inherit;
+        }
+
+        .lb-btn:hover {
+            background: rgba(255, 255, 255, 0.2);
         }
 
         ::-webkit-scrollbar {
@@ -700,382 +744,451 @@
     <input type="file" id="file-picker" accept="image/*" style="display:none;" />
 
     <!-- Lightbox -->
-    <div class="lightbox" id="lightbox" onclick="closeLightbox()">
-        <img id="lightbox-img" src="" alt="" />
+    <div class="lightbox" id="lightbox" onclick="closeLightbox(event)">
+        <div class="lb-controls">
+            <button class="lb-btn" onclick="replyToImage(event)">↩ Reply</button>
+            <a class="lb-btn" id="lb-download" download="image.jpg" onclick="event.stopPropagation()">⬇ Download</a>
+            <button class="lb-btn" onclick="closeLightbox(event)">✕ Close</button>
+        </div>
+        <img id="lightbox-img" src="" onclick="event.stopPropagation()" />
     </div>
 
-    <!-- Titlebar -->
-    <div class="titlebar">
-        <div class="titlebar-left">
-            <span class="tb-role-badge">CLIENT</span>
-            <div class="status-pill">
-                <div class="status-dot disconnected" id="status-dot"></div>
-                <span class="status-pill-text" id="status-text">Not connected</span>
-            </div>
-        </div>
-        <div class="titlebar-btns">
-            <button class="tb-btn min" onclick="api.send('win-minimize',{})"></button>
-            <button class="tb-btn close" onclick="api.send('win-close',{})"></button>
-        </div>
-    </div>
-
-    <!-- App -->
-    <div class="app-layout">
-        <!-- Users Sidebar -->
-        <div class="users-sidebar">
-            <div class="sidebar-hdr">👥 Online Users</div>
-            <div class="user-list" id="user-list">
-                <div class="dm-hint">Connect to see users</div>
-            </div>
-        </div>
-
-        <!-- Chat -->
-        <div class="chat-main">
-            <div class="mode-bar" id="mode-bar">
-                <span>🌐</span><span class="mode-lbl">Group Chat</span>
-            </div>
-            <div class="messages" id="messages">
-                <div class="welcome" id="welcome">
-                    <div class="welcome-icon">🔌</div>
-                    <p>Connect to the server to start chatting.<br />Click a user to send a private message.<br />Use 📎
-                        to share images.</p>
+    <div class="layout">
+        <!-- Titlebar -->
+        <div class="titlebar">
+            <div class="titlebar-left">
+                <span class="tb-role-badge">CLIENT</span>
+                <div class="status-pill">
+                    <div class="status-dot disconnected" id="status-dot"></div>
+                    <span class="status-pill-text" id="status-text">Not connected</span>
                 </div>
             </div>
-            <!-- Image preview bar -->
-            <div class="img-preview-bar" id="img-preview-bar">
-                <img class="img-preview-thumb" id="img-preview-thumb" src="" alt="preview" />
-                <span class="img-preview-name" id="img-preview-name"></span>
-                <button class="btn-cancel-img" onclick="cancelImage()">✕ Cancel</button>
-            </div>
-            <div class="input-area">
-                <div class="input-row">
-                    <button class="btn-img" id="btn-img" onclick="pickImage()" disabled title="Send image">📎</button>
-                    <textarea class="msg-input" id="msg-input"
-                        placeholder="Type a message... (Enter to send, Shift+Enter for new line)" rows="1"
-                        disabled></textarea>
-                    <button class="btn-send" id="btn-send" onclick="sendMsg()" disabled>➤</button>
+            <div class="titlebar-btns">
+                <div class="win-btn win-min" onclick="api.send('win-minimize',{})">
+                    <svg viewBox="0 0 10 1">
+                        <rect x="0" y="0" width="10" height="1"></rect>
+                    </svg>
+                </div>
+                <div class="win-btn win-max" onclick="api.send('win-maximize',{})">
+                    <svg viewBox="0 0 10 10">
+                        <path d="M0,0v10h10V0H0z M9,9H1V1h8V9z"></path>
+                    </svg>
+                </div>
+                <div class="win-btn win-close" onclick="api.send('win-close',{})">
+                    <svg viewBox="0 0 10 10">
+                        <polygon points="10,0.7 9.3,0 5,4.3 0.7,0 0,0.7 4.3,5 0,9.3 0.7,10 5,5.7 9.3,10 10,9.3 5.7,5">
+                        </polygon>
+                    </svg>
                 </div>
             </div>
         </div>
-    </div>
 
-    <!-- Connect Modal -->
-    <div class="modal-overlay" id="modal" style="display:none;">
-        <div class="modal">
-            <h2>💬 Join Chat</h2>
-            <p>Enter your details to connect to the LAN server.</p>
-            <div class="field"><label>Username</label><input id="m-username" placeholder="e.g. Alice" maxlength="24" />
+        <!-- App -->
+        <div class="app-layout">
+            <!-- Users Sidebar -->
+            <div class="users-sidebar">
+                <div class="sidebar-hdr">👥 Online Users</div>
+                <div class="user-list" id="user-list">
+                    <div class="dm-hint">Connect to see users</div>
+                </div>
             </div>
-            <div class="field"><label>Server IP</label><input id="m-host" value="127.0.0.1" /></div>
-            <div class="field"><label>Port</label><input id="m-port" value="65432" /></div>
-            <button class="btn-connect" onclick="doConnect()">Connect →</button>
+
+            <!-- Chat -->
+            <div class="chat-main">
+                <div class="mode-bar" id="mode-bar">
+                    <span>🌐</span><span class="mode-lbl">Group Chat</span>
+                </div>
+                <div class="messages" id="messages">
+                    <div class="welcome" id="welcome">
+                        <div class="welcome-icon">🔌</div>
+                        <p>Connect to the server to start chatting.<br />Click a user to send a private
+                            message.<br />Use 📎
+                            to share images.</p>
+                    </div>
+                </div>
+                <!-- Image preview bar -->
+                <div class="img-preview-bar" id="img-preview-bar">
+                    <img class="img-preview-thumb" id="img-preview-thumb" src="" alt="preview" />
+                    <span class="img-preview-name" id="img-preview-name"></span>
+                    <button class="btn-cancel-img" onclick="cancelImage()">✕ Cancel</button>
+                </div>
+                <div class="input-area">
+                    <div class="input-row">
+                        <button class="btn-img" id="btn-img" onclick="pickImage()" disabled
+                            title="Send image">📎</button>
+                        <textarea class="msg-input" id="msg-input"
+                            placeholder="Type a message... (Enter to send, Shift+Enter for new line)" rows="1"
+                            disabled></textarea>
+                        <button class="btn-send" id="btn-send" onclick="sendMsg()" disabled>➤</button>
+                    </div>
+                </div>
+            </div>
         </div>
-    </div>
 
-    <script>
-        let myUsername = '';
-        let isConnected = false;
-        let dmTarget = null;
-        const unreadCounts = {};
-        const dmHistories = {};
-        const groupHistory = [];
-        let onlineUsers = [];
-        let pendingImage = null; // { data, filename, mimeType }
+        <!-- Connect Modal -->
+        <div class="modal-overlay" id="modal" style="display:none;">
+            <div class="modal">
+                <h2>💬 Join Chat</h2>
+                <p>Enter your details to connect to the LAN server.</p>
+                <div class="field"><label>Username</label><input id="m-username" placeholder="e.g. Alice"
+                        maxlength="24" />
+                </div>
+                <div class="field"><label>Server IP</label><input id="m-host" value="127.0.0.1" /></div>
+                <div class="field"><label>Port</label><input id="m-port" value="65432" /></div>
+                <button class="btn-connect" onclick="doConnect()">Connect →</button>
+            </div>
+        </div>
 
-        // ─── Modal ───────────────────────────────────────────────────
-        api.on('request-connect-info', () => {
-            document.getElementById('modal').style.display = 'flex';
-            setTimeout(() => document.getElementById('m-username').focus(), 100);
-        });
+        <script>
+            let myUsername = '';
+            let isConnected = false;
+            let dmTarget = null;
+            const unreadCounts = {};
+            const dmHistories = {};
+            const groupHistory = [];
+            let onlineUsers = [];
+            let pendingImage = null; // { data, filename, mimeType }
 
-        function doConnect() {
-            const username = document.getElementById('m-username').value.trim();
-            const host = document.getElementById('m-host').value.trim() || '127.0.0.1';
-            const port = document.getElementById('m-port').value.trim() || '65432';
-            if (!username) { document.getElementById('m-username').classList.add('err'); return; }
-            myUsername = username;
-            document.getElementById('modal').style.display = 'none';
-            document.getElementById('welcome').style.display = 'none';
-            api.send('client-connect', { host, port, username });
-        }
+            // ─── Modal ───────────────────────────────────────────────────
+            api.on('request-connect-info', () => {
+                document.getElementById('modal').style.display = 'flex';
+                setTimeout(() => document.getElementById('m-username').focus(), 100);
+            });
 
-        // ─── Image Picker ─────────────────────────────────────────────
-        function pickImage() {
-            document.getElementById('file-picker').click();
-        }
-
-        document.getElementById('file-picker').addEventListener('change', (e) => {
-            const file = e.target.files[0];
-            if (!file) return;
-            if (file.size > 5 * 1024 * 1024) { alert('Image too large (max 5MB)'); return; }
-            const reader = new FileReader();
-            reader.onload = (ev) => {
-                pendingImage = { data: ev.target.result, filename: file.name, mimeType: file.type };
-                document.getElementById('img-preview-thumb').src = ev.target.result;
-                document.getElementById('img-preview-name').textContent = file.name;
-                document.getElementById('img-preview-bar').classList.add('visible');
-                document.getElementById('msg-input').placeholder = 'Add a caption (optional)...';
-            };
-            reader.readAsDataURL(file);
-            e.target.value = '';
-        });
-
-        function cancelImage() {
-            pendingImage = null;
-            document.getElementById('img-preview-bar').classList.remove('visible');
-            document.getElementById('msg-input').placeholder = dmTarget
-                ? `Message ${dmTarget} privately...`
-                : 'Type a message... (Enter to send, Shift+Enter for new line)';
-        }
-
-        // ─── Send ──────────────────────────────────────────────────────
-        function sendMsg() {
-            const input = document.getElementById('msg-input');
-            const text = input.value.trim();
-            if (!isConnected) return;
-
-            if (pendingImage) {
-                // Send image (with optional text caption)
-                const to = dmTarget || null;
-                api.send('client-send-image', {
-                    to,
-                    data: pendingImage.data,
-                    filename: pendingImage.filename,
-                    mimeType: pendingImage.mimeType
-                });
-                cancelImage();
-                input.value = '';
-                input.style.height = 'auto';
-            } else if (text) {
-                if (dmTarget) {
-                    api.send('client-send-dm', { to: dmTarget, text });
-                } else {
-                    api.send('client-send', { text });
-                    appendGroupMsg({ type: 'chat', from: myUsername, text, ts: Date.now() }, true);
-                }
-                input.value = '';
-                input.style.height = 'auto';
+            function doConnect() {
+                const username = document.getElementById('m-username').value.trim();
+                const host = document.getElementById('m-host').value.trim() || '127.0.0.1';
+                const port = document.getElementById('m-port').value.trim() || '65432';
+                if (!username) { document.getElementById('m-username').classList.add('err'); return; }
+                myUsername = username;
+                document.getElementById('modal').style.display = 'none';
+                document.getElementById('welcome').style.display = 'none';
+                api.send('client-connect', { host, port, username });
             }
-        }
 
-        // ─── DM Navigation ────────────────────────────────────────────
-        function openDM(username) {
-            if (username === myUsername) return;
-            dmTarget = username;
-            unreadCounts[username] = 0;
-            renderUserList();
+            // ─── Image Picker ─────────────────────────────────────────────
+            function pickImage() {
+                document.getElementById('file-picker').click();
+            }
 
-            const bar = document.getElementById('mode-bar');
-            bar.className = 'mode-bar dm';
-            bar.innerHTML = `<span>🔒</span><span class="mode-lbl">Private: <strong>${escH(username)}</strong></span>
+            document.getElementById('file-picker').addEventListener('change', (e) => {
+                const file = e.target.files[0];
+                if (!file) return;
+                if (file.size > 5 * 1024 * 1024) { alert('Image too large (max 5MB)'); return; }
+                const reader = new FileReader();
+                reader.onload = (ev) => {
+                    pendingImage = { data: ev.target.result, filename: file.name, mimeType: file.type };
+                    document.getElementById('img-preview-thumb').src = ev.target.result;
+                    document.getElementById('img-preview-name').textContent = file.name;
+                    document.getElementById('img-preview-bar').classList.add('visible');
+                    document.getElementById('msg-input').placeholder = 'Add a caption (optional)...';
+                };
+                reader.readAsDataURL(file);
+                e.target.value = '';
+            });
+
+            function cancelImage() {
+                pendingImage = null;
+                document.getElementById('img-preview-bar').classList.remove('visible');
+                document.getElementById('msg-input').placeholder = dmTarget
+                    ? `Message ${dmTarget} privately...`
+                    : 'Type a message... (Enter to send, Shift+Enter for new line)';
+            }
+
+            // ─── Send ──────────────────────────────────────────────────────
+            function sendMsg() {
+                const input = document.getElementById('msg-input');
+                const text = input.value.trim();
+                if (!isConnected) return;
+
+                if (pendingImage) {
+                    // Send image (with optional text caption right after)
+                    const to = dmTarget || null;
+                    api.send('client-send-image', {
+                        to,
+                        data: pendingImage.data,
+                        filename: pendingImage.filename,
+                        mimeType: pendingImage.mimeType
+                    });
+                    cancelImage();
+
+                    // If text is provided, send it as a subsequent message (caption/reply combo)
+                    if (text) {
+                        if (to) api.send('client-send-dm', { to, text });
+                        else api.send('client-send', { text });
+                    }
+                    input.value = '';
+                    input.style.height = 'auto';
+                } else if (text) {
+                    if (dmTarget) {
+                        api.send('client-send-dm', { to: dmTarget, text });
+                    } else {
+                        api.send('client-send', { text });
+                        appendGroupMsg({ type: 'chat', from: myUsername, text, ts: Date.now() }, true);
+                    }
+                    input.value = '';
+                    input.style.height = 'auto';
+                }
+            }
+
+            // ─── DM Navigation ────────────────────────────────────────────
+            function openDM(username) {
+                if (username === myUsername) return;
+                dmTarget = username;
+                unreadCounts[username] = 0;
+                renderUserList();
+
+                const bar = document.getElementById('mode-bar');
+                bar.className = 'mode-bar dm';
+                bar.innerHTML = `<span>🔒</span><span class="mode-lbl">Private: <strong>${escH(username)}</strong></span>
                 <button class="btn-back" onclick="openGroup()">← Group Chat</button>`;
 
-            const inp = document.getElementById('msg-input');
-            inp.className = 'msg-input dm-mode';
-            inp.placeholder = `Message ${username} privately...`;
-            document.getElementById('btn-send').className = 'btn-send dm-mode';
+                const inp = document.getElementById('msg-input');
+                inp.className = 'msg-input dm-mode';
+                inp.placeholder = `Message ${username} privately...`;
+                document.getElementById('btn-send').className = 'btn-send dm-mode';
 
-            renderDMHistory(username);
-        }
-
-        function openGroup() {
-            dmTarget = null;
-            cancelImage();
-            const bar = document.getElementById('mode-bar');
-            bar.className = 'mode-bar';
-            bar.innerHTML = '<span>🌐</span><span class="mode-lbl">Group Chat</span>';
-            document.getElementById('msg-input').className = 'msg-input';
-            document.getElementById('msg-input').placeholder = 'Type a message... (Enter to send, Shift+Enter for new line)';
-            document.getElementById('btn-send').className = 'btn-send';
-            renderUserList();
-            renderGroupHistory();
-        }
-
-        // ─── Render helpers ────────────────────────────────────────────
-        function appendGroupMsg(msg, isSelf = false) {
-            groupHistory.push({ msg, isSelf });
-            if (!dmTarget) renderGroupMsgEl(msg, isSelf);
-        }
-
-        function renderGroupHistory() {
-            const c = document.getElementById('messages');
-            c.innerHTML = '';
-            for (const { msg, isSelf } of groupHistory) renderGroupMsgEl(msg, isSelf);
-            c.scrollTop = c.scrollHeight;
-        }
-
-        function renderGroupMsgEl(msg, isSelf) {
-            if (dmTarget) return;
-            const c = document.getElementById('messages');
-            const wrap = document.createElement('div');
-            if (msg.type === 'system') {
-                wrap.className = 'msg-wrap system';
-                wrap.innerHTML = `<div class="msg-bubble">${escH(msg.text)}</div>`;
-            } else {
-                wrap.className = `msg-wrap ${isSelf ? 'self' : 'other'}`;
-                const time = fmtTime(msg.ts);
-                if (!isSelf) wrap.innerHTML += `<div class="msg-name">${escH(msg.from)}</div>`;
-                wrap.innerHTML += `<div class="msg-bubble">${escH(msg.text)}</div>`;
-                wrap.innerHTML += `<div class="msg-meta">${time}</div>`;
+                renderDMHistory(username);
             }
-            c.appendChild(wrap);
-            c.scrollTop = c.scrollHeight;
-        }
 
-        function renderDMHistory(username) {
-            const c = document.getElementById('messages');
-            c.innerHTML = '';
-            for (const dm of (dmHistories[username] || [])) renderDMEl(dm, true);
-            c.scrollTop = c.scrollHeight;
-        }
+            function openGroup() {
+                dmTarget = null;
+                cancelImage();
+                const bar = document.getElementById('mode-bar');
+                bar.className = 'mode-bar';
+                bar.innerHTML = '<span>🌐</span><span class="mode-lbl">Group Chat</span>';
+                document.getElementById('msg-input').className = 'msg-input';
+                document.getElementById('msg-input').placeholder = 'Type a message... (Enter to send, Shift+Enter for new line)';
+                document.getElementById('btn-send').className = 'btn-send';
+                renderUserList();
+                renderGroupHistory();
+            }
 
-        function renderDMEl(dm, force = false) {
-            const c = document.getElementById('messages');
-            const isSelf = dm.from === myUsername || dm.from === '🖥️ Server' && dm.to === myUsername;
-            const threadUser = isSelf && dm.from !== '🖥️ Server' ? dm.to : dm.from;
-            if (!force && dmTarget !== threadUser) return;
-            const wrap = document.createElement('div');
-            wrap.className = `msg-wrap ${isSelf ? 'dm-self' : 'dm-other'}`;
-            const time = fmtTime(dm.ts);
-            if (isSelf)
-                wrap.innerHTML += `<div class="dm-lbl" style="justify-content:flex-end">🔒 to ${escH(dm.to)}</div>`;
-            else
-                wrap.innerHTML += `<div class="dm-lbl">🔒 ${escH(dm.from)}</div>`;
-            wrap.innerHTML += `<div class="msg-bubble">${escH(dm.text)}</div>`;
-            wrap.innerHTML += `<div class="msg-meta">${time}</div>`;
-            c.appendChild(wrap);
-            c.scrollTop = c.scrollHeight;
-        }
+            // ─── Render helpers ────────────────────────────────────────────
+            function appendGroupMsg(msg, isSelf = false) {
+                groupHistory.push({ msg, isSelf });
+                if (!dmTarget) renderGroupMsgEl(msg, isSelf);
+            }
 
-        function renderImageEl(img, isSelf) {
-            const c = document.getElementById('messages');
-            const wrapClass = img.to
-                ? (isSelf ? 'dm-self' : 'dm-other')
-                : (isSelf ? 'self' : 'other');
-            const wrap = document.createElement('div');
-            wrap.className = `msg-wrap ${wrapClass}`;
-            const time = fmtTime(img.ts);
-            if (!isSelf) wrap.innerHTML += `<div class="msg-name">${escH(img.from)}</div>`;
-            wrap.innerHTML += `
-                <div class="img-bubble" onclick="openLightbox('${img.data}')">
+            function renderGroupHistory() {
+                const c = document.getElementById('messages');
+                c.innerHTML = '';
+                for (const { msg, isSelf } of groupHistory) {
+                    if (msg.isImage) renderImageEl(msg, isSelf, true);
+                    else renderGroupMsgEl(msg, isSelf);
+                }
+                c.scrollTop = c.scrollHeight;
+            }
+
+            function renderGroupMsgEl(msg, isSelf) {
+                if (dmTarget) return;
+                const c = document.getElementById('messages');
+                const wrap = document.createElement('div');
+                if (msg.type === 'system') {
+                    wrap.className = 'msg-wrap system';
+                    wrap.innerHTML = `<div class="msg-bubble">${escH(msg.text)}</div>`;
+                } else {
+                    wrap.className = `msg-wrap ${isSelf ? 'self' : 'other'}`;
+                    const time = fmtTime(msg.ts);
+                    if (!isSelf) wrap.innerHTML += `<div class="msg-name">${escH(msg.from)}</div>`;
+                    wrap.innerHTML += `<div class="msg-bubble">${escH(msg.text)}</div>`;
+                    wrap.innerHTML += `<div class="msg-meta">${time}</div>`;
+                }
+                c.appendChild(wrap);
+                c.scrollTop = c.scrollHeight;
+            }
+
+            function renderDMHistory(username) {
+                const c = document.getElementById('messages');
+                c.innerHTML = '';
+                for (const dm of (dmHistories[username] || [])) {
+                    if (dm.isImage) renderImageEl(dm, dm.from === myUsername, true);
+                    else renderDMEl(dm, true);
+                }
+                c.scrollTop = c.scrollHeight;
+            }
+
+            function renderDMEl(dm, force = false) {
+                const c = document.getElementById('messages');
+                const isSelf = dm.from === myUsername || dm.from === '🖥️ Server' && dm.to === myUsername;
+                const threadUser = isSelf && dm.from !== '🖥️ Server' ? dm.to : dm.from;
+                if (!force && dmTarget !== threadUser) return;
+                const wrap = document.createElement('div');
+                wrap.className = `msg-wrap ${isSelf ? 'dm-self' : 'dm-other'}`;
+                const time = fmtTime(dm.ts);
+                if (isSelf)
+                    wrap.innerHTML += `<div class="dm-lbl" style="justify-content:flex-end">🔒 to ${escH(dm.to)}</div>`;
+                else
+                    wrap.innerHTML += `<div class="dm-lbl">🔒 ${escH(dm.from)}</div>`;
+                wrap.innerHTML += `<div class="msg-bubble">${escH(dm.text)}</div>`;
+                wrap.innerHTML += `<div class="msg-meta">${time}</div>`;
+                c.appendChild(wrap);
+                c.scrollTop = c.scrollHeight;
+            }
+
+            function renderImageEl(img, isSelf) {
+                const c = document.getElementById('messages');
+                const wrapClass = img.to
+                    ? (isSelf ? 'dm-self' : 'dm-other')
+                    : (isSelf ? 'self' : 'other');
+                const wrap = document.createElement('div');
+                wrap.className = `msg-wrap ${wrapClass}`;
+                const time = fmtTime(img.ts);
+                if (!isSelf) wrap.innerHTML += `<div class="msg-name">${escH(img.from)}</div>`;
+                wrap.innerHTML += `
+                <div class="img-bubble" onclick="openLightbox('${img.data}', '${escH(img.filename)}')">
                     <img src="${img.data}" alt="${escH(img.filename)}" loading="lazy"/>
                     <div class="img-caption">📎 ${escH(img.filename)}</div>
                 </div>
                 <div class="msg-meta">${time}</div>`;
-            c.appendChild(wrap);
-            c.scrollTop = c.scrollHeight;
-        }
-
-        // ─── User List ─────────────────────────────────────────────────
-        function renderUserList() {
-            const list = document.getElementById('user-list');
-            list.innerHTML = '';
-            if (!isConnected || onlineUsers.length === 0) {
-                const h = document.createElement('div');
-                h.className = 'dm-hint';
-                h.textContent = isConnected ? 'No other users online' : 'Connect to see users';
-                list.appendChild(h);
-                return;
+                c.appendChild(wrap);
+                c.scrollTop = c.scrollHeight;
             }
-            const sorted = [myUsername, ...onlineUsers.filter(u => u !== myUsername)];
-            for (const u of sorted) {
-                if (!onlineUsers.includes(u)) continue;
-                const item = document.createElement('div');
-                item.className = 'user-item' + (dmTarget === u ? ' active-dm' : '');
-                item.onclick = () => u !== myUsername && openDM(u);
-                const unread = unreadCounts[u] || 0;
-                item.innerHTML = `
-                    <div class="u-avatar">${escH(u.charAt(0).toUpperCase())}</div>
-                    <span class="u-name${u === myUsername ? ' me' : ''}">${escH(u)}${u === myUsername ? ' (you)' : ''}</span>
+
+            // ─── User List ─────────────────────────────────────────────────
+            function renderUserList() {
+                const list = document.getElementById('user-list');
+                list.innerHTML = '';
+                if (!isConnected) {
+                    const h = document.createElement('div');
+                    h.className = 'dm-hint';
+                    h.textContent = 'Connect to see users';
+                    list.appendChild(h);
+                    return;
+                }
+
+                // Always add Group Chat and Server to the list of DM targets
+                const allUsers = ['🌐 Group Chat', '🖥️ Server', ...onlineUsers.filter(u => u !== myUsername)];
+
+                for (const u of allUsers) {
+                    const isGroup = u === '🌐 Group Chat';
+                    const isActive = isGroup ? !dmTarget : dmTarget === u;
+
+                    const item = document.createElement('div');
+                    item.className = 'user-item' + (isActive ? ' active-dm' : '');
+                    item.onclick = () => isGroup ? openGroup() : openDM(u);
+
+                    const unread = unreadCounts[u] || 0;
+                    let avatarChar = escH(u.charAt(0).toUpperCase());
+                    if (u === '🖥️ Server') avatarChar = '🖥️';
+                    if (isGroup) avatarChar = '🌐';
+
+                    item.innerHTML = `
+                    <div class="u-avatar">${avatarChar}</div>
+                    <span class="u-name">${escH(u)}</span>
                     ${unread > 0 ? `<div class="unread-dot">${unread}</div>` : ''}`;
-                list.appendChild(item);
+                    list.appendChild(item);
+                }
             }
-        }
 
-        // ─── Status ───────────────────────────────────────────────────
-        function setStatus(status, host, port) {
-            const dot = document.getElementById('status-dot');
-            const txt = document.getElementById('status-text');
-            dot.className = 'status-dot';
-            const inp = document.getElementById('msg-input');
-            const btn = document.getElementById('btn-send');
-            const imgBtn = document.getElementById('btn-img');
-            if (status === 'Connected') {
-                dot.classList.add('connected'); txt.textContent = `${host}:${port}`;
-                isConnected = true; inp.disabled = false; btn.disabled = false; imgBtn.disabled = false;
-            } else if (status.startsWith('Reconnecting') || status === 'Connecting...') {
-                dot.classList.add('reconnecting'); txt.textContent = status;
-                isConnected = false; inp.disabled = true; btn.disabled = true; imgBtn.disabled = true;
-            } else {
-                dot.classList.add('disconnected'); txt.textContent = status || 'Disconnected';
-                isConnected = false; inp.disabled = true; btn.disabled = true; imgBtn.disabled = true;
+            // ─── Status ───────────────────────────────────────────────────
+            function setStatus(status, host, port) {
+                const dot = document.getElementById('status-dot');
+                const txt = document.getElementById('status-text');
+                dot.className = 'status-dot';
+                const inp = document.getElementById('msg-input');
+                const btn = document.getElementById('btn-send');
+                const imgBtn = document.getElementById('btn-img');
+                if (status === 'Connected') {
+                    dot.classList.add('connected'); txt.textContent = `${host}:${port}`;
+                    isConnected = true; inp.disabled = false; btn.disabled = false; imgBtn.disabled = false;
+                } else if (status.startsWith('Reconnecting') || status === 'Connecting...') {
+                    dot.classList.add('reconnecting'); txt.textContent = status;
+                    isConnected = false; inp.disabled = true; btn.disabled = true; imgBtn.disabled = true;
+                } else {
+                    dot.classList.add('disconnected'); txt.textContent = status || 'Disconnected';
+                    isConnected = false; inp.disabled = true; btn.disabled = true; imgBtn.disabled = true;
+                }
             }
-        }
 
-        // ─── Lightbox ─────────────────────────────────────────────────
-        function openLightbox(src) {
-            document.getElementById('lightbox-img').src = src;
-            document.getElementById('lightbox').classList.add('open');
-        }
-        function closeLightbox() {
-            document.getElementById('lightbox').classList.remove('open');
-        }
+            // ─── Lightbox ─────────────────────────────────────────────────
+            let currentLbFilename = '';
 
-        // ─── Helpers ──────────────────────────────────────────────────
-        function escH(s) { if (typeof s !== 'string') return ''; return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); }
-        function fmtTime(ts) { return new Date(ts || Date.now()).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }); }
+            function openLightbox(src, filename) {
+                document.getElementById('lightbox-img').src = src;
+                currentLbFilename = filename;
+                const dl = document.getElementById('lb-download');
+                dl.href = src;
+                dl.download = filename || 'image.jpg';
+                document.getElementById('lightbox').classList.add('open');
+            }
 
-        // ─── IPC ──────────────────────────────────────────────────────
-        api.on('message', (msg) => {
-            const isSelf = msg.type === 'chat' && msg.from === myUsername;
-            if (!isSelf) appendGroupMsg(msg, false);
-        });
+            function closeLightbox(e) {
+                if (e) e.stopPropagation();
+                document.getElementById('lightbox').classList.remove('open');
+            }
 
-        api.on('status', (data) => setStatus(data.status, data.host, data.port));
+            function replyToImage(e) {
+                if (e) e.stopPropagation();
+                const inp = document.getElementById('msg-input');
+                const prefix = `[Replying to 📎 ${currentLbFilename}]\n`;
+                inp.value = prefix + inp.value;
+                inp.focus();
+                inp.style.height = 'auto';
+                inp.style.height = Math.min(inp.scrollHeight, 80) + 'px';
+                closeLightbox();
+            }
 
-        api.on('client-list', (data) => {
-            onlineUsers = data.users || [];
-            renderUserList();
-        });
+            // ─── Helpers ──────────────────────────────────────────────────
+            function escH(s) { if (typeof s !== 'string') return ''; return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); }
+            function fmtTime(ts) { return new Date(ts || Date.now()).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }); }
 
-        api.on('dm', (dm) => {
-            const threadUser = dm.from === myUsername ? dm.to : dm.from;
-            if (!dmHistories[threadUser]) dmHistories[threadUser] = [];
-            dmHistories[threadUser].push(dm);
-            if (dmTarget === threadUser) {
-                renderDMEl(dm);
-            } else if (dm.from !== myUsername) {
-                unreadCounts[threadUser] = (unreadCounts[threadUser] || 0) + 1;
+            // ─── IPC ──────────────────────────────────────────────────────
+            api.on('message', (msg) => {
+                const isSelf = msg.type === 'chat' && msg.from === myUsername;
+                if (!isSelf) appendGroupMsg(msg, false);
+            });
+
+            api.on('status', (data) => setStatus(data.status, data.host, data.port));
+
+            api.on('client-list', (data) => {
+                onlineUsers = data.users || [];
                 renderUserList();
-                appendGroupMsg({ type: 'system', text: `📨 New private message from ${dm.from}`, ts: Date.now() });
-            }
-        });
+            });
 
-        api.on('image', (img) => {
-            const isSelf = img.from === myUsername;
-            // If DM image, store in thread
-            if (img.to) {
-                const threadUser = isSelf ? img.to : img.from;
-                if (dmTarget === threadUser) renderImageEl(img, isSelf);
-                else if (!isSelf) {
+            api.on('dm', (dm) => {
+                const threadUser = dm.from === myUsername ? dm.to : dm.from;
+                if (!dmHistories[threadUser]) dmHistories[threadUser] = [];
+                dmHistories[threadUser].push(dm);
+                if (dmTarget === threadUser) {
+                    renderDMEl(dm);
+                } else if (dm.from !== myUsername) {
                     unreadCounts[threadUser] = (unreadCounts[threadUser] || 0) + 1;
                     renderUserList();
-                    appendGroupMsg({ type: 'system', text: `📎 Image from ${img.from} (private)`, ts: img.ts });
+                    appendGroupMsg({ type: 'system', text: `📨 New private message from ${dm.from}`, ts: Date.now() });
                 }
-            } else {
-                // Group image
-                if (!dmTarget) renderImageEl(img, isSelf);
-            }
-        });
+            });
 
-        api.on('failover', (data) => appendGroupMsg({ type: 'system', text: `⚡ Failover! Switching to ${data.host}:${data.port}`, ts: Date.now() }));
-        api.on('ack', (data) => appendGroupMsg({ type: 'system', text: `✅ ${data.message}`, ts: Date.now() }));
+            api.on('image', (img) => {
+                img.isImage = true;
+                const isSelf = img.from === myUsername;
+                // If DM image, store in thread
+                if (img.to) {
+                    const threadUser = isSelf ? img.to : img.from;
+                    if (!dmHistories[threadUser]) dmHistories[threadUser] = [];
+                    dmHistories[threadUser].push(img);
 
-        // ─── Input behavior ───────────────────────────────────────────
-        const inp = document.getElementById('msg-input');
-        inp.addEventListener('keydown', (e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMsg(); } });
-        inp.addEventListener('input', () => { inp.style.height = 'auto'; inp.style.height = Math.min(inp.scrollHeight, 80) + 'px'; });
-    </script>
+                    if (dmTarget === threadUser) renderImageEl(img, isSelf);
+                    else if (!isSelf) {
+                        unreadCounts[threadUser] = (unreadCounts[threadUser] || 0) + 1;
+                        renderUserList();
+                        appendGroupMsg({ type: 'system', text: `📎 Image from ${img.from} (private)`, ts: img.ts });
+                    }
+                } else {
+                    // Group image
+                    groupHistory.push({ msg: img, isSelf });
+                    if (!dmTarget) renderImageEl(img, isSelf);
+                }
+            });
+
+            api.on('failover', (data) => appendGroupMsg({ type: 'system', text: `⚡ Failover! Switching to ${data.host}:${data.port}`, ts: Date.now() }));
+            api.on('ack', (data) => appendGroupMsg({ type: 'system', text: `✅ ${data.message}`, ts: Date.now() }));
+
+            // ─── Input behavior ───────────────────────────────────────────
+            const inp = document.getElementById('msg-input');
+            inp.addEventListener('keydown', (e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMsg(); } });
+            inp.addEventListener('input', () => { inp.style.height = 'auto'; inp.style.height = Math.min(inp.scrollHeight, 80) + 'px'; });
+        </script>
 </body>
 
 </html>

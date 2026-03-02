@@ -132,6 +132,16 @@ ipcMain.on('win-minimize', () => {
     const w = roleWin || launcherWin;
     if (w) w.minimize();
 });
+ipcMain.on('win-maximize', () => {
+    const w = roleWin || launcherWin;
+    if (w) {
+        if (w.isMaximized()) {
+            w.unmaximize();
+        } else {
+            w.maximize();
+        }
+    }
+});
 ipcMain.on('win-close', () => {
     const w = roleWin || launcherWin;
     if (w) w.close();

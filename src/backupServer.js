@@ -224,12 +224,20 @@ class BackupServer {
                             from: sender, to: to || null, data, filename, mimeType, ts: Date.now()
                         });
                         if (to) {
-                            const recipientSock = this.userMap.get(to);
-                            if (recipientSock && !recipientSock.destroyed) recipientSock.write(imgPacket);
-                            if (!socket.destroyed) socket.write(imgPacket);
+                            if (to === '🖥️ Server') {
+                                if (!socket.destroyed) socket.write(imgPacket);
+                                this._log(`[IMG-DM] ${sender} → Server: ${filename}`);
+                                this._emit('image', { from: sender, to: '🖥️ Server', imgData: data, filename, ts: Date.now() });
+                            } else {
+                                const recipientSock = this.userMap.get(to);
+                                if (recipientSock && !recipientSock.destroyed) recipientSock.write(imgPacket);
+                                if (!socket.destroyed) socket.write(imgPacket);
+                                this._emit('chat-message', { from: sender, image: true, filename, ts: Date.now() });
+                            }
                         } else {
                             this._broadcast(imgPacket, socket);
                             if (!socket.destroyed) socket.write(imgPacket);
+                            this._emit('chat-message', { from: sender, image: true, filename, ts: Date.now() });
                         }
                         this._log(`[IMG] ${sender}: ${filename}`);
 
@@ -240,10 +248,18 @@ class BackupServer {
                             from: sender, to: toUser,
                             text: msg.payload.text, ts: Date.now()
                         });
-                        const recipientSock = this.userMap.get(toUser);
-                        if (recipientSock && !recipientSock.destroyed) recipientSock.write(dmPacket);
-                        if (!socket.destroyed) socket.write(dmPacket);
-                        this._log(`[DM] ${sender} → ${toUser}: ${msg.payload.text}`);
+
+                        if (toUser === '🖥️ Server') {
+                            if (!socket.destroyed) socket.write(dmPacket);
+                            this._log(`[DM] ${sender} → Server: ${msg.payload.text}`);
+                            this._emit('dm-message', { from: sender, to: toUser, text: msg.payload.text, ts: Date.now() });
+                        } else {
+                            const recipientSock = this.userMap.get(toUser);
+                            if (recipientSock && !recipientSock.destroyed) recipientSock.write(dmPacket);
+                            if (!socket.destroyed) socket.write(dmPacket);
+                            this._log(`[DM] ${sender} → ${toUser}: ${msg.payload.text}`);
+                            this._emit('dm-message', { from: sender, to: toUser, text: msg.payload.text, ts: Date.now() });
+                        }
                     }
                 }
             });

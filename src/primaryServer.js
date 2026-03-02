@@ -83,18 +83,27 @@ class PrimaryServer {
                             data, filename, mimeType, ts: Date.now()
                         });
                         if (to) {
-                            // Private image
-                            const recipientSock = this.userMap.get(to);
-                            if (recipientSock && !recipientSock.destroyed) recipientSock.write(imgPacket);
-                            if (!socket.destroyed) socket.write(imgPacket);
-                            this._log(`[IMG-DM] ${sender} → ${to}: ${filename}`);
+                            if (to === '🖥️ Server') {
+                                // Intercept for Server Admin UI
+                                if (!socket.destroyed) socket.write(imgPacket); // echo to sender
+                                this._log(`[IMG-DM] ${sender} → Server: ${filename}`);
+                                // Emit to UI with 'to' preserving the DM context
+                                this._emit('image', { from: sender, to: '🖥️ Server', imgData: data, filename, ts: Date.now() });
+                            } else {
+                                // Private image to another client
+                                const recipientSock = this.userMap.get(to);
+                                if (recipientSock && !recipientSock.destroyed) recipientSock.write(imgPacket);
+                                if (!socket.destroyed) socket.write(imgPacket);
+                                this._log(`[IMG-DM] ${sender} → ${to}: ${filename}`);
+                                this._emit('chat-message', { from: sender, image: true, filename, ts: Date.now() });
+                            }
                         } else {
                             // Group image
                             this._broadcast(imgPacket, socket);
                             if (!socket.destroyed) socket.write(imgPacket); // echo to sender
                             this._log(`[IMG] ${sender}: ${filename}`);
+                            this._emit('chat-message', { from: sender, image: true, filename, ts: Date.now() });
                         }
-                        this._emit('chat-message', { from: sender, image: true, filename, ts: Date.now() });
 
                     } else if (msg.type === proto.MSG_DM) {
                         const sender = clientInfo ? clientInfo.username : 'Unknown';
@@ -103,11 +112,19 @@ class PrimaryServer {
                         const dmPacket = proto.pack(proto.MSG_DM, {
                             from: sender, to: toUser, text, ts: Date.now()
                         });
-                        const recipientSock = this.userMap.get(toUser);
-                        if (recipientSock && !recipientSock.destroyed) recipientSock.write(dmPacket);
-                        if (!socket.destroyed) socket.write(dmPacket);
-                        this._log(`[DM] ${sender} → ${toUser}: ${text}`);
-                        this._emit('dm-message', { from: sender, to: toUser, text, ts: Date.now() });
+
+                        if (toUser === '🖥️ Server') {
+                            if (!socket.destroyed) socket.write(dmPacket); // echo
+                            this._log(`[DM] ${sender} → Server: ${text}`);
+                            // Force UI to show as incoming DM to server
+                            this._emit('dm-message', { from: sender, to: toUser, text, ts: Date.now() });
+                        } else {
+                            const recipientSock = this.userMap.get(toUser);
+                            if (recipientSock && !recipientSock.destroyed) recipientSock.write(dmPacket);
+                            if (!socket.destroyed) socket.write(dmPacket); // echo
+                            this._log(`[DM] ${sender} → ${toUser}: ${text}`);
+                            this._emit('dm-message', { from: sender, to: toUser, text, ts: Date.now() });
+                        }
                     }
                 }
             });

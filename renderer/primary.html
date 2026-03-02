@@ -29,7 +29,8 @@
             display: flex;
             align-items: center;
             justify-content: space-between;
-            padding: 0 16px;
+            padding-left: 16px;
+            padding-right: 0;
             -webkit-app-region: drag;
             border-bottom: 1px solid #1a1a30;
             flex-shrink: 0;
@@ -58,24 +59,40 @@
 
         .titlebar-btns {
             display: flex;
-            gap: 8px;
+            height: 100%;
             -webkit-app-region: no-drag;
         }
 
-        .tb-btn {
-            width: 13px;
-            height: 13px;
-            border-radius: 50%;
-            border: none;
+        .win-btn {
+            width: 46px;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
             cursor: pointer;
+            transition: background 0.15s;
         }
 
-        .tb-btn.close {
-            background: #ff5f57;
+        .win-btn svg {
+            width: 10px;
+            height: 10px;
+            fill: #94a3b8;
         }
 
-        .tb-btn.min {
-            background: #febc2e;
+        .win-btn:hover {
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        .win-btn:hover svg {
+            fill: #e2e8f0;
+        }
+
+        .win-btn.win-close:hover {
+            background: #e81123;
+        }
+
+        .win-btn.win-close:hover svg {
+            fill: #ffffff;
         }
 
         /* Layout */
@@ -607,6 +624,53 @@
             opacity: .9;
         }
 
+        /* image preview bar */
+        .img-preview-bar {
+            display: none;
+            padding: 8px 14px;
+            background: #0d0d1f;
+            border-top: 1px solid #1a1a30;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .img-preview-bar.visible {
+            display: flex;
+        }
+
+        .img-preview-thumb {
+            width: 48px;
+            height: 48px;
+            border-radius: 8px;
+            object-fit: cover;
+            border: 1px solid #252545;
+        }
+
+        .img-preview-name {
+            font-size: 11px;
+            color: #94a3b8;
+            flex: 1;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .btn-cancel-img {
+            background: none;
+            border: 1px solid #374151;
+            border-radius: 6px;
+            padding: 3px 10px;
+            color: #64748b;
+            font-size: 10px;
+            cursor: pointer;
+            font-family: inherit;
+        }
+
+        .btn-cancel-img:hover {
+            border-color: #ef4444;
+            color: #ef4444;
+        }
+
         /* clickable client item */
         .client-item {
             cursor: pointer;
@@ -652,8 +716,22 @@
             <span class="titlebar-title">Active Coordinator Node</span>
         </div>
         <div class="titlebar-btns">
-            <button class="tb-btn min" onclick="api.send('win-minimize',{})"></button>
-            <button class="tb-btn close" onclick="api.send('win-close',{})"></button>
+            <div class="win-btn win-min" onclick="api.send('win-minimize',{})">
+                <svg viewBox="0 0 10 1">
+                    <rect x="0" y="0" width="10" height="1"></rect>
+                </svg>
+            </div>
+            <div class="win-btn win-max" onclick="api.send('win-maximize',{})">
+                <svg viewBox="0 0 10 10">
+                    <path d="M0,0v10h10V0H0z M9,9H1V1h8V9z"></path>
+                </svg>
+            </div>
+            <div class="win-btn win-close" onclick="api.send('win-close',{})">
+                <svg viewBox="0 0 10 10">
+                    <polygon points="10,0.7 9.3,0 5,4.3 0.7,0 0,0.7 4.3,5 0,9.3 0.7,10 5,5.7 9.3,10 10,9.3 5.7,5">
+                    </polygon>
+                </svg>
+            </div>
         </div>
     </div>
 
@@ -724,6 +802,14 @@
             <!-- Chat Console Tab -->
             <div class="panel-content" id="pane-chat" style="flex-direction:column;">
                 <div class="feed" id="chat-feed"></div>
+
+                <!-- Image preview bar -->
+                <div class="img-preview-bar" id="img-preview-bar">
+                    <img class="img-preview-thumb" id="img-preview-thumb" src="" alt="preview" />
+                    <span class="img-preview-name" id="img-preview-name"></span>
+                    <button class="btn-cancel-img" onclick="cancelSrvImage()">✕ Cancel</button>
+                </div>
+
                 <div class="console-area">
                     <div class="console-target">
                         <label>To:</label>
@@ -792,8 +878,7 @@
                     filename: srvPendingImage.filename,
                     mimeType: srvPendingImage.mimeType
                 });
-                srvPendingImage = null;
-                document.getElementById('console-input').placeholder = 'Type message as Server...';
+                cancelSrvImage();
             } else if (text) {
                 if (to) {
                     api.send('server-send-dm', { to, text });
@@ -815,11 +900,21 @@
             const reader = new FileReader();
             reader.onload = (ev) => {
                 srvPendingImage = { data: ev.target.result, filename: file.name, mimeType: file.type };
-                document.getElementById('console-input').placeholder = `📎 ${file.name} (add caption optional)`;
+                document.getElementById('img-preview-thumb').src = ev.target.result;
+                document.getElementById('img-preview-name').textContent = file.name;
+                document.getElementById('img-preview-bar').classList.add('visible');
+                document.getElementById('console-input').placeholder = 'Add a caption (optional)...';
             };
             reader.readAsDataURL(file);
             e.target.value = '';
         });
+
+        function cancelSrvImage() {
+            srvPendingImage = null;
+            document.getElementById('img-preview-bar').classList.remove('visible');
+            document.getElementById('console-input').placeholder = 'Type message as Server...';
+        }
+
 
         // ─── Chat Feed Render ───────────────────────────────────────
         function addFeedMsg(data) {
@@ -832,7 +927,7 @@
             } else if (data.image) {
                 wrap.className = `feed-msg ${isSrv ? 'srv' : 'client'}`;
                 if (!isSrv) wrap.innerHTML += `<div class="feed-name">${escapeHtml(data.from)}</div>`;
-                wrap.innerHTML += `<div class="feed-img"><img src="${data.imgData}" /></div><div class="feed-meta">${fmtTime(data.ts)} · 📎 ${escapeHtml(data.filename)}</div>`;
+                wrap.innerHTML += `<div class="feed-img"><img src="${data.imgData}" /></div><div class="feed-meta">${fmtTime(data.ts)} · 📎 ${escapeHtml(data.filename)} <a href="${data.imgData}" download="${escapeHtml(data.filename)}" style="color:#6366f1;text-decoration:none;margin-left:8px;" title="Download image">⬇ dl</a></div>`;
             } else {
                 wrap.className = `feed-msg ${isSrv ? 'srv' : 'client'}`;
                 if (!isSrv) wrap.innerHTML += `<div class="feed-name">${escapeHtml(data.from)}</div>`;
@@ -865,6 +960,21 @@
             }
             noClients.style.display = 'none';
             list.querySelectorAll('.client-item').forEach(i => i.remove());
+
+            // Add Group Chat at the top
+            const grpEl = document.createElement('div');
+            grpEl.className = 'client-item';
+            grpEl.title = 'Click to chat with Everyone';
+            grpEl.onclick = () => {
+                switchTab('chat');
+                document.getElementById('dm-target-select').value = '';
+                document.getElementById('console-input').focus();
+            };
+            grpEl.innerHTML = `
+                <div class="client-avatar" style="background:#10b981;">🌐</div>
+                <div><div class="client-name">Everyone (Group)</div><div class="client-ip">Broadcast</div></div>
+                <span class="dm-btn">Chat</span>`;
+            list.appendChild(grpEl);
             for (const [key, info] of Object.entries(clients)) {
                 const el = document.createElement('div');
                 el.className = 'client-item';

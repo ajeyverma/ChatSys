@@ -31,7 +31,8 @@
       display: flex;
       align-items: center;
       justify-content: space-between;
-      padding: 0 16px;
+      padding-left: 16px;
+      padding-right: 0;
       -webkit-app-region: drag;
       border-bottom: 1px solid #1e1e3a;
     }
@@ -44,29 +45,40 @@
 
     .titlebar-btns {
       display: flex;
-      gap: 8px;
+      height: 100%;
       -webkit-app-region: no-drag;
     }
 
-    .tb-btn {
-      width: 13px;
-      height: 13px;
-      border-radius: 50%;
-      border: none;
+    .win-btn {
+      width: 46px;
+      height: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
       cursor: pointer;
-      transition: opacity .2s;
+      transition: background 0.1s;
     }
 
-    .tb-btn.close {
-      background: #ff5f57;
+    .win-btn svg {
+      width: 10px;
+      height: 10px;
+      fill: #94a3b8;
     }
 
-    .tb-btn.min {
-      background: #febc2e;
+    .win-btn:hover {
+      background: rgba(255, 255, 255, 0.1);
     }
 
-    .tb-btn:hover {
-      opacity: .8;
+    .win-btn:hover svg {
+      fill: #e2e8f0;
+    }
+
+    .win-btn.win-close:hover {
+      background: #e81123;
+    }
+
+    .win-btn.win-close:hover svg {
+      fill: #ffffff;
     }
 
     /* Main Content */
@@ -328,8 +340,16 @@
   <div class="titlebar">
     <span class="titlebar-title">ChatSys — Fault-Tolerant LAN Communication</span>
     <div class="titlebar-btns">
-      <button class="tb-btn min" onclick="api.send('win-minimize',{})"></button>
-      <button class="tb-btn close" onclick="api.send('win-close',{})"></button>
+      <div class="win-btn win-min" onclick="api.send('win-minimize',{})">
+        <svg viewBox="0 0 10 1">
+          <rect x="0" y="0" width="10" height="1"></rect>
+        </svg>
+      </div>
+      <div class="win-btn win-close" onclick="api.send('win-close',{})">
+        <svg viewBox="0 0 10 10">
+          <polygon points="10,0.7 9.3,0 5,4.3 0.7,0 0,0.7 4.3,5 0,9.3 0.7,10 5,5.7 9.3,10 10,9.3 5.7,5"></polygon>
+        </svg>
+      </div>
     </div>
   </div>
 
