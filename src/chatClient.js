@@ -3,11 +3,13 @@
  * Handles automatic failover reconnection via MSG_ANNOUNCE_PRIMARY.
  */
 const net = require('net');
+const EventEmitter = require('events');
 const cfg = require('./config');
 const proto = require('./protocol');
 
-class ChatClient {
+class ChatClient extends EventEmitter {
     constructor(mainWindow) {
+        super();
         this.win = mainWindow;
         this.socket = null;
         this.username = '';
@@ -74,7 +76,12 @@ class ChatClient {
 
         this.socket.on('error', (err) => {
             this._log(`Connection error: ${err.message}`);
-            if (!this.reconnecting && !this.redirecting) this._scheduleReconnect();
+            if (err.code === 'ECONNREFUSED' && this.retryCount === 0 && !this.redirecting) {
+                // First attempt failed — tell main.js to boot auto-host server
+                this.emit('server-not-found');
+            } else if (!this.reconnecting && !this.redirecting) {
+                this._scheduleReconnect();
+            }
         });
     }
 

@@ -45,49 +45,55 @@ function createRoleWindow(role, width, height) {
     return win;
 }
 
-// ─── IPC: Role Selection ──────────────────────────────────────────────────────
-ipcMain.on('select-role', (event, { role, options }) => {
+// ─── IPC: Auto-Host Launch ──────────────────────────────────────────────────────
+ipcMain.on('client-launch', (event, { username, host, port }) => {
     if (launcherWin) {
         launcherWin.close();
         launcherWin = null;
     }
 
-    if (role === 'primary') {
-        roleWin = createRoleWindow('primary', 1000, 680);
-        roleWin.once('ready-to-show', () => roleWin.show());
-        roleWin.webContents.once('did-finish-load', () => {
+    // Always create a Client window
+    roleWin = createRoleWindow('client', 860, 640);
+    roleWin.once('ready-to-show', () => roleWin.show());
+
+    roleWin.webContents.once('did-finish-load', () => {
+        const ChatClient = require('./src/chatClient');
+        activeClient = new ChatClient(roleWin);
+        
+        // Listen for internal event when connection is refused (meaning no server)
+        activeClient.on('server-not-found', () => {
+            console.log(`[Main] No server found at ${host}:${port}. Booting local back-end...`);
+            
+            // Start the PrimaryServer headlessly in the background
             const PrimaryServer = require('./src/primaryServer');
-            activeServer = new PrimaryServer(roleWin, options.backupHost || '127.0.0.1');
+            // Provide a dummy window for the UI emitting so it doesn't crash on `_emit`
+            const dummyWin = { webContents: { send: () => {} }, isDestroyed: () => false };
+            
+            activeServer = new PrimaryServer(dummyWin, '127.0.0.1'); 
             activeServer.start();
+
+            // Notify the client that it has automatically become the host
+            roleWin.webContents.send('message', {
+                type: 'system',
+                text: '🚀 No server detected. Auto-hosting network locally!',
+                ts: Date.now()
+            });
+
+            // Re-attempt client connection after starting local server
+            setTimeout(() => {
+                activeClient.connect(host, parseInt(port), username);
+            }, 500); 
         });
 
-    } else if (role === 'backup') {
-        roleWin = createRoleWindow('backup', 900, 620);
-        roleWin.once('ready-to-show', () => roleWin.show());
-        roleWin.webContents.once('did-finish-load', () => {
-            const BackupServer = require('./src/backupServer');
-            activeServer = new BackupServer(roleWin);
-            activeServer.start();
-        });
+        // Trigger immediate connection. ChatClient now handles its own status emitting
+        activeClient.connect(host, parseInt(port), username);
+    });
 
-    } else if (role === 'client') {
-        roleWin = createRoleWindow('client', 860, 640);
-        roleWin.once('ready-to-show', () => roleWin.show());
-        roleWin.webContents.once('did-finish-load', () => {
-            const ChatClient = require('./src/chatClient');
-            activeClient = new ChatClient(roleWin);
-            // Signal renderer to show username dialog
-            roleWin.webContents.send('request-connect-info', {});
-        });
-    }
-
-    if (roleWin) {
-        roleWin.on('closed', () => {
-            if (activeServer) { activeServer.stop(); activeServer = null; }
-            if (activeClient) { activeClient.disconnect(); activeClient = null; }
-            roleWin = null;
-        });
-    }
+    roleWin.on('closed', () => {
+        if (activeServer) { activeServer.stop(); activeServer = null; }
+        if (activeClient) { activeClient.disconnect(); activeClient = null; }
+        roleWin = null;
+    });
 });
 
 // ─── IPC: Client Actions ──────────────────────────────────────────────────────
