@@ -149,18 +149,8 @@ class PrimaryServer {
 
         this.tcpServer.on('error', (err) => {
             if (err.code === 'EADDRINUSE') {
-                // Port is held by the promoted backup — signal it to demote
-                this._log(`Port ${cfg.PRIMARY_PORT} is in use (Backup may be active). Sending recovery signal...`);
-                this._emit('status', { status: 'RECOVERING', port: cfg.PRIMARY_PORT });
-                this._broadcastRecovery();
-                // Retry binding after backup has had time to release the port
-                setTimeout(() => {
-                    if (!this.running) return;
-                    this._log(`Retrying bind on port ${cfg.PRIMARY_PORT}...`);
-                    this.tcpServer.close();
-                    this.tcpServer = null;
-                    this._startTCPServer();
-                }, 4000);
+                this._log(`Port ${cfg.PRIMARY_PORT} is in use. Another instance is likely host. Aborting server start...`);
+                this.stop();
             } else {
                 this._log(`Server error: ${err.message}`);
                 this._emit('error', { message: err.message });

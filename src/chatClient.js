@@ -172,7 +172,8 @@ class ChatClient extends EventEmitter {
     _scheduleReconnect() {
         if (this.retryCount >= cfg.RECONNECT_ATTEMPTS) {
             this._emit('status', { status: 'Disconnected', host: this.currentHost, port: this.currentPort });
-            this._emit('message', { type: 'system', text: '❌ Could not reconnect. Server may be down.', ts: Date.now() });
+            this._emit('message', { type: 'system', text: '❌ Could not reconnect. Attempting auto-host failover...', ts: Date.now() });
+            this.emit('server-not-found');
             return;
         }
 
