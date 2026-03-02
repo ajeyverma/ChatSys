@@ -7,3 +7,8 @@
 .idea/
 .DS_Store
 ```
+```ignore
+debug/
+```
+debug_utf8.txt
+debug.txt
