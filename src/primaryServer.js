@@ -59,9 +59,6 @@ class PrimaryServer {
                         this.userMap.set(username, socket);
                         this._log(`${username} joined from ${address}`);
                         this._emit('client-connected', { username, address, count: this.clients.size });
-                        this._broadcast(proto.pack(proto.MSG_SYS, {
-                            text: `${username} has joined the chat.`
-                        }), null);
                         socket.write(proto.pack(proto.MSG_ACK, { ok: true, message: 'Connected to Primary Server' }));
                         this._broadcastClientList();
 

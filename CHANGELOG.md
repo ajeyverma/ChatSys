@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [2.0.1] - 2026-03-03
+
+### Changed
+- **Refined Notifications**: Removed redundant "User Joined/Left" and "Auto-Hosting" system messages from the group chat feed to reduce clutter.
+- **Connection Privacy**: Reconnection attempts and status updates are now strictly confined to the titlebar status pill.
+
 ## [2.0.0] - 2026-03-03
 
 ### Added

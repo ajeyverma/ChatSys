@@ -1,3 +1,15 @@
+# Release Notes v2.0.1 - Notification Refinement
+ 
+This patch focuses on cleaning up the user experience by reducing feed interruptions during routine network events.
+ 
+## What’s New
+ 
+* **Silenced "User Joined/Left" Messages**: The chat feed no longer broadcasts membership changes. The sidebar remains the source of truth for online users.
+* **Hidden Background Logic**: Removed the "Auto-hosting" system bubble. All architectural state changes are now subtly presented via the titlebar status pill.
+* **Feed Stability**: Fixed edge cases where private images or reconnection attempts could inadvertently leak into the group feed.
+ 
+---
+ 
 # Release Notes v2.0.0
 
 ## Major Architectural Upgrade

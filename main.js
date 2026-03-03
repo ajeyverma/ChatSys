@@ -132,12 +132,7 @@ ipcMain.on('client-launch', (event, { username, host, port }) => {
                 webContents: {
                     send: (evt, data) => {
                         if (evt === 'status' && data.status === 'ACTIVE') {
-                            // Notify the client that it has successfully automatically become the host
-                            roleWin.webContents.send('message', {
-                                type: 'system',
-                                text: '🚀 No server detected. Auto-hosting network locally!',
-                                ts: Date.now()
-                            });
+                            // Notify logic removed for UI decluttering
                         }
                     }
                 },
