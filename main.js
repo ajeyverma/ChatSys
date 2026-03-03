@@ -4,11 +4,15 @@
  */
 const { app, BrowserWindow, ipcMain } = require('electron');
 const path = require('path');
+const dgram = require('dgram');
+const cfg = require('./src/config');
+const proto = require('./src/protocol');
 
 let launcherWin = null;
 let roleWin = null;
 let activeServer = null;
 let activeClient = null;
+let discoveryListener = null;
 
 function createLauncher() {
     launcherWin = new BrowserWindow({
@@ -25,6 +29,14 @@ function createLauncher() {
         backgroundColor: '#0f0f1a'
     });
     launcherWin.loadFile(path.join(__dirname, 'renderer', 'launcher.html'));
+
+    // Start listening for UDP discovery broadcasts
+    startDiscoveryListener();
+
+    launcherWin.on('closed', () => {
+        stopDiscoveryListener();
+        launcherWin = null;
+    });
 }
 
 function createRoleWindow(role, width, height) {
@@ -45,49 +57,111 @@ function createRoleWindow(role, width, height) {
     return win;
 }
 
-// ─── IPC: Role Selection ──────────────────────────────────────────────────────
-ipcMain.on('select-role', (event, { role, options }) => {
+// ─── UDP Discovery Listener ───────────────────────────────────────────────────
+function startDiscoveryListener() {
+    if (discoveryListener) return;
+
+    discoveryListener = dgram.createSocket('udp4');
+
+    discoveryListener.on('listening', () => {
+        const address = discoveryListener.address();
+        console.log(`[Main] Listening for server discovery beacons on UDP port ${address.port}`);
+    });
+
+    discoveryListener.on('message', (msg, rinfo) => {
+        try {
+            const data = proto.unpack(msg.toString());
+            if (data && data.type === proto.MSG_DISCOVERY) {
+                if (launcherWin && !launcherWin.isDestroyed()) {
+                    // Send discovered server to launcher UI
+                    launcherWin.webContents.send('server-discovered', {
+                        host: rinfo.address,
+                        port: data.payload.port
+                    });
+                }
+            }
+        } catch (e) {
+            // Ignore malformed packets quietly
+        }
+    });
+
+    discoveryListener.on('error', (err) => {
+        console.log(`[Main] Discovery listener error: ${err.message}`);
+        stopDiscoveryListener();
+    });
+
+    try {
+        discoveryListener.bind(cfg.DISCOVERY_PORT);
+    } catch (e) {
+        console.log(`[Main] Failed to bind discovery listener: ${e.message}`);
+    }
+}
+
+function stopDiscoveryListener() {
+    if (discoveryListener) {
+        try {
+            discoveryListener.close();
+        } catch (e) { }
+        discoveryListener = null;
+    }
+}
+
+// ─── IPC: Auto-Host Launch ──────────────────────────────────────────────────────
+ipcMain.on('client-launch', (event, { username, host, port }) => {
     if (launcherWin) {
         launcherWin.close();
         launcherWin = null;
     }
 
-    if (role === 'primary') {
-        roleWin = createRoleWindow('primary', 1000, 680);
-        roleWin.once('ready-to-show', () => roleWin.show());
-        roleWin.webContents.once('did-finish-load', () => {
+    // Always create a Client window
+    roleWin = createRoleWindow('client', 860, 640);
+    roleWin.once('ready-to-show', () => roleWin.show());
+
+    roleWin.webContents.once('did-finish-load', () => {
+        const ChatClient = require('./src/chatClient');
+        activeClient = new ChatClient(roleWin);
+
+        // Listen for internal event when connection is refused (meaning no server)
+        activeClient.on('server-not-found', () => {
+            console.log(`[Main] No server found at ${host}:${port}. Booting local back-end...`);
+
+            // Start the PrimaryServer headlessly in the background
             const PrimaryServer = require('./src/primaryServer');
-            activeServer = new PrimaryServer(roleWin, options.backupHost || '127.0.0.1');
+            // Provide a dummy window for the UI emitting so it doesn't crash on `_emit`
+            const dummyWin = {
+                webContents: {
+                    send: (evt, data) => {
+                        if (evt === 'status' && data.status === 'ACTIVE') {
+                            // Notify the client that it has successfully automatically become the host
+                            roleWin.webContents.send('message', {
+                                type: 'system',
+                                text: '🚀 No server detected. Auto-hosting network locally!',
+                                ts: Date.now()
+                            });
+                        }
+                    }
+                },
+                isDestroyed: () => false
+            };
+
+            activeServer = new PrimaryServer(dummyWin, '127.0.0.1');
             activeServer.start();
+
+            // Re-attempt client connection after starting local server
+            setTimeout(() => {
+                activeClient.connect(host, parseInt(port), username);
+            }, 500);
         });
 
-    } else if (role === 'backup') {
-        roleWin = createRoleWindow('backup', 900, 620);
-        roleWin.once('ready-to-show', () => roleWin.show());
-        roleWin.webContents.once('did-finish-load', () => {
-            const BackupServer = require('./src/backupServer');
-            activeServer = new BackupServer(roleWin);
-            activeServer.start();
-        });
+        // Trigger immediate connection. ChatClient now handles its own status emitting
+        activeClient.connect(host, parseInt(port), username);
+    });
 
-    } else if (role === 'client') {
-        roleWin = createRoleWindow('client', 860, 640);
-        roleWin.once('ready-to-show', () => roleWin.show());
-        roleWin.webContents.once('did-finish-load', () => {
-            const ChatClient = require('./src/chatClient');
-            activeClient = new ChatClient(roleWin);
-            // Signal renderer to show username dialog
-            roleWin.webContents.send('request-connect-info', {});
-        });
-    }
-
-    if (roleWin) {
-        roleWin.on('closed', () => {
-            if (activeServer) { activeServer.stop(); activeServer = null; }
-            if (activeClient) { activeClient.disconnect(); activeClient = null; }
-            roleWin = null;
-        });
-    }
+    roleWin.on('closed', () => {
+        if (activeServer) { activeServer.stop(); activeServer = null; }
+        if (activeClient) { activeClient.disconnect(); activeClient = null; }
+        roleWin = null;
+    });
 });
 
 // ─── IPC: Client Actions ──────────────────────────────────────────────────────

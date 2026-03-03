@@ -766,7 +766,7 @@
         <!-- Titlebar -->
         <div class="titlebar">
             <div class="titlebar-left">
-                <span class="tb-role-badge">CLIENT</span>
+                <span class="tb-role-badge" id="tb-role-badge">CLIENT</span>
                 <div class="status-pill">
                     <div class="status-dot disconnected" id="status-dot"></div>
                     <span class="status-pill-text" id="status-text">Not connected</span>
@@ -870,6 +870,10 @@
                 const port = document.getElementById('m-port').value.trim() || '65432';
                 if (!username) { document.getElementById('m-username').classList.add('err'); return; }
                 myUsername = username;
+
+                // Update titlebar to show username
+                document.getElementById('tb-role-badge').textContent = username.toUpperCase();
+
                 document.getElementById('modal').style.display = 'none';
                 document.getElementById('welcome').style.display = 'none';
                 api.send('client-connect', { host, port, username });
@@ -1066,8 +1070,8 @@
                     return;
                 }
 
-                // Always add Group Chat and Server to the list of DM targets
-                const allUsers = ['🌐 Group Chat', '🖥️ Server', ...onlineUsers.filter(u => u !== myUsername)];
+                // Always add Group Chat to the list of DM targets
+                const allUsers = ['🌐 Group Chat', ...onlineUsers.filter(u => u !== myUsername)];
 
                 for (const u of allUsers) {
                     const isGroup = u === '🌐 Group Chat';
@@ -1079,7 +1083,6 @@
 
                     const unread = unreadCounts[u] || 0;
                     let avatarChar = escH(u.charAt(0).toUpperCase());
-                    if (u === '🖥️ Server') avatarChar = '🖥️';
                     if (isGroup) avatarChar = '🌐';
 
                     item.innerHTML = `
@@ -1148,6 +1151,14 @@
                 if (!isSelf) appendGroupMsg(msg, false);
             });
 
+            api.on('set-username', (name) => {
+                myUsername = name;
+                document.getElementById('tb-role-badge').textContent = name.toUpperCase();
+                // Hide modal and welcome message if they are visible
+                document.getElementById('modal').style.display = 'none';
+                document.getElementById('welcome').style.display = 'none';
+            });
+
             api.on('status', (data) => setStatus(data.status, data.host, data.port));
 
             api.on('client-list', (data) => {
@@ -1164,7 +1175,6 @@
                 } else if (dm.from !== myUsername) {
                     unreadCounts[threadUser] = (unreadCounts[threadUser] || 0) + 1;
                     renderUserList();
-                    appendGroupMsg({ type: 'system', text: `📨 New private message from ${dm.from}`, ts: Date.now() });
                 }
             });
 
@@ -1181,7 +1191,6 @@
                     else if (!isSelf) {
                         unreadCounts[threadUser] = (unreadCounts[threadUser] || 0) + 1;
                         renderUserList();
-                        appendGroupMsg({ type: 'system', text: `📎 Image from ${img.from} (private)`, ts: img.ts });
                     }
                 } else {
                     // Group image
@@ -1189,9 +1198,6 @@
                     if (!dmTarget) renderImageEl(img, isSelf);
                 }
             });
-
-            api.on('failover', (data) => appendGroupMsg({ type: 'system', text: `⚡ Failover! Switching to ${data.host}:${data.port}`, ts: Date.now() }));
-            api.on('ack', (data) => appendGroupMsg({ type: 'system', text: `✅ ${data.message}`, ts: Date.now() }));
 
             // ─── Input behavior ───────────────────────────────────────────
             const inp = document.getElementById('msg-input');

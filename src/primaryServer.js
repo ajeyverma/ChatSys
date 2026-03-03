@@ -16,9 +16,11 @@ class PrimaryServer {
         this.clients = new Map();       // socket -> { username, address }
         this.userMap = new Map();       // username -> socket  (for DM routing)
         this.tcpServer = null;
-        this.udpSocket = null;
+        this.udpSocket = null; // Used for heartbeat to backup
+        this.discoverySocket = null; // Used for LAN discovery broadcast
         this.heartbeatTimer = null;
         this.stateSyncTimer = null;
+        this.discoveryTimer = null;
         this.running = false;
         this.msgCount = 0;
         this.hbCount = 0;
@@ -28,6 +30,7 @@ class PrimaryServer {
         this._initUDP();               // UDP must be ready before TCP (for recovery broadcast)
         this._startTCPServer();
         this._startStateSync();
+        this._startDiscoveryBeacon();
         this.running = true;
         this._log('Primary Server started on port ' + cfg.PRIMARY_PORT);
         this._emit('status', { status: 'STARTING', port: cfg.PRIMARY_PORT });
@@ -135,9 +138,6 @@ class PrimaryServer {
                     this.userMap.delete(clientInfo.username);
                     this._log(`${clientInfo.username} disconnected.`);
                     this._emit('client-disconnected', { username: clientInfo.username, count: this.clients.size });
-                    this._broadcast(proto.pack(proto.MSG_SYS, {
-                        text: `${clientInfo.username} has left the chat.`
-                    }), null);
                     this._broadcastClientList();
                 }
             });
@@ -149,18 +149,8 @@ class PrimaryServer {
 
         this.tcpServer.on('error', (err) => {
             if (err.code === 'EADDRINUSE') {
-                // Port is held by the promoted backup — signal it to demote
-                this._log(`Port ${cfg.PRIMARY_PORT} is in use (Backup may be active). Sending recovery signal...`);
-                this._emit('status', { status: 'RECOVERING', port: cfg.PRIMARY_PORT });
-                this._broadcastRecovery();
-                // Retry binding after backup has had time to release the port
-                setTimeout(() => {
-                    if (!this.running) return;
-                    this._log(`Retrying bind on port ${cfg.PRIMARY_PORT}...`);
-                    this.tcpServer.close();
-                    this.tcpServer = null;
-                    this._startTCPServer();
-                }, 4000);
+                this._log(`Port ${cfg.PRIMARY_PORT} is in use. Another instance is likely host. Aborting server start...`);
+                this.stop();
             } else {
                 this._log(`Server error: ${err.message}`);
                 this._emit('error', { message: err.message });
@@ -234,6 +224,37 @@ class PrimaryServer {
         const packet = proto.pack(proto.MSG_CLIENT_LIST, { users });
         this._broadcast(packet, null);
         this._emit('client-list', { users });
+    }
+
+    _startDiscoveryBeacon() {
+        if (this.discoverySocket) return; // already running
+
+        this.discoverySocket = dgram.createSocket('udp4');
+        this.discoverySocket.on('error', (err) => {
+            this._log(`Discovery UDP error: ${err.message}`);
+        });
+
+        // Use setTimeout to ensure we bind before setting broadcast
+        this.discoverySocket.bind(() => {
+            this.discoverySocket.setBroadcast(true);
+            this._log(`Discovery beacon active on UDP port ${cfg.DISCOVERY_PORT}`);
+            this.discoveryTimer = setInterval(() => {
+                const packet = proto.pack(proto.MSG_DISCOVERY, {
+                    host: this._getLocalIP(),
+                    port: cfg.PRIMARY_PORT
+                });
+
+                // Broadcast to 255.255.255.255
+                this.discoverySocket.send(packet, 0, packet.length, cfg.DISCOVERY_PORT, '255.255.255.255', (err) => {
+                    if (err) {
+                        // Suppress logs for common EPERM or network unreachable errors during broadcast to avoid spam
+                        if (err.code !== 'EPERM' && err.code !== 'ENETUNREACH') {
+                            this._log(`Discovery broadcast error: ${err.message}`);
+                        }
+                    }
+                });
+            }, cfg.DISCOVERY_INTERVAL);
+        });
     }
 
     _broadcast(packet, excludeSocket) {
@@ -318,10 +339,21 @@ class PrimaryServer {
         this.running = false;
         clearInterval(this.heartbeatTimer);
         clearInterval(this.stateSyncTimer);
-        if (this.udpSocket) this.udpSocket.close();
-        if (this.tcpServer) this.tcpServer.close();
+        clearInterval(this.discoveryTimer);
+        if (this.udpSocket) {
+            try { this.udpSocket.close(); } catch (e) { }
+            this.udpSocket = null;
+        }
+        if (this.discoverySocket) {
+            try { this.discoverySocket.close(); } catch (e) { }
+            this.discoverySocket = null;
+        }
+        if (this.tcpServer) {
+            try { this.tcpServer.close(); } catch (e) { }
+            this.tcpServer = null;
+        }
         for (const [sock] of this.clients) {
-            sock.destroy();
+            try { sock.destroy(); } catch (e) { }
         }
         this.clients.clear();
         this._log('Primary Server stopped.');
