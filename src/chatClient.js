@@ -3,11 +3,13 @@
  * Handles automatic failover reconnection via MSG_ANNOUNCE_PRIMARY.
  */
 const net = require('net');
+const EventEmitter = require('events');
 const cfg = require('./config');
 const proto = require('./protocol');
 
-class ChatClient {
+class ChatClient extends EventEmitter {
     constructor(mainWindow) {
+        super();
         this.win = mainWindow;
         this.socket = null;
         this.username = '';
@@ -21,10 +23,14 @@ class ChatClient {
     }
 
     connect(host, port, username) {
+        if (this.reconnectTimer) clearTimeout(this.reconnectTimer);
         this.currentHost = host;
         this.currentPort = port;
         this.username = username;
         this.retryCount = 0;
+        this.reconnecting = false;
+        this.redirecting = false;
+        this._emit('set-username', username);
         this._doConnect();
     }
 
@@ -74,7 +80,12 @@ class ChatClient {
 
         this.socket.on('error', (err) => {
             this._log(`Connection error: ${err.message}`);
-            if (!this.reconnecting && !this.redirecting) this._scheduleReconnect();
+            if (err.code === 'ECONNREFUSED' && this.retryCount === 0 && !this.redirecting) {
+                // First attempt failed — tell main.js to boot auto-host server
+                this.emit('server-not-found');
+            } else if (!this.reconnecting && !this.redirecting) {
+                this._scheduleReconnect();
+            }
         });
     }
 
@@ -115,11 +126,6 @@ class ChatClient {
                 }
                 this._log(`New Primary announced: ${newHost}:${newPort}. Redirecting...`);
                 this._emit('failover', { host: newHost, port: newPort });
-                this._emit('message', {
-                    type: 'system',
-                    text: `⚡ Server failover! Reconnecting to new primary at ${newHost}:${newPort}...`,
-                    ts: Date.now()
-                });
                 this.currentHost = newHost;
                 this.currentPort = newPort;
                 this.retryCount = 0;
@@ -164,7 +170,7 @@ class ChatClient {
     _scheduleReconnect() {
         if (this.retryCount >= cfg.RECONNECT_ATTEMPTS) {
             this._emit('status', { status: 'Disconnected', host: this.currentHost, port: this.currentPort });
-            this._emit('message', { type: 'system', text: '❌ Could not reconnect. Server may be down.', ts: Date.now() });
+            this.emit('server-not-found');
             return;
         }
 
@@ -172,13 +178,9 @@ class ChatClient {
         this.retryCount++;
         const delay = cfg.RECONNECT_DELAY * this.retryCount;
         this._emit('status', { status: `Reconnecting (${this.retryCount}/${cfg.RECONNECT_ATTEMPTS})...`, host: this.currentHost, port: this.currentPort });
-        this._emit('message', {
-            type: 'system',
-            text: `🔄 Reconnecting... attempt ${this.retryCount}/${cfg.RECONNECT_ATTEMPTS}`,
-            ts: Date.now()
-        });
 
-        setTimeout(() => {
+        if (this.reconnectTimer) clearTimeout(this.reconnectTimer);
+        this.reconnectTimer = setTimeout(() => {
             this.reconnecting = false;
             this._doConnect();
         }, delay);
@@ -202,6 +204,7 @@ class ChatClient {
     }
 
     disconnect() {
+        if (this.reconnectTimer) clearTimeout(this.reconnectTimer);
         this.reconnecting = true; // prevent auto-reconnect
         if (this.socket) {
             this.socket.removeAllListeners();
