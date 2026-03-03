@@ -1,11 +1,20 @@
 [Setup]
-AppName=ChatSys (64-bit)
+AppName=ChatSys
 AppVersion=1.0.0
-DefaultDirName={autopf}\ChatSys
+AppVerName=ChatSys 1.0.0
+AppPublisher=ChatSys Team
+AppPublisherURL=https://github.com/AjayVerma/ChatSys
+DefaultDirName={pf}\ChatSys
 DefaultGroupName=ChatSys
-OutputBaseFilename=ChatSys_x64_Setup
+DisableProgramGroupPage=yes
+OutputBaseFilename=ChatSys-x64-v1.0.0
+DisableWelcomePage=yes
+WizardStyle=modern
+CloseApplications=yes
+AppMutex=ChatSysAppMutex
 PrivilegesRequired=lowest
-OutputDir=..\..\dist\windows\x64
+LicenseFile=LICENSE.txt
+OutputDir=..\Output\windows\x64
 Compression=lzma2/ultra64
 SolidCompression=yes
 ArchitecturesAllowed=x64
