@@ -1,35 +1,70 @@
-# ChatSys v1.0.0 Release Notes
+# Release Notes v2.0.0
 
-Welcome to the initial release of **ChatSys (v1.0.0)**! 🎉
+## Major Architectural Upgrade
 
-ChatSys is a fault-tolerant, GUI-based LAN communication system designed for resilient, offline-ready local network messaging. It features automatic failover capabilities, ensuring that your team's communication remains uninterrupted even if the primary host goes down.
+ChatSys v2.0.0 introduces a significant architectural redesign, transforming the application from a traditional client-server model into a unified, self-managing LAN communication system.
 
-## ✨ Key Features
+This release removes the dependency on a dedicated server and introduces automatic discovery and failover capabilities to improve reliability and usability.
 
-### Robust Server Architecture
-* **Primary & Backup Server Modes:** Deploy a Primary Server to host the chat, and a Backup Server that automatically promotes itself and takes over if the primary fails.
-* **Automatic Failover:** Clients transparently reconnect to the backup server with zero data loss during a primary server outage.
-* **Network Status Heartbeats:** Built-in health checks monitor connection integrity in real-time.
+---
 
-### Messaging & Collaboration
-* **Group & Private Chatting:** Communicate with everyone on the network simultaneously, or click on a user's name to drop into a secure, private DM thread pane.
-* **Image Sharing:** Easily send and receive image attachments in both group chats and direct messages.
-* **Inline Image Lightbox:** Click on any image to zoom in, view details, download, or reply directly to the attachment.
-* **Real-time Unread Badges:** Keep track of missed direct messages with dynamic notification dots in the sidebar.
+## What’s Changed
 
-### Premium User Interface
-* **Sleek Dark Mode:** A polished, modern interface optimized for developer workflows, built with a deep-purple and neon accent color palette.
-* **Window Controls:** Native-feeling maximize, minimize, and close titlebar controls that blend seamlessly into the application aesthetic.
-* **Responsive Layout:** Dynamic UI elements that gracefully resize and pin to the bottom so your messages are always in view.
+* Implemented integrated chat client UI
+* Added automatic LAN peer discovery (UDP-based)
+* Introduced automatic primary server assignment
+* Eliminated the need for a separate server application
+* Unified client and server into a single executable
 
-## 🛠️ Installation
+Full Changelog:
+[https://github.com/ajeyverma/ChatSys/compare/v1.0.0...v2.0.0](https://github.com/ajeyverma/ChatSys/compare/v1.0.0...v2.0.0)
 
-1. Download the latest `ChatSys Setup 1.0.0.exe`
-2. Run the installer to unpack the application to your Windows machine.
-3. Open **ChatSys** from your Start Menu.
-4. Choose your role: **Primary Server**, **Backup Server**, or **Client** to begin communicating over your LAN!
+---
 
-## 🐛 Known Issues & Limitations
-* Currently restricted to IPv4 LAN networks. 
-* Direct peer-to-peer file sharing (outside of images) is planned for a future update.
+## Key Enhancements
 
+### Unified Client–Server Architecture
+
+Each ChatSys instance can dynamically operate as a Primary Server, Backup Node, or Client. No manual server setup is required.
+
+### Automatic Failover
+
+If the active Primary Server goes offline, remaining nodes automatically coordinate and promote a new Primary, ensuring continuous availability within the LAN.
+
+### Zero-Configuration LAN Discovery
+
+Built-in UDP-based discovery automatically detects peers and active servers on the local network. Manual IP configuration is no longer necessary.
+
+### Windows Installer Support
+
+* Dedicated Windows installer packages
+* ARM64 support for modern Windows devices
+* x86 build for standard systems
+* Installer built using Inno Setup
+
+---
+
+## Technical Improvements
+
+* Centralized protocol handling for improved stability
+* Dynamic runtime role switching
+* Refactored networking layer
+* Improved connection handling and synchronization
+* Updated project documentation in `/docs`
+
+---
+
+## Breaking Changes
+
+* The legacy v1.x separate client/server architecture is deprecated
+* v1.x nodes are not compatible with v2.0.0
+
+---
+
+## Contributors
+
+This release was built and engineered by:
+
+**@ajeyverma**  
+Founder & Lead Developer  
+Architect of the new self-managing LAN communication system powering ChatSys v2.0.0

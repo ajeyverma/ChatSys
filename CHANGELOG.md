@@ -5,18 +5,44 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+---
+
+## [2.0.0] - 2026-03-03
+
+### Added
+- **Architectural Overhaul**: Combined Client and Server into a single unified application. Each node can operate as both client and server.
+- **Failover Logic**: Automatic Primary Server promotion and election mechanism within the LAN.
+- **LAN Auto-Discovery**: Integrated UDP discovery allowing clients to automatically detect active servers.
+- **Inno Setup Installers**: Installers for x86, x64, and ARM64 Windows architectures.
+- **Documentation**: Added `ARCHITECTURE.md` and `DEPLOYMENT.md` to the `docs` folder.
+
+### Changed
+- Refactored core networking into `src/protocol.js` and `src/chatClient.js`.
+- Moved server logic to `src/primaryServer.js`.
+- Simplified `main.js` to manage the unified application lifecycle.
+
+### Removed
+- Removed the requirement for a standalone server-only process.
+
+---
+
 ## [1.0.0] - 2026-03-02
 
 ### Added
-- **Primary Server Mode:** Ability to host the LAN chat and manage initial client connections.
-- **Backup Server Mode:** Auto-promotes to primary server upon detecting failover, ensuring continuous uptime.
-- **Client Application:** Lightweight client interface linking automatically to whatever server is currently active on the LAN.
-- **Automatic Failover:** Heartbeat detection gracefully migrates all connected clients to the Backup Server if the Primary Server crashes.
-- **Group Chat:** Global chat room for all connected users to broadcast messages.
-- **Direct Messaging (DMs):** Private 1-on-1 conversations between connected clients without cluttering the global feed.
-- **Image Sharing:** Send, view, and reply to image attachments inline with text chats.
-- **Image Lightbox:** Zoom, download, and reply to images through a dedicated pop-up modal.
-- **Unread Message Badges:** Visual indicators on the sidebar tracking missed direct messages.
-- **Server DM'ing:** The server has a dedicated chat console that allows the administrator to send and receive direct messages.
-- **Custom UI:** Dark mode developer-friendly interface featuring dynamic window resizing, flex-box layout, and VS Code-inspired titlebar controls.
-- **Windows Installer:** Automated `.exe` release built using `electron-builder`.
+- **Primary Server Mode**: Host LAN chat and manage client connections.
+- **Backup Server Mode**: Automatic promotion upon primary failure detection.
+- **Client Application**: Interface that connects to the active LAN server.
+- **Automatic Failover**: Heartbeat-based client migration mechanism.
+- **Group Chat** functionality.
+- **Direct Messaging (DMs)** for private conversations.
+- **Image Sharing** with inline preview support.
+- **Image Lightbox** modal for zoom and download.
+- **Unread Message Badges** in the sidebar.
+- **Server Direct Messaging Console**.
+- **Custom Dark UI** with responsive layout.
+- **Windows Installer** built using `electron-builder`.
+
+---
+
+[2.0.0]: https://github.com/ajeyverma/ChatSys/compare/v1.0.0...v2.0.0  
+[1.0.0]: https://github.com/ajeyverma/ChatSys/releases/tag/v1.0.0
