@@ -11,7 +11,8 @@ const TYPES = {
     MSG_SYS: 'SYS',
     MSG_JOIN: 'JOIN',
     MSG_LEAVE: 'LEAVE',
-    MSG_ACK: 'ACK'
+    MSG_ACK: 'ACK',
+    MSG_DISCOVERY: 'DISCOVERY'
 };
 
 /**

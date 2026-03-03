@@ -41,6 +41,7 @@
       font-size: 12px;
       color: #6b7280;
       font-weight: 500;
+      padding: 10px 0 10px 0;
     }
 
     .titlebar-btns {
@@ -85,15 +86,16 @@
     .main {
       flex: 1;
       display: flex;
-      flex-direction: column;
+      flex-direction: row;
       align-items: center;
       justify-content: center;
-      padding: 32px;
-      gap: 36px;
+      padding: 32px 48px;
+      gap: 40px;
     }
 
     .logo-area {
-      text-align: center;
+      flex: 1;
+      text-align: left;
     }
 
     .logo-icon {
@@ -105,7 +107,7 @@
       align-items: center;
       justify-content: center;
       font-size: 30px;
-      margin: 0 auto 16px;
+      margin: 0 0 16px 0;
       box-shadow: 0 8px 32px rgba(99, 102, 241, .35);
     }
 
@@ -130,7 +132,7 @@
       border-radius: 14px;
       padding: 24px 28px;
       width: 100%;
-      max-width: 360px;
+      max-width: 320px;
       animation: fadeIn .4s ease;
     }
 
@@ -259,6 +261,10 @@
       <div style="font-size: 10px; color: #475569; text-align: center; margin-top: 16px; font-style: italic;">
         If a server does not exist at this address, ChatSys will automatically boot a Primary Server in the background.
       </div>
+      <div id="discovery-msg"
+        style="font-size: 11px; color: #10b981; text-align: center; margin-top: 10px; font-weight: 500; display: none; animation: fadeIn .3s ease;">
+        <!-- Discovered server message goes here -->
+      </div>
     </div>
   </div>
 
@@ -279,6 +285,25 @@
     // Launch on Enter key
     document.addEventListener('keydown', e => {
       if (e.key === 'Enter') launch();
+    });
+
+    // Handle incoming discovered server
+    api.receive('server-discovered', (data) => {
+      if (!data || !data.host) return;
+
+      const hostInput = document.getElementById('serverHost');
+      const portInput = document.getElementById('serverPort');
+      const msgDiv = document.getElementById('discovery-msg');
+
+      hostInput.value = data.host;
+      portInput.value = data.port || '65432';
+
+      msgDiv.innerHTML = `🎯 Discovered server at ${data.host}:${data.port || 65432}`;
+      msgDiv.style.display = 'block';
+
+      // Slight highlight effect to draw attention
+      hostInput.style.borderColor = '#10b981';
+      setTimeout(() => hostInput.style.borderColor = '#2d2d4e', 1500);
     });
   </script>
 </body>

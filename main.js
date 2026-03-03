@@ -4,11 +4,15 @@
  */
 const { app, BrowserWindow, ipcMain } = require('electron');
 const path = require('path');
+const dgram = require('dgram');
+const cfg = require('./src/config');
+const proto = require('./src/protocol');
 
 let launcherWin = null;
 let roleWin = null;
 let activeServer = null;
 let activeClient = null;
+let discoveryListener = null;
 
 function createLauncher() {
     launcherWin = new BrowserWindow({
@@ -25,6 +29,14 @@ function createLauncher() {
         backgroundColor: '#0f0f1a'
     });
     launcherWin.loadFile(path.join(__dirname, 'renderer', 'launcher.html'));
+
+    // Start listening for UDP discovery broadcasts
+    startDiscoveryListener();
+
+    launcherWin.on('closed', () => {
+        stopDiscoveryListener();
+        launcherWin = null;
+    });
 }
 
 function createRoleWindow(role, width, height) {
@@ -43,6 +55,55 @@ function createRoleWindow(role, width, height) {
     });
     win.loadFile(path.join(__dirname, 'renderer', `${role}.html`));
     return win;
+}
+
+// ─── UDP Discovery Listener ───────────────────────────────────────────────────
+function startDiscoveryListener() {
+    if (discoveryListener) return;
+
+    discoveryListener = dgram.createSocket('udp4');
+
+    discoveryListener.on('listening', () => {
+        const address = discoveryListener.address();
+        console.log(`[Main] Listening for server discovery beacons on UDP port ${address.port}`);
+    });
+
+    discoveryListener.on('message', (msg, rinfo) => {
+        try {
+            const data = proto.unpack(msg.toString());
+            if (data && data.type === proto.MSG_DISCOVERY) {
+                if (launcherWin && !launcherWin.isDestroyed()) {
+                    // Send discovered server to launcher UI
+                    launcherWin.webContents.send('server-discovered', {
+                        host: rinfo.address,
+                        port: data.payload.port
+                    });
+                }
+            }
+        } catch (e) {
+            // Ignore malformed packets quietly
+        }
+    });
+
+    discoveryListener.on('error', (err) => {
+        console.log(`[Main] Discovery listener error: ${err.message}`);
+        stopDiscoveryListener();
+    });
+
+    try {
+        discoveryListener.bind(cfg.DISCOVERY_PORT);
+    } catch (e) {
+        console.log(`[Main] Failed to bind discovery listener: ${e.message}`);
+    }
+}
+
+function stopDiscoveryListener() {
+    if (discoveryListener) {
+        try {
+            discoveryListener.close();
+        } catch (e) { }
+        discoveryListener = null;
+    }
 }
 
 // ─── IPC: Auto-Host Launch ──────────────────────────────────────────────────────

@@ -16,9 +16,11 @@ class PrimaryServer {
         this.clients = new Map();       // socket -> { username, address }
         this.userMap = new Map();       // username -> socket  (for DM routing)
         this.tcpServer = null;
-        this.udpSocket = null;
+        this.udpSocket = null; // Used for heartbeat to backup
+        this.discoverySocket = null; // Used for LAN discovery broadcast
         this.heartbeatTimer = null;
         this.stateSyncTimer = null;
+        this.discoveryTimer = null;
         this.running = false;
         this.msgCount = 0;
         this.hbCount = 0;
@@ -28,6 +30,7 @@ class PrimaryServer {
         this._initUDP();               // UDP must be ready before TCP (for recovery broadcast)
         this._startTCPServer();
         this._startStateSync();
+        this._startDiscoveryBeacon();
         this.running = true;
         this._log('Primary Server started on port ' + cfg.PRIMARY_PORT);
         this._emit('status', { status: 'STARTING', port: cfg.PRIMARY_PORT });
@@ -223,6 +226,37 @@ class PrimaryServer {
         this._emit('client-list', { users });
     }
 
+    _startDiscoveryBeacon() {
+        if (this.discoverySocket) return; // already running
+
+        this.discoverySocket = dgram.createSocket('udp4');
+        this.discoverySocket.on('error', (err) => {
+            this._log(`Discovery UDP error: ${err.message}`);
+        });
+
+        // Use setTimeout to ensure we bind before setting broadcast
+        this.discoverySocket.bind(() => {
+            this.discoverySocket.setBroadcast(true);
+            this._log(`Discovery beacon active on UDP port ${cfg.DISCOVERY_PORT}`);
+            this.discoveryTimer = setInterval(() => {
+                const packet = proto.pack(proto.MSG_DISCOVERY, {
+                    host: this._getLocalIP(),
+                    port: cfg.PRIMARY_PORT
+                });
+
+                // Broadcast to 255.255.255.255
+                this.discoverySocket.send(packet, 0, packet.length, cfg.DISCOVERY_PORT, '255.255.255.255', (err) => {
+                    if (err) {
+                        // Suppress logs for common EPERM or network unreachable errors during broadcast to avoid spam
+                        if (err.code !== 'EPERM' && err.code !== 'ENETUNREACH') {
+                            this._log(`Discovery broadcast error: ${err.message}`);
+                        }
+                    }
+                });
+            }, cfg.DISCOVERY_INTERVAL);
+        });
+    }
+
     _broadcast(packet, excludeSocket) {
         for (const [sock] of this.clients) {
             if (sock !== excludeSocket && !sock.destroyed) {
@@ -305,9 +339,14 @@ class PrimaryServer {
         this.running = false;
         clearInterval(this.heartbeatTimer);
         clearInterval(this.stateSyncTimer);
+        clearInterval(this.discoveryTimer);
         if (this.udpSocket) {
             try { this.udpSocket.close(); } catch (e) { }
             this.udpSocket = null;
+        }
+        if (this.discoverySocket) {
+            try { this.discoverySocket.close(); } catch (e) { }
+            this.discoverySocket = null;
         }
         if (this.tcpServer) {
             try { this.tcpServer.close(); } catch (e) { }
