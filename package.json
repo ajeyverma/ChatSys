@@ -5,7 +5,9 @@
   "main": "main.js",
   "scripts": {
     "start": "electron .",
-    "build": "electron-builder"
+    "build:x64": "electron-builder --win --x64 --dir",
+    "build:x86": "electron-builder --win --ia32 --dir",
+    "build:arm64": "electron-builder --win --arm64 --dir"
   },
   "devDependencies": {
     "electron": "^29.0.0",
@@ -22,5 +24,8 @@
     }
   },
   "author": "",
-  "license": "MIT"
+  "license": "MIT",
+  "dependencies": {
+    "png-to-ico": "^3.0.1"
+  }
 }
