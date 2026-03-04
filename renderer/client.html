@@ -1071,7 +1071,10 @@
                 }
 
                 // Always add Group Chat to the list of DM targets
-                const allUsers = ['🌐 Group Chat', ...onlineUsers.filter(u => u !== myUsername)];
+                const allUsers = [
+                    '🌐 Group Chat', 
+                    ...onlineUsers.filter(u => u !== myUsername && u !== '🖥️ Server')
+                ];
 
                 for (const u of allUsers) {
                     const isGroup = u === '🌐 Group Chat';

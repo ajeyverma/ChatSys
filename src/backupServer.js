@@ -9,6 +9,7 @@ const net = require('net');
 const dgram = require('dgram');
 const cfg = require('./config');
 const proto = require('./protocol');
+const cryptoEngine = require('./crypto_engine');
 
 class BackupServer {
     constructor(mainWindow) {
@@ -22,6 +23,8 @@ class BackupServer {
         this.knownClients = [];
         this.primaryHost = null;
         this.primaryPort = cfg.PRIMARY_PORT;
+        this.groupKey = null;
+        this.userKeys = new Map(); // username -> publicKey for DMs
         this.clients = new Map();
         this.userMap = new Map();  // username -> socket for DM routing
     }
@@ -59,6 +62,15 @@ class BackupServer {
                     this.knownClients = packet.payload.clients || [];
                     this.primaryHost = packet.payload.primaryHost;
                     this.primaryPort = packet.payload.primaryPort;
+                    // Sync encryption state
+                    if (packet.payload.groupKey) {
+                        this.groupKey = Buffer.from(packet.payload.groupKey, 'base64');
+                    }
+                    for (const client of this.knownClients) {
+                        if (client.username && client.publicKey) {
+                            this.userKeys.set(client.username, client.publicKey);
+                        }
+                    }
                     this._emit('state-sync', { clientCount: this.knownClients.length });
 
                 } else if (packet.type === proto.MSG_PRIMARY_RECOVERED) {
@@ -201,32 +213,60 @@ class BackupServer {
 
                     if (msg.type === proto.MSG_JOIN) {
                         const username = (msg.payload.username || 'Unknown').substring(0, cfg.MAX_USERNAME_LEN);
-                        clientInfo = { username, address: socket.remoteAddress };
+                        const publicKey = msg.payload.publicKey;
+                        clientInfo = { username, address: socket.remoteAddress, publicKey };
                         this.clients.set(socket, clientInfo);
                         this.userMap.set(username, socket);
+                        this.userKeys.set(username, publicKey);
+
                         this._log(`[PROMOTED] ${username} reconnected.`);
-                        this._emit('client-connected', { username, count: this.clients.size });
-                        socket.write(proto.pack(proto.MSG_ACK, { ok: true, message: 'Connected to Promoted Backup (now Primary)' }));
+                        this._emit('client-connected', { username: username, count: this.clients.size });
+
+                        // Encrypt group key for re-joining member
+                        if (this.groupKey && publicKey) {
+                            const encryptedGroupKey = cryptoEngine.encryptRSA(this.groupKey, publicKey);
+                            socket.write(proto.pack(proto.MSG_ACK, {
+                                ok: true,
+                                message: 'Reconnected to Promoted Backup',
+                                groupKey: encryptedGroupKey
+                            }));
+                        } else {
+                            socket.write(proto.pack(proto.MSG_ACK, { ok: true, message: 'Connected (no matching group key)' }));
+                        }
+
                         this._broadcastClientList();
 
                     } else if (msg.type === proto.MSG_CHAT) {
                         const sender = clientInfo ? clientInfo.username : 'Unknown';
-                        const packet = proto.pack(proto.MSG_CHAT, { from: sender, text: msg.payload.text, ts: Date.now() });
+                        const packet = proto.pack(proto.MSG_CHAT, {
+                            ...msg.payload,
+                            from: sender,
+                            ts: Date.now()
+                        });
                         this._broadcast(packet, socket);
-                        this._log(`[MSG] ${sender}: ${msg.payload.text}`);
-                        this._emit('message-relayed', { from: sender, text: msg.payload.text });
+                        this._log(`[MSG] ${sender}: ${msg.payload.encrypted ? '[Encrypted]' : msg.payload.text}`);
+                        this._emit('message-relayed', { from: sender });
 
                     } else if (msg.type === proto.MSG_IMAGE) {
                         const sender = clientInfo ? clientInfo.username : 'Unknown';
                         const { to, data, filename, mimeType } = msg.payload;
                         const imgPacket = proto.pack(proto.MSG_IMAGE, {
-                            from: sender, to: to || null, data, filename, mimeType, ts: Date.now()
+                            ...msg.payload,
+                            from: sender,
+                            ts: Date.now()
                         });
                         if (to) {
                             if (to === '🖥️ Server') {
+                                let decryptedData = data;
+                                if (msg.payload.encrypted) {
+                                    try {
+                                        const sessionKey = cryptoEngine.decryptRSA(msg.payload.encryptedKey, this.privateKey);
+                                        decryptedData = cryptoEngine.decryptAES(data, sessionKey, msg.payload.iv, msg.payload.tag);
+                                    } catch (e) { decryptedData = null; }
+                                }
                                 if (!socket.destroyed) socket.write(imgPacket);
                                 this._log(`[IMG-DM] ${sender} → Server: ${filename}`);
-                                this._emit('image', { from: sender, to: '🖥️ Server', imgData: data, filename, ts: Date.now() });
+                                this._emit('image', { from: sender, to: '🖥️ Server', imgData: decryptedData, filename, ts: Date.now() });
                             } else {
                                 const recipientSock = this.userMap.get(to);
                                 if (recipientSock && !recipientSock.destroyed) recipientSock.write(imgPacket);
@@ -244,14 +284,22 @@ class BackupServer {
                         const sender = clientInfo ? clientInfo.username : 'Unknown';
                         const toUser = msg.payload.to;
                         const dmPacket = proto.pack(proto.MSG_DM, {
-                            from: sender, to: toUser,
-                            text: msg.payload.text, ts: Date.now()
+                            ...msg.payload,
+                            from: sender,
+                            ts: Date.now()
                         });
 
                         if (toUser === '🖥️ Server') {
+                            let decryptedText = msg.payload.text;
+                            if (msg.payload.encrypted) {
+                                try {
+                                    const sessionKey = cryptoEngine.decryptRSA(msg.payload.encryptedKey, this.privateKey);
+                                    decryptedText = cryptoEngine.decryptAES(msg.payload.text, sessionKey, msg.payload.iv, msg.payload.tag);
+                                } catch (e) { decryptedText = '[Decryption Failed]'; }
+                            }
                             if (!socket.destroyed) socket.write(dmPacket);
-                            this._log(`[DM] ${sender} → Server: ${msg.payload.text}`);
-                            this._emit('dm-message', { from: sender, to: toUser, text: msg.payload.text, ts: Date.now() });
+                            this._log(`[DM] ${sender} → Server: ${decryptedText}`);
+                            this._emit('dm-message', { from: sender, to: toUser, text: decryptedText, ts: Date.now() });
                         } else {
                             const recipientSock = this.userMap.get(toUser);
                             if (recipientSock && !recipientSock.destroyed) recipientSock.write(dmPacket);
@@ -289,8 +337,12 @@ class BackupServer {
 
     _broadcastClientList() {
         const users = [];
-        for (const [, info] of this.clients) users.push(info.username);
-        const packet = proto.pack(proto.MSG_CLIENT_LIST, { users });
+        const keys = {};
+        for (const [, info] of this.clients) {
+            users.push(info.username);
+            keys[info.username] = info.publicKey;
+        }
+        const packet = proto.pack(proto.MSG_CLIENT_LIST, { users, keys });
         this._broadcast(packet, null);
     }
 

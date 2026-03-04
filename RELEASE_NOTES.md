@@ -80,3 +80,75 @@ This release was built and engineered by:
 **@ajeyverma**  
 Founder & Lead Developer  
 Architect of the new self-managing LAN communication system powering ChatSys v2.0.0
+
+# Release Notes v1.0.0 
+
+## Initial Release – Fault-Tolerant LAN Messaging System
+
+ChatSys v1.0.0 introduces a resilient LAN-based communication platform designed for offline-ready local network messaging.
+
+This version establishes the foundation of a fault-tolerant client–server architecture with automatic failover capabilities and a modern desktop user interface.
+
+---
+
+## What’s Included
+
+### Primary–Backup Server Architecture
+
+* Dedicated **Primary Server Mode** to host and manage LAN communication.
+* **Backup Server Mode** capable of automatic promotion upon primary server failure.
+* Heartbeat-based health monitoring between nodes.
+
+### Automatic Failover
+
+* Clients automatically reconnect to the promoted backup server.
+* Designed to minimize disruption during primary server outages.
+
+### Messaging Capabilities
+
+* **Group Chat** for LAN-wide communication.
+* **Direct Messaging (DMs)** for private 1-to-1 conversations.
+* **Image Sharing** with inline previews.
+* **Image Lightbox Modal** for zoom, download, and quick reply.
+* **Unread Message Indicators** for direct message tracking.
+* **Server Direct Messaging Console** for administrative communication.
+
+### User Interface
+
+* Custom dark-themed desktop interface.
+* Dynamic window resizing and responsive layout.
+* Native-style window controls (minimize, maximize, close).
+* Developer-oriented aesthetic.
+
+---
+
+## Technical Overview
+
+* Electron-based desktop application.
+* Separate client and server runtime processes.
+* Heartbeat-based failover detection.
+* LAN IPv4 communication support.
+
+---
+
+## Known Limitations
+
+* IPv4 LAN networks only.
+* No external WAN support.
+* File sharing limited to images.
+* Separate server process required.
+
+---
+
+## Contributors
+
+This release was built and engineered by:
+
+**@ajeyverma**  
+Founder & Lead Developer  
+Architect of the original fault-tolerant LAN communication system powering ChatSys v1.0.0
+
+
+
+
+
