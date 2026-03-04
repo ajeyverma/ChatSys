@@ -1,3 +1,17 @@
+# Release Notes v2.2.0
+ 
+This release introduces a major UI overhaul with a comprehensive **Theming System**. Users can now select and persist their visual preference between Dark, Light, and System themes for a personalized experience.
+ 
+## What’s New
+ 
+* **Dynamic Theme Selection**: Choose between Dark, Light, and System modes. 
+* **Global CSS Tokens**: Unified styling across Launcher, Client, and Server consoles.
+* **Theme Persistence**: Settings are saved locally and persist across application restarts.
+* **System Sync**: The Default theme automatically mirrors your OS (Windows/macOS) preferences.
+* **Enhanced Visuals**: Migrated all legacy colors to dynamic CSS variables for 100% theme support.
+ 
+---
+ 
 # Release Notes v2.1.3
  
 Description of what is new in this version.

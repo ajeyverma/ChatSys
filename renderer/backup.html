@@ -4,6 +4,8 @@
 <head>
     <meta charset="UTF-8" />
     <title>ChatSys — Backup Server</title>
+    <link rel="stylesheet" href="themes.css" />
+    <script src="theme_manager.js"></script>
     <style>
         * {
             margin: 0;
@@ -13,8 +15,8 @@
 
         body {
             font-family: 'Inter', sans-serif;
-            background: #0b0b18;
-            color: #e2e8f0;
+            background: var(--bg-main);
+            color: var(--text-main);
             height: 100vh;
             display: flex;
             flex-direction: column;
@@ -24,14 +26,14 @@
 
         .titlebar {
             height: 42px;
-            background: #07070f;
+            background: var(--bg-titlebar);
             display: flex;
             align-items: center;
             justify-content: space-between;
             padding-left: 16px;
             padding-right: 0;
             -webkit-app-region: drag;
-            border-bottom: 1px solid #1a1a30;
+            border-bottom: 1px solid var(--border);
             flex-shrink: 0;
         }
 
@@ -53,7 +55,7 @@
 
         .titlebar-title {
             font-size: 12px;
-            color: #475569;
+            color: var(--text-dim);
         }
 
         .titlebar-btns {
@@ -75,15 +77,19 @@
         .win-btn svg {
             width: 10px;
             height: 10px;
-            fill: #94a3b8;
+            fill: var(--text-muted);
         }
 
         .win-btn:hover {
             background: rgba(255, 255, 255, 0.1);
         }
 
+        [data-theme="light"] .win-btn:hover {
+            background: rgba(0, 0, 0, 0.05);
+        }
+
         .win-btn:hover svg {
-            fill: #e2e8f0;
+            fill: var(--text-main);
         }
 
         .win-btn.win-close:hover {
@@ -103,8 +109,8 @@
 
         /* Sidebar */
         .sidebar {
-            background: #0d0d1f;
-            border-right: 1px solid #1a1a30;
+            background: var(--bg-sidebar);
+            border-right: 1px solid var(--border);
             display: flex;
             flex-direction: column;
             gap: 0;
@@ -129,7 +135,7 @@
             align-items: center;
             justify-content: center;
             flex-direction: column;
-            border: 3px solid #1e1e3a;
+            border: 3px solid var(--border);
             position: relative;
             transition: all .5s ease;
         }
@@ -185,14 +191,14 @@
 
         .ring-sub {
             font-size: 10px;
-            color: #64748b;
+            color: var(--text-muted);
             margin-top: 2px;
         }
 
         /* Heartbeat monitor */
         .section {
-            background: #111128;
-            border: 1px solid #1e1e3a;
+            background: var(--bg-panel);
+            border: 1px solid var(--border);
             border-radius: 12px;
             padding: 14px;
             margin-bottom: 12px;
@@ -200,7 +206,7 @@
 
         .section-lbl {
             font-size: 10px;
-            color: #64748b;
+            color: var(--text-muted);
             font-weight: 600;
             text-transform: uppercase;
             letter-spacing: .7px;
@@ -218,7 +224,7 @@
         .hb-bar {
             width: 10px;
             border-radius: 3px 3px 0 0;
-            background: #1e1e3a;
+            background: var(--border);
             transition: height .3s ease, background .3s ease;
         }
 
@@ -235,18 +241,18 @@
 
         .info-label {
             font-size: 11px;
-            color: #64748b;
+            color: var(--text-muted);
         }
 
         .info-val {
             font-size: 11px;
             font-weight: 600;
-            color: #e2e8f0;
+            color: var(--text-main);
         }
 
         .countdown-bar-wrap {
             height: 4px;
-            background: #1a1a30;
+            background: var(--bg-main);
             border-radius: 2px;
             overflow: hidden;
             margin-top: 8px;
@@ -279,8 +285,9 @@
             gap: 8px;
             padding: 7px 9px;
             border-radius: 7px;
-            background: #0b0b18;
+            background: var(--bg-main);
             margin-bottom: 5px;
+            border: 1px solid var(--border);
         }
 
         .client-avatar {
@@ -298,7 +305,7 @@
 
         .client-name {
             font-size: 11px;
-            color: #e2e8f0;
+            color: var(--text-main);
         }
 
         /* Log Panel */
@@ -310,7 +317,7 @@
 
         .log-header {
             padding: 20px 20px 14px;
-            border-bottom: 1px solid #1a1a30;
+            border-bottom: 1px solid var(--border);
             display: flex;
             align-items: center;
             justify-content: space-between;
@@ -324,18 +331,18 @@
 
         .btn-clear {
             background: none;
-            border: 1px solid #1e1e3a;
+            border: 1px solid var(--border);
             border-radius: 6px;
             padding: 4px 10px;
-            color: #64748b;
+            color: var(--text-muted);
             font-size: 11px;
             cursor: pointer;
             font-family: 'Inter', sans-serif;
         }
 
         .btn-clear:hover {
-            border-color: #374151;
-            color: #94a3b8;
+            border-color: var(--text-dim);
+            color: var(--text-main);
         }
 
         .log-body {
@@ -370,8 +377,47 @@
         }
 
         ::-webkit-scrollbar-thumb {
-            background: #2d2d4e;
+            background: var(--scrollbar-thumb);
             border-radius: 2px;
+        }
+
+        /* Theme Switcher */
+        .theme-sidebar-ctrl {
+            padding: 12px;
+            border-top: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            justify-content: space-around;
+            gap: 5px;
+            background: var(--bg-sidebar);
+            margin-top: auto;
+        }
+
+        .t-btn {
+            background: var(--bg-panel);
+            border: 1px solid var(--border);
+            color: var(--text-dim);
+            width: 32px;
+            height: 32px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.2s;
+        }
+
+        .t-btn:hover {
+            border-color: var(--accent);
+            color: var(--accent);
+        }
+
+        .t-btn.active {
+            background: var(--accent);
+            border-color: var(--accent);
+            color: white;
+            box-shadow: 0 4px 12px var(--accent-glow);
         }
     </style>
 </head>
@@ -552,6 +598,14 @@
                                     <div class="section-lbl">🟢 Active Clients (Promoted)</div>
                                     <div id="client-list-items"></div>
                                 </div>
+                                <div class="theme-sidebar-ctrl">
+                                    <div class="t-btn" id="t-default" onclick="setTheme('default')"
+                                        title="System Theme">🌗</div>
+                                    <div class="t-btn" id="t-light" onclick="setTheme('light')" title="Light Theme">☀️
+                                    </div>
+                                    <div class="t-btn" id="t-dark" onclick="setTheme('dark')" title="Dark Theme">🌙
+                                    </div>
+                                </div>
                             </div>
 
                             <!-- Main Panel (tabbed: Log + Chat Feed) -->
@@ -607,6 +661,22 @@
                         </div>
 
                         <script>
+                            // Theme UI sync
+                            function setTheme(t) {
+                                ThemeManager.apply(t);
+                                updateThemeUI();
+                            }
+
+                            function updateThemeUI() {
+                                const current = ThemeManager.getCurrent();
+                                document.querySelectorAll('.t-btn').forEach(btn => btn.classList.remove('active'));
+                                const activeBtn = document.getElementById(`t-${current}`);
+                                if (activeBtn) activeBtn.classList.add('active');
+                            }
+
+                            // Run on start
+                            updateThemeUI();
+
                             let hbCount = 0;
                             let lastHbTime = null;
                             const TIMEOUT_MS = 10000;

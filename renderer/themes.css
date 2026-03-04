@@ -1,0 +1,56 @@
+:root {
+    /* System Default (Fallback to Dark if no preference) */
+    --bg-main: #0b0b18;
+    --bg-sidebar: #0d0d1f;
+    --bg-titlebar: #07070f;
+    --bg-panel: #111128;
+    --text-main: #e2e8f0;
+    --text-muted: #64748b;
+    --text-dim: #475569;
+    --border: #1a1a30;
+    --accent: #a855f7;
+    --accent-glow: rgba(168, 85, 247, 0.15);
+    --input-bg: #161628;
+    --bubble-me: #6366f1;
+    --bubble-them: #1e1e3a;
+    --scrollbar-thumb: #1e1e3a;
+}
+
+[data-theme="light"] {
+    --bg-main: #f8fafc;
+    --bg-sidebar: #f1f5f9;
+    --bg-titlebar: #ffffff;
+    --bg-panel: #ffffff;
+    --text-main: #1e293b;
+    --text-muted: #475569;
+    --text-dim: #94a3b8;
+    --border: #e2e8f0;
+    --accent: #7c3aed;
+    --accent-glow: rgba(124, 58, 237, 0.1);
+    --input-bg: #f8fafc;
+    --bubble-me: #7c3aed;
+    --bubble-them: #e2e8f0;
+    --scrollbar-thumb: #cbd5e1;
+}
+
+[data-theme="dark"] {
+    --bg-main: #0f172a;
+    --bg-sidebar: #0b0f1d;
+    --bg-titlebar: #070b14;
+    --bg-panel: #111422;
+    --text-main: #f8fafc;
+    --text-muted: #94a3b8;
+    --text-dim: #64748b;
+    --border: #1e293b;
+    --accent: #a855f7;
+    --accent-glow: rgba(168, 85, 247, 0.2);
+    --input-bg: #161a29;
+    --bubble-me: #a855f7;
+    --bubble-them: #1e293b;
+    --scrollbar-thumb: #1e293b;
+}
+
+/* Helper Class for Transition */
+body.theme-transitioning * {
+    transition: background-color 0.3s ease, border-color 0.3s ease, color 0.3s ease !important;
+}

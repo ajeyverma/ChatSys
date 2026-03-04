@@ -7,6 +7,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+
+## [2.2.0] - 2026-03-04
+
+### Added
+- Comprehensive **Theming Engine** with support for Dark, Light, and System themes.
+- Global **CSS Token System** (`themes.css`) for consistent styling across Launcher, Client, and Servers.
+- **Theme Persistence**: User selection is saved to local storage and restored on startup.
+- Interactive Theme Switchers:
+  - Dedicated buttons in the Launcher.
+  - Polished icon toggles (🌗 ☀️ 🌙) in the Client/Server sidebars.
+
+### Fixed
+- Migrated all legacy hardcoded color values to dynamic CSS variables.
+- Refined UI contrast for better accessibility in both light and dark modes.
+
+### Changed
+- Major upgrade to internal UI architecture to support dynamic styling.
+- Streamlined version synchronization for minor and patch releases.
 ## [2.1.3] - 2026-03-04
 
 ### Added
