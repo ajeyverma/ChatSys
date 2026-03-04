@@ -10,6 +10,7 @@ const dgram = require('dgram');
 const cfg = require('./config');
 const proto = require('./protocol');
 const cryptoEngine = require('./crypto_engine');
+const logger = require('./logger');
 
 class BackupServer {
     constructor(mainWindow) {
@@ -364,10 +365,12 @@ class BackupServer {
     }
 
     _log(msg) {
-        const ts = new Date().toLocaleTimeString();
-        const line = `[${ts}] ${msg}`;
-        console.log(line);
-        if (this.win && !this.win.isDestroyed()) this.win.webContents.send('log', line);
+        logger.info('Backup', msg);
+        if (this.win && !this.win.isDestroyed()) {
+            const ts = new Date().toLocaleTimeString();
+            const line = `[${ts}] ${msg}`;
+            this.win.webContents.send('log', line);
+        }
     }
 
     _emit(event, data) {

@@ -7,6 +7,7 @@ const EventEmitter = require('events');
 const cfg = require('./config');
 const proto = require('./protocol');
 const cryptoEngine = require('./crypto_engine');
+const logger = require('./logger');
 
 class ChatClient extends EventEmitter {
     constructor(mainWindow) {
@@ -336,8 +337,7 @@ class ChatClient extends EventEmitter {
     }
 
     _log(msg) {
-        const ts = new Date().toLocaleTimeString();
-        console.log(`[${ts}] [Client] ${msg}`);
+        logger.info('Client', msg);
     }
 
     _emit(event, data) {

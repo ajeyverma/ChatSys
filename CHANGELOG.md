@@ -7,11 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
-## [2.0.1] - 2026-03-03
+## [2.1.0] - 2026-03-04
 
 ### Added
 - **End-to-End Encryption (E2EE)**: RSA + AES-256-GCM hybrid encryption for all group messages and DMs.
+- **Persistent Logging Engine**: Automatically captures all system, server, and encryption events to date-rotated files in `%APPDATA%\chatsys\logs`.
 - **Secure Server DMs**: Fully encrypted communication channel between clients and the Server Admin console.
+
+### Fixed
+- **Encryption Relay**: Resolved a bug where relayed messages lost encryption metadata, showing as ciphertext to recipients.
+- **Self-Decryption**: Implemented dual-key encryption (sender + recipient) to allow users to view their own sent private messages.
+- **UI Privacy**: Filtered the internal "🖥️ Server" account from the client-side online user list.
 
 ### Changed
 - **Refined Notifications**: Removed redundant "User Joined/Left" and "Auto-Hosting" system messages from the group chat feed to reduce clutter.

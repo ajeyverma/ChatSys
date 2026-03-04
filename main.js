@@ -7,6 +7,7 @@ const path = require('path');
 const dgram = require('dgram');
 const cfg = require('./src/config');
 const proto = require('./src/protocol');
+const logger = require('./src/logger');
 
 let launcherWin = null;
 let roleWin = null;
@@ -29,11 +30,13 @@ function createLauncher() {
         backgroundColor: '#0f0f1a'
     });
     launcherWin.loadFile(path.join(__dirname, 'renderer', 'launcher.html'));
+    logger.info('Main', 'Launcher window created');
 
     // Start listening for UDP discovery broadcasts
     startDiscoveryListener();
 
     launcherWin.on('closed', () => {
+        logger.info('Main', 'Launcher closed');
         stopDiscoveryListener();
         launcherWin = null;
     });
@@ -54,6 +57,12 @@ function createRoleWindow(role, width, height) {
         backgroundColor: '#0f0f1a'
     });
     win.loadFile(path.join(__dirname, 'renderer', `${role}.html`));
+    logger.info('Main', `Created ${role} window`);
+
+    win.on('closed', () => {
+        logger.info('Main', `${role} window closed`);
+        if (role === 'client') activeClient = null;
+    });
     return win;
 }
 
@@ -65,7 +74,7 @@ function startDiscoveryListener() {
 
     discoveryListener.on('listening', () => {
         const address = discoveryListener.address();
-        console.log(`[Main] Listening for server discovery beacons on UDP port ${address.port}`);
+        logger.info('Main', `Listening for server discovery beacons on UDP port ${address.port}`);
     });
 
     discoveryListener.on('message', (msg, rinfo) => {
@@ -86,14 +95,14 @@ function startDiscoveryListener() {
     });
 
     discoveryListener.on('error', (err) => {
-        console.log(`[Main] Discovery listener error: ${err.message}`);
+        logger.error('Main', `Discovery listener error: ${err.message}`);
         stopDiscoveryListener();
     });
 
     try {
         discoveryListener.bind(cfg.DISCOVERY_PORT);
     } catch (e) {
-        console.log(`[Main] Failed to bind discovery listener: ${e.message}`);
+        logger.error('Main', `Failed to bind discovery listener: ${e.message}`);
     }
 }
 
@@ -101,13 +110,42 @@ function stopDiscoveryListener() {
     if (discoveryListener) {
         try {
             discoveryListener.close();
-        } catch (e) { }
+            logger.info('Main', 'Discovery listener stopped.');
+        } catch (e) {
+            logger.warn('Main', `Error stopping discovery listener: ${e.message}`);
+        }
         discoveryListener = null;
     }
 }
 
+// ─── Server Management ────────────────────────────────────────────────────────
+function startPrimaryServer() {
+    if (activeServer) {
+        logger.warn('Main', 'Primary server already active, not starting new one.');
+        return;
+    }
+    logger.info('Main', 'Booting local back-end PrimaryServer...');
+    const PrimaryServer = require('./src/primaryServer');
+    // Provide a dummy window for the UI emitting so it doesn't crash on `_emit`
+    const dummyWin = {
+        webContents: {
+            send: (evt, data) => {
+                if (evt === 'status' && data.status === 'ACTIVE') {
+                    // Notify logic removed for UI decluttering
+                }
+            }
+        },
+        isDestroyed: () => false
+    };
+
+    activeServer = new PrimaryServer(dummyWin, '127.0.0.1');
+    activeServer.start();
+    logger.info('Main', 'PrimaryServer started.');
+}
+
 // ─── IPC: Auto-Host Launch ──────────────────────────────────────────────────────
 ipcMain.on('client-launch', (event, { username, host, port }) => {
+    logger.info('Main', `Client launch requested: username=${username}, host=${host}, port=${port}`);
     if (launcherWin) {
         launcherWin.close();
         launcherWin = null;
@@ -122,30 +160,21 @@ ipcMain.on('client-launch', (event, { username, host, port }) => {
         activeClient = new ChatClient(roleWin);
 
         // Listen for internal event when connection is refused (meaning no server)
-        activeClient.on('server-not-found', () => {
-            console.log(`[Main] No server found at ${host}:${port}. Booting local back-end...`);
+        activeClient.on('server-not-found', ({ host, port, isInitial, isRedirect, err }) => {
+            logger.info('Client', `Connection error: ${err.message}. ${isInitial ? 'First attempt failed.' : ''}`);
 
-            // Start the PrimaryServer headlessly in the background
-            const PrimaryServer = require('./src/primaryServer');
-            // Provide a dummy window for the UI emitting so it doesn't crash on `_emit`
-            const dummyWin = {
-                webContents: {
-                    send: (evt, data) => {
-                        if (evt === 'status' && data.status === 'ACTIVE') {
-                            // Notify logic removed for UI decluttering
-                        }
+            if (isInitial && !isRedirect) {
+                logger.warn('Main', `No server found at ${host}:${port}. Booting local back-end...`);
+                startPrimaryServer();
+
+                // Retry connecting client once server is ready
+                setTimeout(() => {
+                    if (activeClient) {
+                        logger.info('Main', 'Retrying client connection after auto-host...');
+                        activeClient.connect(host, port, username);
                     }
-                },
-                isDestroyed: () => false
-            };
-
-            activeServer = new PrimaryServer(dummyWin, '127.0.0.1');
-            activeServer.start();
-
-            // Re-attempt client connection after starting local server
-            setTimeout(() => {
-                activeClient.connect(host, parseInt(port), username);
-            }, 500);
+                }, 1500);
+            }
         });
 
         // Trigger immediate connection. ChatClient now handles its own status emitting
@@ -156,41 +185,50 @@ ipcMain.on('client-launch', (event, { username, host, port }) => {
         if (activeServer) { activeServer.stop(); activeServer = null; }
         if (activeClient) { activeClient.disconnect(); activeClient = null; }
         roleWin = null;
+        logger.info('Main', 'Client window closed. Active client/server cleaned up.');
     });
 });
 
 // ─── IPC: Client Actions ──────────────────────────────────────────────────────
 ipcMain.on('client-connect', (event, { host, port, username }) => {
+    logger.info('Main', `Client connect requested: host=${host}, port=${port}, username=${username}`);
     if (activeClient) activeClient.connect(host, parseInt(port), username);
 });
 
 ipcMain.on('client-send', (event, { text }) => {
+    logger.debug('Main', `Client send message: "${text}"`);
     if (activeClient) activeClient.sendMessage(text);
 });
 
 ipcMain.on('client-send-dm', (event, { to, text }) => {
+    logger.debug('Main', `Client send DM to ${to}: "${text}"`);
     if (activeClient) activeClient.sendDM(to, text);
 });
 
 ipcMain.on('client-send-image', (event, { to, data, filename, mimeType }) => {
+    logger.debug('Main', `Client send image to ${to}: ${filename} (${mimeType})`);
     if (activeClient) activeClient.sendImage(to, data, filename, mimeType);
 });
 
 // ─── IPC: Primary Admin Messaging ─────────────────────────────────────────────
 ipcMain.on('server-send-msg', (event, { text }) => {
+    logger.info('Main', `Server admin message: "${text}"`);
     if (activeServer && activeServer.serverSendMessage) activeServer.serverSendMessage(text);
 });
 
 ipcMain.on('server-send-dm', (event, { to, text }) => {
+    logger.info('Main', `Server admin DM to ${to}: "${text}"`);
     if (activeServer && activeServer.serverSendDM) activeServer.serverSendDM(to, text);
 });
 
 ipcMain.on('server-send-image', (event, { to, data, filename, mimeType }) => {
+    logger.info('Main', `Server admin send image to ${to}: ${filename} (${mimeType})`);
     if (activeServer && activeServer.serverSendImage) activeServer.serverSendImage(to, data, filename, mimeType);
 });
 
 // ─── IPC: Primary Actions ─────────────────────────────────────────────────────
 ipcMain.on('server-broadcast', (event, { text }) => {
+    logger.info('Main', `Server broadcast system message: "${text}"`);
     if (activeServer && activeServer.broadcastSystemMessage) {
         activeServer.broadcastSystemMessage(text);
     }
@@ -199,27 +237,43 @@ ipcMain.on('server-broadcast', (event, { text }) => {
 // ─── IPC: Window Controls ─────────────────────────────────────────────────────
 ipcMain.on('win-minimize', () => {
     const w = roleWin || launcherWin;
-    if (w) w.minimize();
+    if (w) {
+        w.minimize();
+        logger.debug('Main', 'Window minimized');
+    }
 });
 ipcMain.on('win-maximize', () => {
     const w = roleWin || launcherWin;
     if (w) {
         if (w.isMaximized()) {
             w.unmaximize();
+            logger.debug('Main', 'Window unmaximized');
         } else {
             w.maximize();
+            logger.debug('Main', 'Window maximized');
         }
     }
 });
 ipcMain.on('win-close', () => {
     const w = roleWin || launcherWin;
-    if (w) w.close();
+    if (w) {
+        w.close();
+        logger.debug('Main', 'Window close requested');
+    }
 });
 
 // ─── App Lifecycle ────────────────────────────────────────────────────────────
-app.whenReady().then(createLauncher);
+app.whenReady().then(() => {
+    logger.info('Main', 'ChatSys starting up...');
+    logger.info('Main', `Logs are being saved to: ${path.join(app.getPath('userData'), 'logs')}`);
+    createLauncher();
+});
+
 app.on('window-all-closed', () => {
-    if (process.platform !== 'darwin') app.quit();
+    if (process.platform !== 'darwin') {
+        logger.info('Main', 'All windows closed. Quitting.');
+        app.quit();
+    }
 });
 app.on('activate', () => {
     if (BrowserWindow.getAllWindows().length === 0) createLauncher();

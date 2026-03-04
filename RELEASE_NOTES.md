@@ -1,12 +1,13 @@
-# Release Notes v2.0.1 - Notification Refinement
+# Release Notes v2.1.0 - Security & Persistence
  
-This patch focuses on cleaning up the user experience by reducing feed interruptions during routine network events.
+This update significantly upgrades the privacy model and stability of ChatSys, ensuring all data is secure on the wire and system events are tracked for troubleshooting.
  
 ## What’s New
  
-* **Silenced "User Joined/Left" Messages**: The chat feed no longer broadcasts membership changes. The sidebar remains the source of truth for online users.
-* **Hidden Background Logic**: Removed the "Auto-hosting" system bubble. All architectural state changes are now subtly presented via the titlebar status pill.
-* **Feed Stability**: Fixed edge cases where private images or reconnection attempts could inadvertently leak into the group feed.
+* **End-to-End Encryption (E2EE)**: Hybrid RSA/AES-256-GCM encryption is now active for all messages and images.
+* **Persistent Logging**: The app now maintains detailed daily logs in `%APPDATA%\chatsys\logs`, making it easy to troubleshoot network issues or server failovers.
+* **Fixed Encryption Echoes**: Resolved the issue where sent messages would appear as encrypted blobs to the sender; they are now correctly decrypted for all participants.
+* **Streamlined UI**: Hidden administrative server identities from the user list and silenced redundant system notifications.
  
 ---
  

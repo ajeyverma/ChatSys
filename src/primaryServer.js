@@ -9,6 +9,7 @@ const { ipcMain } = require('electron');
 const cfg = require('./config');
 const proto = require('./protocol');
 const cryptoEngine = require('./crypto_engine');
+const logger = require('./logger');
 
 class PrimaryServer {
     constructor(mainWindow, backupHost) {
@@ -358,11 +359,10 @@ class PrimaryServer {
     }
 
     _log(msg) {
-        const ts = new Date().toLocaleTimeString();
-        const line = `[${ts}] ${msg}`;
-        console.log(line);
+        logger.info('Server', msg);
         if (this.win && !this.win.isDestroyed()) {
-            this.win.webContents.send('log', line);
+            const ts = new Date().toLocaleTimeString();
+            this.win.webContents.send('log', `[${ts}] ${msg}`);
         }
     }
 
