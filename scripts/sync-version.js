@@ -29,38 +29,7 @@ issFiles.forEach(file => {
     console.log(`- Updated ${file}`);
 });
 
-// 3. Update CHANGELOG.md (Insert new header if missing)
-const changelogPath = path.join(__dirname, '..', 'CHANGELOG.md');
-if (fs.existsSync(changelogPath)) {
-    let content = fs.readFileSync(changelogPath, 'utf8');
-    const header = `## [${version}] - ${new Date().toISOString().split('T')[0]}`;
-
-    if (!content.includes(`## [${version}]`)) {
-        const template = `${header}\n\n### Added\n- \n\n### Fixed\n- \n\n### Changed\n- \n\n`;
-        // Insert after the first "---" and its following line breaks
-        content = content.replace(/(---[\r\n]+)/, `$1\n${template}`);
-        fs.writeFileSync(changelogPath, content, 'utf8');
-        console.log(`- Created new entry in CHANGELOG.md for ${version}`);
-    } else {
-        console.log(`- Entry for ${version} already exists in CHANGELOG.md`);
-    }
-}
-
-// 4. Update RELEASE_NOTES.md (Insert new section if missing)
-const releaseNotesPath = path.join(__dirname, '..', 'RELEASE_NOTES.md');
-if (fs.existsSync(releaseNotesPath)) {
-    let content = fs.readFileSync(releaseNotesPath, 'utf8');
-    const header = `# Release Notes v${version}`;
-
-    if (!content.includes(header)) {
-        const template = `${header}\n \nDescription of what is new in this version.\n \n## What’s New\n \n* \n \n---\n \n`;
-        // Prepend to the file
-        content = template + content;
-        fs.writeFileSync(releaseNotesPath, content, 'utf8');
-        console.log(`- Created new section in RELEASE_NOTES.md for ${version}`);
-    } else {
-        console.log(`- Section for ${version} already exists in RELEASE_NOTES.md`);
-    }
-}
+// 3. (Removed) Update CHANGELOG.md and RELEASE_NOTES.md
+// User requested to remove the sync between version and markdown files.
 
 console.log('Version sync complete!');
