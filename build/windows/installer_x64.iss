@@ -1,13 +1,13 @@
 [Setup]
 AppName=ChatSys
-AppVersion=2.1.0
-AppVerName=ChatSys 2.1.0
+AppVersion=2.1.3
+AppVerName=ChatSys 2.1.3
 AppPublisher=ChatSys Team
 AppPublisherURL=https://github.com/AjayVerma/ChatSys
 DefaultDirName={pf}\ChatSys
 DefaultGroupName=ChatSys
 DisableProgramGroupPage=yes
-OutputBaseFilename=ChatSys-x64-v2.1.0
+OutputBaseFilename=ChatSys-x64-v2.1.3
 DisableWelcomePage=yes
 WizardStyle=modern
 CloseApplications=yes

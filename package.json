@@ -1,13 +1,15 @@
 {
   "name": "chatsys",
-  "version": "2.1.0",
+  "version": "2.1.3",
   "description": "Fault-Tolerant GUI-Based LAN Communication System with Automatic Failover",
   "main": "main.js",
   "scripts": {
     "start": "electron .",
-    "build:x64": "electron-builder --win --x64 --dir",
-    "build:x86": "electron-builder --win --ia32 --dir",
-    "build:arm64": "electron-builder --win --arm64 --dir"
+    "version:sync": "node scripts/sync-version.js",
+    "build:x64": "npm run version:sync && electron-builder --win --x64 --dir",
+    "build:x86": "npm run version:sync && electron-builder --win --ia32 --dir",
+    "build:arm64": "npm run version:sync && electron-builder --win --arm64 --dir",
+    "postversion": "npm run version:sync"
   },
   "devDependencies": {
     "electron": "^29.0.0",

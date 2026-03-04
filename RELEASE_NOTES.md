@@ -1,3 +1,23 @@
+# Release Notes v2.1.3
+ 
+Description of what is new in this version.
+ 
+## What’s New
+ 
+* 
+ 
+---
+ 
+# Release Notes v2.1.2
+ 
+Description of what is new in this version.
+ 
+## What’s New
+ 
+* 
+ 
+---
+ 
 # Release Notes v2.1.0 - Security & Persistence
  
 This update significantly upgrades the privacy model and stability of ChatSys, ensuring all data is secure on the wire and system events are tracked for troubleshooting.
