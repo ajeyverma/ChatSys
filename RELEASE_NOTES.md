@@ -1,3 +1,14 @@
+# Release Notes v2.2.1
+ 
+This update fixes a critical crash that occurred when the client could not initialy find a server on start-up.
+ 
+## What’s New
+ 
+* **Stability Fix**: Resolved `TypeError: Cannot destructure property 'host' of 'undefined'` in the main process when connections are refused.
+* **Improved Error Handling**: More robust error reporting when the backend auto-hosting is triggered.
+ 
+---
+ 
 # Release Notes v2.2.0
  
 This release introduces a major UI overhaul with a comprehensive **Theming System**. Users can now select and persist their visual preference between Dark, Light, and System themes for a personalized experience.

@@ -94,7 +94,13 @@ class ChatClient extends EventEmitter {
             this._log(`Connection error: ${err.message}`);
             if (err.code === 'ECONNREFUSED' && this.retryCount === 0 && !this.redirecting) {
                 // First attempt failed — tell main.js to boot auto-host server
-                this.emit('server-not-found');
+                this.emit('server-not-found', {
+                    host: this.currentHost,
+                    port: this.currentPort,
+                    isInitial: true,
+                    isRedirect: false,
+                    err
+                });
             } else if (!this.reconnecting && !this.redirecting) {
                 this._scheduleReconnect();
             }
@@ -230,7 +236,13 @@ class ChatClient extends EventEmitter {
     _scheduleReconnect() {
         if (this.retryCount >= cfg.RECONNECT_ATTEMPTS) {
             this._emit('status', { status: 'Disconnected', host: this.currentHost, port: this.currentPort });
-            this.emit('server-not-found');
+            this.emit('server-not-found', {
+                host: this.currentHost,
+                port: this.currentPort,
+                isInitial: false,
+                isRedirect: false,
+                err: new Error('Maximum reconnect attempts reached')
+            });
             return;
         }
 
