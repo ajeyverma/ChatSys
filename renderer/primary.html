@@ -884,6 +884,20 @@
         </div>
     </div>
 
+    <!-- Context Menu -->
+    <div id="msg-context-menu" class="context-menu">
+        <div class="context-menu-item" onclick="handleMenuAction('copy')">
+            <span class="icon">📋</span> Copy Text
+        </div>
+        <div class="context-menu-item" onclick="handleMenuAction('reply')">
+            <span class="icon">↩</span> Reply
+        </div>
+        <div class="context-menu-sep"></div>
+        <div class="context-menu-item" onclick="handleMenuAction('quote')">
+            <span class="icon">💬</span> Quote
+        </div>
+    </div>
+
     <script>
         // Theme UI sync
         function setTheme(t) {
@@ -1113,6 +1127,76 @@
 
         document.getElementById('broadcast-input').addEventListener('keydown', e => { if (e.key === 'Enter') broadcast(); });
         document.getElementById('console-input').addEventListener('keydown', e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); serverSend(); } });
+
+        // ─── Context Menu Logic ───────────────────────────────────────
+        let contextMsgData = null;
+
+        document.addEventListener('contextmenu', (e) => {
+            const bubble = e.target.closest('.feed-bubble, .feed-img');
+            if (!bubble) {
+                hideContextMenu();
+                return;
+            }
+
+            e.preventDefault();
+            const wrap = bubble.closest('.feed-msg');
+            if (wrap.classList.contains('sys')) {
+                hideContextMenu();
+                return;
+            }
+
+            const isImage = bubble.classList.contains('feed-img');
+            const text = isImage ? `[Image]` : bubble.textContent;
+            const from = wrap.querySelector('.feed-name')?.textContent || (wrap.classList.contains('srv') ? 'Server' : 'Client');
+
+            contextMsgData = { text, from, isImage, bubble };
+
+            const menu = document.getElementById('msg-context-menu');
+            menu.style.display = 'block';
+
+            let x = e.clientX;
+            let y = e.clientY;
+            if (x + 150 > window.innerWidth) x -= 150;
+            if (y + 120 > window.innerHeight) y -= 120;
+
+            menu.style.left = x + 'px';
+            menu.style.top = y + 'px';
+        });
+
+        document.addEventListener('click', () => hideContextMenu());
+
+        function hideContextMenu() {
+            const menu = document.getElementById('msg-context-menu');
+            if (menu) menu.style.display = 'none';
+        }
+
+        function handleMenuAction(action) {
+            if (!contextMsgData) return;
+            const { text, from, isImage } = contextMsgData;
+
+            if (action === 'copy') {
+                navigator.clipboard.writeText(text);
+            } else if (action === 'reply') {
+                const inp = document.getElementById('console-input');
+                const sel = document.getElementById('dm-target-select');
+                if (from !== 'Server') {
+                    // Set DM target if possible
+                    const options = Array.from(sel.options);
+                    const targetOpt = options.find(o => o.text === from || o.value === from);
+                    if (targetOpt) sel.value = targetOpt.value;
+                }
+                inp.value = `@${from} ` + inp.value;
+                inp.focus();
+            } else if (action === 'quote') {
+                const inp = document.getElementById('console-input');
+                const quote = text.split('\n').map(l => `> ${l}`).join('\n');
+                inp.value = quote + '\n' + inp.value;
+                inp.focus();
+                inp.style.height = 'auto';
+                inp.style.height = Math.min(inp.scrollHeight, 60) + 'px';
+            }
+            hideContextMenu();
+        }
     </script>
 </body>
 

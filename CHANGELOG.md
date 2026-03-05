@@ -6,19 +6,24 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ---
+## [2.3.0] 
+
+### Added
+- **Context Menu**: Right-click menu for messages with options to copy, reply, and quote.
+- **Reply Feature**: Added reply functionality to messages.
+- **Quote Feature**: Added quote functionality to messages.
+
+### Fixed
+- Fixed a bug where the context menu was not working.
 
 
 
 ## [2.2.1] - 2026-03-04
 
-### Added
-- 
-
 ### Fixed
 - Fixed a fatal crash in the main process (`TypeError: Cannot destructure property 'host' of 'undefined'`) when the client fails to connect on startup.
 - Added robust error object passing in the `ChatClient` emission of `server-not-found`.
-### Changed
-- 
+
 
 ## [2.2.0] - 2026-03-04
 
@@ -37,16 +42,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 - Major upgrade to internal UI architecture to support dynamic styling.
 - Streamlined version synchronization for minor and patch releases.
-## [2.1.3] - 2026-03-04
 
-### Added
-- 
-
-### Fixed
-- 
-
-### Changed
-- 
 
 ## [2.1.0] - 2026-03-04
 
