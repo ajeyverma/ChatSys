@@ -6,6 +6,8 @@ const net = require('net');
 const EventEmitter = require('events');
 const cfg = require('./config');
 const proto = require('./protocol');
+const cryptoEngine = require('./crypto_engine');
+const logger = require('./logger');
 
 class ChatClient extends EventEmitter {
     constructor(mainWindow) {
@@ -20,6 +22,13 @@ class ChatClient extends EventEmitter {
         this.redirecting = false;  // true during intentional failover redirect
         this.retryCount = 0;
         this.buffer = '';
+
+        // Encryption state
+        const { publicKey, privateKey } = cryptoEngine.generateKeyPair();
+        this.publicKey = publicKey;
+        this.privateKey = privateKey;
+        this.groupKey = null;
+        this.userKeys = {}; // username -> publicKey
     }
 
     connect(host, port, username) {
@@ -53,8 +62,11 @@ class ChatClient extends EventEmitter {
             this._log(`Connected to ${this.currentHost}:${this.currentPort}`);
             this._emit('status', { status: 'Connected', host: this.currentHost, port: this.currentPort });
 
-            // Send JOIN handshake
-            this.socket.write(proto.pack(proto.MSG_JOIN, { username: this.username }));
+            // Send JOIN handshake with public key
+            this.socket.write(proto.pack(proto.MSG_JOIN, {
+                username: this.username,
+                publicKey: this.publicKey
+            }));
         });
 
         this.socket.on('data', (data) => {
@@ -82,7 +94,13 @@ class ChatClient extends EventEmitter {
             this._log(`Connection error: ${err.message}`);
             if (err.code === 'ECONNREFUSED' && this.retryCount === 0 && !this.redirecting) {
                 // First attempt failed — tell main.js to boot auto-host server
-                this.emit('server-not-found');
+                this.emit('server-not-found', {
+                    host: this.currentHost,
+                    port: this.currentPort,
+                    isInitial: true,
+                    isRedirect: false,
+                    err
+                });
             } else if (!this.reconnecting && !this.redirecting) {
                 this._scheduleReconnect();
             }
@@ -91,14 +109,19 @@ class ChatClient extends EventEmitter {
 
     _handleMessage(msg) {
         switch (msg.type) {
-            case proto.MSG_CHAT:
+            case proto.MSG_CHAT: {
+                let text = msg.payload.text;
+                if (msg.payload.encrypted && this.groupKey) {
+                    text = cryptoEngine.decryptAES(text, this.groupKey, msg.payload.iv, msg.payload.tag);
+                }
                 this._emit('message', {
                     type: 'chat',
                     from: msg.payload.from,
-                    text: msg.payload.text,
+                    text: text || '[Encrypted Message - Decryption Failed]',
                     ts: msg.ts
                 });
                 break;
+            }
 
             case proto.MSG_SYS:
                 this._emit('message', {
@@ -138,39 +161,88 @@ class ChatClient extends EventEmitter {
             }
 
             case proto.MSG_ACK:
+                if (msg.payload.groupKey) {
+                    try {
+                        this.groupKey = cryptoEngine.decryptRSA(msg.payload.groupKey, this.privateKey);
+                        this._log('Group encryption key synchronized.');
+                    } catch (e) {
+                        this._log('Failed to decrypt group key!');
+                    }
+                }
                 this._emit('ack', { message: msg.payload.message });
                 break;
 
-            case proto.MSG_DM:
+            case proto.MSG_DM: {
+                let text = msg.payload.text;
+                if (msg.payload.encrypted) {
+                    try {
+                        const isFromMe = msg.payload.from === this.username;
+                        const keyToDecrypt = isFromMe ? msg.payload.senderKey : msg.payload.encryptedKey;
+
+                        if (keyToDecrypt) {
+                            const sessionKey = cryptoEngine.decryptRSA(keyToDecrypt, this.privateKey);
+                            text = cryptoEngine.decryptAES(text, sessionKey, msg.payload.iv, msg.payload.tag);
+                        } else {
+                            text = '[Encrypted DM - Key Missing]';
+                        }
+                    } catch (e) {
+                        text = '[Encrypted DM - Decryption Failed]';
+                    }
+                }
                 this._emit('dm', {
                     from: msg.payload.from,
                     to: msg.payload.to,
-                    text: msg.payload.text,
+                    text: text,
                     ts: msg.payload.ts || Date.now()
                 });
                 break;
+            }
 
             case proto.MSG_CLIENT_LIST:
+                this.userKeys = msg.payload.keys || {};
                 this._emit('client-list', { users: msg.payload.users || [] });
                 break;
 
-            case proto.MSG_IMAGE:
+            case proto.MSG_IMAGE: {
+                let data = msg.payload.data;
+                if (msg.payload.encrypted) {
+                    try {
+                        let key;
+                        if (msg.payload.to) {
+                            const isFromMe = msg.payload.from === this.username;
+                            const keyToDecrypt = isFromMe ? msg.payload.senderKey : msg.payload.encryptedKey;
+                            key = cryptoEngine.decryptRSA(keyToDecrypt, this.privateKey);
+                        } else {
+                            key = this.groupKey;
+                        }
+                        data = cryptoEngine.decryptAES(data, key, msg.payload.iv, msg.payload.tag);
+                    } catch (e) {
+                        data = null; // show broken image
+                    }
+                }
                 this._emit('image', {
                     from: msg.payload.from,
                     to: msg.payload.to || null,
-                    data: msg.payload.data,
+                    data: data,
                     filename: msg.payload.filename,
                     mimeType: msg.payload.mimeType,
                     ts: msg.payload.ts || Date.now()
                 });
                 break;
+            }
         }
     }
 
     _scheduleReconnect() {
         if (this.retryCount >= cfg.RECONNECT_ATTEMPTS) {
             this._emit('status', { status: 'Disconnected', host: this.currentHost, port: this.currentPort });
-            this.emit('server-not-found');
+            this.emit('server-not-found', {
+                host: this.currentHost,
+                port: this.currentPort,
+                isInitial: false,
+                isRedirect: false,
+                err: new Error('Maximum reconnect attempts reached')
+            });
             return;
         }
 
@@ -188,19 +260,81 @@ class ChatClient extends EventEmitter {
 
     sendMessage(text) {
         if (!this.connected || !text.trim()) return;
-        this.socket.write(proto.pack(proto.MSG_CHAT, { text: text.trim() }));
+        if (this.groupKey) {
+            const encrypted = cryptoEngine.encryptAES(text.trim(), this.groupKey);
+            this.socket.write(proto.pack(proto.MSG_CHAT, {
+                encrypted: true,
+                text: encrypted.data,
+                iv: encrypted.iv,
+                tag: encrypted.tag
+            }));
+        } else {
+            this.socket.write(proto.pack(proto.MSG_CHAT, { text: text.trim() }));
+        }
     }
 
     sendDM(to, text) {
         if (!this.connected || !text.trim() || !to) return;
-        this.socket.write(proto.pack(proto.MSG_DM, { to, text: text.trim() }));
+        const recipientKey = this.userKeys[to];
+        if (recipientKey) {
+            const sessionKey = cryptoEngine.generateRandomKey();
+            const encryptedMsg = cryptoEngine.encryptAES(text.trim(), sessionKey);
+            const encryptedKeyForRecipient = cryptoEngine.encryptRSA(sessionKey, recipientKey);
+            const encryptedKeyForMe = cryptoEngine.encryptRSA(sessionKey, this.publicKey);
+
+            this.socket.write(proto.pack(proto.MSG_DM, {
+                to,
+                encrypted: true,
+                text: encryptedMsg.data,
+                iv: encryptedMsg.iv,
+                tag: encryptedMsg.tag,
+                encryptedKey: encryptedKeyForRecipient,
+                senderKey: encryptedKeyForMe
+            }));
+        } else {
+            this.socket.write(proto.pack(proto.MSG_DM, { to, text: text.trim() }));
+        }
     }
 
     sendImage(to, data, filename, mimeType) {
         if (!this.connected) return;
-        this.socket.write(proto.pack(proto.MSG_IMAGE, {
-            to: to || null, data, filename, mimeType
-        }));
+        let payload = { to: to || null, data, filename, mimeType };
+
+        if (to) {
+            // Private image
+            const recipientKey = this.userKeys[to];
+            if (recipientKey) {
+                const sessionKey = cryptoEngine.generateRandomKey();
+                const encryptedImg = cryptoEngine.encryptAES(data, sessionKey);
+                const encryptedKeyForRecipient = cryptoEngine.encryptRSA(sessionKey, recipientKey);
+                const encryptedKeyForMe = cryptoEngine.encryptRSA(sessionKey, this.publicKey);
+                payload = {
+                    to,
+                    filename,
+                    mimeType,
+                    encrypted: true,
+                    data: encryptedImg.data,
+                    iv: encryptedImg.iv,
+                    tag: encryptedImg.tag,
+                    encryptedKey: encryptedKeyForRecipient,
+                    senderKey: encryptedKeyForMe
+                };
+            }
+        } else if (this.groupKey) {
+            // Group image
+            const encryptedImg = cryptoEngine.encryptAES(data, this.groupKey);
+            payload = {
+                to: null,
+                filename,
+                mimeType,
+                encrypted: true,
+                data: encryptedImg.data,
+                iv: encryptedImg.iv,
+                tag: encryptedImg.tag
+            };
+        }
+
+        this.socket.write(proto.pack(proto.MSG_IMAGE, payload));
     }
 
     disconnect() {
@@ -215,8 +349,7 @@ class ChatClient extends EventEmitter {
     }
 
     _log(msg) {
-        const ts = new Date().toLocaleTimeString();
-        console.log(`[${ts}] [Client] ${msg}`);
+        logger.info('Client', msg);
     }
 
     _emit(event, data) {

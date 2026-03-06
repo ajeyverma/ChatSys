@@ -4,6 +4,8 @@
 <head>
     <meta charset="UTF-8" />
     <title>ChatSys — Client</title>
+    <link rel="stylesheet" href="themes.css" />
+    <script src="theme_manager.js"></script>
     <style>
         * {
             margin: 0;
@@ -13,8 +15,8 @@
         }
 
         body {
-            background: #0b0b18;
-            color: #e2e8f0;
+            background: var(--bg-main);
+            color: var(--text-main);
             height: 100vh;
             display: flex;
             flex-direction: column;
@@ -25,14 +27,14 @@
         /* ─── Titlebar ────────────────────────────────────────── */
         .titlebar {
             height: 42px;
-            background: #07070f;
+            background: var(--bg-titlebar);
             display: flex;
             align-items: center;
             justify-content: space-between;
             padding-left: 16px;
             padding-right: 0;
             -webkit-app-region: drag;
-            border-bottom: 1px solid #1a1a30;
+            border-bottom: 1px solid var(--border);
             flex-shrink: 0;
         }
 
@@ -45,8 +47,8 @@
         .tb-role-badge {
             font-size: 11px;
             font-weight: 600;
-            background: rgba(168, 85, 247, .15);
-            color: #a855f7;
+            background: var(--accent-glow);
+            color: var(--accent);
             padding: 3px 10px;
             border-radius: 20px;
             letter-spacing: .6px;
@@ -56,8 +58,8 @@
             display: flex;
             align-items: center;
             gap: 5px;
-            background: #111128;
-            border: 1px solid #1e1e3a;
+            background: var(--bg-panel);
+            border: 1px solid var(--border);
             border-radius: 20px;
             padding: 3px 10px;
         }
@@ -66,7 +68,7 @@
             width: 7px;
             height: 7px;
             border-radius: 50%;
-            background: #374151;
+            background: var(--text-dim);
             transition: background .3s;
         }
 
@@ -97,7 +99,7 @@
 
         .status-pill-text {
             font-size: 10px;
-            color: #64748b;
+            color: var(--text-muted);
         }
 
         .titlebar-btns {
@@ -119,15 +121,19 @@
         .win-btn svg {
             width: 10px;
             height: 10px;
-            fill: #94a3b8;
+            fill: var(--text-muted);
         }
 
         .win-btn:hover {
             background: rgba(255, 255, 255, 0.1);
         }
 
+        [data-theme="light"] .win-btn:hover {
+            background: rgba(0, 0, 0, 0.05);
+        }
+
         .win-btn:hover svg {
-            fill: #e2e8f0;
+            fill: var(--text-main);
         }
 
         .win-btn.win-close:hover {
@@ -156,8 +162,8 @@
 
         /* ─── Users Sidebar ───────────────────────────────────── */
         .users-sidebar {
-            background: #0d0d1f;
-            border-right: 1px solid #1a1a30;
+            background: var(--bg-sidebar);
+            border-right: 1px solid var(--border);
             display: flex;
             flex-direction: column;
             overflow: hidden;
@@ -165,10 +171,10 @@
 
         .sidebar-hdr {
             padding: 12px 14px 8px;
-            border-bottom: 1px solid #1a1a30;
+            border-bottom: 1px solid var(--border);
             font-size: 10px;
             font-weight: 600;
-            color: #475569;
+            color: var(--text-dim);
             text-transform: uppercase;
             letter-spacing: .8px;
         }
@@ -191,19 +197,19 @@
         }
 
         .user-item:hover {
-            background: #161628;
+            background: var(--input-bg);
         }
 
         .user-item.active-dm {
-            background: rgba(168, 85, 247, .1);
-            border-color: rgba(168, 85, 247, .25);
+            background: var(--accent-glow);
+            border-color: var(--accent);
         }
 
         .u-avatar {
             width: 28px;
             height: 28px;
             border-radius: 8px;
-            background: linear-gradient(135deg, #6366f1, #8b5cf6);
+            background: linear-gradient(135deg, var(--accent), #8b5cf6);
             display: flex;
             align-items: center;
             justify-content: center;
@@ -215,18 +221,18 @@
 
         .u-name {
             font-size: 12px;
-            color: #c4c9d4;
+            color: var(--text-main);
             flex: 1;
         }
 
         .u-name.me {
-            color: #a855f7;
+            color: var(--accent);
         }
 
         .unread-dot {
             width: 16px;
             height: 16px;
-            background: #a855f7;
+            background: var(--accent);
             border-radius: 50%;
             font-size: 9px;
             font-weight: 700;
@@ -239,7 +245,7 @@
 
         .dm-hint {
             font-size: 10px;
-            color: #374151;
+            color: var(--text-dim);
             padding: 8px;
             font-style: italic;
             text-align: center;
@@ -352,16 +358,16 @@
         }
 
         .msg-wrap.other .msg-bubble {
-            background: #161628;
-            border: 1px solid #252545;
-            color: #e2e8f0;
+            background: var(--bg-panel);
+            border: 1px solid var(--border);
+            color: var(--text-main);
             border-radius: 14px 14px 14px 4px;
         }
 
         .msg-wrap.system .msg-bubble {
-            background: #111128;
-            border: 1px solid #252545;
-            color: #64748b;
+            background: var(--bg-panel);
+            border: 1px solid var(--border);
+            color: var(--text-muted);
             font-size: 11px;
             border-radius: 20px;
             padding: 4px 14px;
@@ -369,35 +375,35 @@
         }
 
         .msg-wrap.dm-self .msg-bubble {
-            background: linear-gradient(135deg, #7c3aed, #a855f7);
+            background: linear-gradient(135deg, var(--bubble-me), #a855f7);
             color: #fff;
             border-radius: 14px 14px 4px 14px;
         }
 
         .msg-wrap.dm-other .msg-bubble {
-            background: rgba(168, 85, 247, .12);
-            border: 1px solid rgba(168, 85, 247, .3);
-            color: #e2e8f0;
+            background: var(--accent-glow);
+            border: 1px solid var(--accent);
+            color: var(--text-main);
             border-radius: 14px 14px 14px 4px;
         }
 
         .dm-lbl {
             font-size: 9px;
-            color: #a855f7;
+            color: var(--accent);
             margin-bottom: 2px;
             padding: 0 2px;
         }
 
         .msg-meta {
             font-size: 10px;
-            color: #475569;
+            color: var(--text-dim);
             margin-top: 2px;
             padding: 0 2px;
         }
 
         .msg-name {
             font-weight: 600;
-            color: #94a3b8;
+            color: var(--text-muted);
             margin-bottom: 2px;
             font-size: 11px;
             padding: 0 2px;
@@ -409,7 +415,7 @@
             border-radius: 12px;
             overflow: hidden;
             cursor: pointer;
-            border: 1px solid #252545;
+            border: 1px solid var(--border);
         }
 
         .img-bubble img {
@@ -419,9 +425,9 @@
 
         .img-caption {
             font-size: 10px;
-            color: #64748b;
+            color: var(--text-muted);
             padding: 4px 8px;
-            background: #111128;
+            background: var(--bg-panel);
         }
 
         /* welcome */
@@ -432,7 +438,7 @@
             align-items: center;
             justify-content: center;
             text-align: center;
-            color: #2d2d4e;
+            color: var(--text-dim);
             padding: 30px;
         }
 
@@ -447,6 +453,43 @@
         }
 
         /* ─── Input Area ──────────────────────────────────────── */
+        /* Theme Switcher */
+        .theme-sidebar-ctrl {
+            padding: 12px;
+            border-top: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            justify-content: space-around;
+            gap: 5px;
+        }
+
+        .t-btn {
+            background: var(--bg-panel);
+            border: 1px solid var(--border);
+            color: var(--text-dim);
+            width: 32px;
+            height: 32px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.2s;
+        }
+
+        .t-btn:hover {
+            border-color: var(--accent);
+            color: var(--accent);
+        }
+
+        .t-btn.active {
+            background: var(--accent);
+            border-color: var(--accent);
+            color: white;
+            box-shadow: 0 4px 12px var(--accent-glow);
+        }
+
         .input-area {
             padding: 10px 14px;
             background: #0d0d1f;
@@ -762,6 +805,20 @@
         <img id="lightbox-img" src="" onclick="event.stopPropagation()" />
     </div>
 
+    <!-- Context Menu -->
+    <div id="msg-context-menu" class="context-menu">
+        <div class="context-menu-item" onclick="handleMenuAction('copy')">
+            <span class="icon">📋</span> Copy Text
+        </div>
+        <div class="context-menu-item" onclick="handleMenuAction('reply')">
+            <span class="icon">↩</span> Reply
+        </div>
+        <div class="context-menu-sep"></div>
+        <div class="context-menu-item" onclick="handleMenuAction('quote')">
+            <span class="icon">💬</span> Quote
+        </div>
+    </div>
+
     <div class="layout">
         <!-- Titlebar -->
         <div class="titlebar">
@@ -799,6 +856,12 @@
                 <div class="sidebar-hdr">👥 Online Users</div>
                 <div class="user-list" id="user-list">
                     <div class="dm-hint">Connect to see users</div>
+                </div>
+                <!-- Theme Controller -->
+                <div class="theme-sidebar-ctrl">
+                    <div class="t-btn" id="t-default" onclick="setTheme('default')" title="System Theme">🌗</div>
+                    <div class="t-btn" id="t-light" onclick="setTheme('light')" title="Light Theme">☀️</div>
+                    <div class="t-btn" id="t-dark" onclick="setTheme('dark')" title="Dark Theme">🌙</div>
                 </div>
             </div>
 
@@ -849,6 +912,22 @@
         </div>
 
         <script>
+            // Theme UI sync
+            function setTheme(t) {
+                ThemeManager.apply(t);
+                updateThemeUI();
+            }
+
+            function updateThemeUI() {
+                const current = ThemeManager.getCurrent();
+                document.querySelectorAll('.t-btn').forEach(btn => btn.classList.remove('active'));
+                const activeBtn = document.getElementById(`t-${current}`);
+                if (activeBtn) activeBtn.classList.add('active');
+            }
+
+            // Run on start
+            updateThemeUI();
+
             let myUsername = '';
             let isConnected = false;
             let dmTarget = null;
@@ -1071,7 +1150,10 @@
                 }
 
                 // Always add Group Chat to the list of DM targets
-                const allUsers = ['🌐 Group Chat', ...onlineUsers.filter(u => u !== myUsername)];
+                const allUsers = [
+                    '🌐 Group Chat',
+                    ...onlineUsers.filter(u => u !== myUsername && u !== '🖥️ Server')
+                ];
 
                 for (const u of allUsers) {
                     const isGroup = u === '🌐 Group Chat';
@@ -1203,6 +1285,64 @@
             const inp = document.getElementById('msg-input');
             inp.addEventListener('keydown', (e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMsg(); } });
             inp.addEventListener('input', () => { inp.style.height = 'auto'; inp.style.height = Math.min(inp.scrollHeight, 80) + 'px'; });
+
+            // ─── Context Menu Logic ───────────────────────────────────────
+            let contextMsgData = null;
+
+            document.addEventListener('contextmenu', (e) => {
+                const bubble = e.target.closest('.msg-bubble, .img-bubble');
+                if (!bubble) {
+                    hideContextMenu();
+                    return;
+                }
+
+                e.preventDefault();
+                const wrap = bubble.closest('.msg-wrap');
+                const isImage = bubble.classList.contains('img-bubble');
+                const text = isImage ? `[Image: ${bubble.querySelector('.img-caption').textContent.replace('📎 ', '')}]` : bubble.textContent;
+                const from = wrap.querySelector('.msg-name')?.textContent || (wrap.classList.contains('self') || wrap.classList.contains('dm-self') ? 'Me' : 'System');
+
+                contextMsgData = { text, from, isImage, bubble };
+
+                const menu = document.getElementById('msg-context-menu');
+                menu.style.display = 'block';
+
+                // Position check to keep menu on screen
+                let x = e.clientX;
+                let y = e.clientY;
+                if (x + 150 > window.innerWidth) x -= 150;
+                if (y + 120 > window.innerHeight) y -= 120;
+
+                menu.style.left = x + 'px';
+                menu.style.top = y + 'px';
+            });
+
+            document.addEventListener('click', () => hideContextMenu());
+
+            function hideContextMenu() {
+                document.getElementById('msg-context-menu').style.display = 'none';
+            }
+
+            function handleMenuAction(action) {
+                if (!contextMsgData) return;
+                const { text, from, isImage } = contextMsgData;
+
+                if (action === 'copy') {
+                    navigator.clipboard.writeText(text);
+                } else if (action === 'reply') {
+                    const inp = document.getElementById('msg-input');
+                    inp.value = `@${from} `;
+                    inp.focus();
+                } else if (action === 'quote') {
+                    const inp = document.getElementById('msg-input');
+                    const quote = text.split('\n').map(l => `> ${l}`).join('\n');
+                    inp.value = quote + '\n' + inp.value;
+                    inp.focus();
+                    inp.style.height = 'auto';
+                    inp.style.height = Math.min(inp.scrollHeight, 80) + 'px';
+                }
+                hideContextMenu();
+            }
         </script>
 </body>
 

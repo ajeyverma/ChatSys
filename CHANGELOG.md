@@ -6,6 +6,59 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ---
+## [2.3.0] 
+
+### Added
+- **Context Menu**: Right-click menu for messages with options to copy, reply, and quote.
+- **Reply Feature**: Added reply functionality to messages.
+- **Quote Feature**: Added quote functionality to messages.
+
+### Fixed
+- Fixed a bug where the context menu was not working.
+
+
+
+## [2.2.1] - 2026-03-04
+
+### Fixed
+- Fixed a fatal crash in the main process (`TypeError: Cannot destructure property 'host' of 'undefined'`) when the client fails to connect on startup.
+- Added robust error object passing in the `ChatClient` emission of `server-not-found`.
+
+
+## [2.2.0] - 2026-03-04
+
+### Added
+- Comprehensive **Theming Engine** with support for Dark, Light, and System themes.
+- Global **CSS Token System** (`themes.css`) for consistent styling across Launcher, Client, and Servers.
+- **Theme Persistence**: User selection is saved to local storage and restored on startup.
+- Interactive Theme Switchers:
+  - Dedicated buttons in the Launcher.
+  - Polished icon toggles (🌗 ☀️ 🌙) in the Client/Server sidebars.
+
+### Fixed
+- Migrated all legacy hardcoded color values to dynamic CSS variables.
+- Refined UI contrast for better accessibility in both light and dark modes.
+
+### Changed
+- Major upgrade to internal UI architecture to support dynamic styling.
+- Streamlined version synchronization for minor and patch releases.
+
+
+## [2.1.0] - 2026-03-04
+
+### Added
+- **End-to-End Encryption (E2EE)**: RSA + AES-256-GCM hybrid encryption for all group messages and DMs.
+- **Persistent Logging Engine**: Automatically captures all system, server, and encryption events to date-rotated files in `%APPDATA%\chatsys\logs`.
+- **Secure Server DMs**: Fully encrypted communication channel between clients and the Server Admin console.
+
+### Fixed
+- **Encryption Relay**: Resolved a bug where relayed messages lost encryption metadata, showing as ciphertext to recipients.
+- **Self-Decryption**: Implemented dual-key encryption (sender + recipient) to allow users to view their own sent private messages.
+- **UI Privacy**: Filtered the internal "🖥️ Server" account from the client-side online user list.
+
+### Changed
+- **Refined Notifications**: Removed redundant "User Joined/Left" and "Auto-Hosting" system messages from the group chat feed to reduce clutter.
+- **Connection Privacy**: Reconnection attempts and status updates are now strictly confined to the titlebar status pill.
 
 ## [2.0.0] - 2026-03-03
 

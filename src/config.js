@@ -12,5 +12,6 @@ module.exports = {
   RECONNECT_DELAY: 2000,      // ms: client waits before retry
   RECONNECT_ATTEMPTS: 5,
   DISCOVERY_PORT: 65430,      // UDP: discovery beacon port
-  DISCOVERY_INTERVAL: 2000    // ms: primary broadcasts discovery
+  DISCOVERY_INTERVAL: 2000,   // ms: primary broadcasts discovery
+  VERSION: require('../package.json').version
 };

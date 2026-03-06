@@ -4,7 +4,8 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>ChatSys — Launch</title>
+  <link rel="stylesheet" href="themes.css" />
+  <script src="theme_manager.js"></script>
   <style>
     * {
       margin: 0;
@@ -15,8 +16,8 @@
 
     body {
       font-family: 'Inter', sans-serif;
-      background: #0f0f1a;
-      color: #e2e8f0;
+      background: var(--bg-main);
+      color: var(--text-main);
       height: 100vh;
       display: flex;
       flex-direction: column;
@@ -27,21 +28,22 @@
     /* Title Bar */
     .titlebar {
       height: 38px;
-      background: #0a0a14;
+      background: var(--bg-titlebar);
       display: flex;
       align-items: center;
       justify-content: space-between;
       padding-left: 16px;
       padding-right: 0;
       -webkit-app-region: drag;
-      border-bottom: 1px solid #1e1e3a;
+      border-bottom: 1px solid var(--border);
     }
 
     .titlebar-title {
-      font-size: 12px;
-      color: #6b7280;
+      font-size: 11px;
+      color: var(--text-muted);
       font-weight: 500;
-      padding: 10px 0 10px 0;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
     }
 
     .titlebar-btns {
@@ -63,7 +65,7 @@
     .win-btn svg {
       width: 10px;
       height: 10px;
-      fill: #94a3b8;
+      fill: var(--text-muted);
     }
 
     .win-btn:hover {
@@ -71,7 +73,11 @@
     }
 
     .win-btn:hover svg {
-      fill: #e2e8f0;
+      fill: var(--text-main);
+    }
+
+    [data-theme="light"] .win-btn:hover {
+      background: rgba(0, 0, 0, 0.05);
     }
 
     .win-btn.win-close:hover {
@@ -101,25 +107,25 @@
     .logo-icon {
       width: 64px;
       height: 64px;
-      background: linear-gradient(135deg, #6366f1, #8b5cf6);
+      background: linear-gradient(135deg, var(--accent), #8b5cf6);
       border-radius: 18px;
       display: flex;
       align-items: center;
       justify-content: center;
       font-size: 30px;
       margin: 0 0 16px 0;
-      box-shadow: 0 8px 32px rgba(99, 102, 241, .35);
+      box-shadow: 0 8px 32px var(--accent-glow);
     }
 
     .logo-area h1 {
       font-size: 26px;
       font-weight: 700;
-      color: #f1f5f9;
+      color: var(--text-main);
     }
 
     .logo-area p {
       font-size: 13px;
-      color: #64748b;
+      color: var(--text-muted);
       margin-top: 6px;
       max-width: 360px;
       line-height: 1.5;
@@ -127,13 +133,14 @@
 
     /* Config Panel */
     .config-panel {
-      background: #161628;
-      border: 1px solid #252545;
+      background: var(--bg-panel);
+      border: 1px solid var(--border);
       border-radius: 14px;
       padding: 24px 28px;
       width: 100%;
       max-width: 320px;
       animation: fadeIn .4s ease;
+      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
     }
 
     @keyframes fadeIn {
@@ -148,20 +155,13 @@
       }
     }
 
-    .config-panel h4 {
-      font-size: 13px;
-      color: #94a3b8;
-      margin-bottom: 14px;
-      font-weight: 500;
-    }
-
     .field {
       margin-bottom: 12px;
     }
 
     .field label {
       font-size: 11px;
-      color: #64748b;
+      color: var(--text-muted);
       display: block;
       margin-bottom: 5px;
       font-weight: 500;
@@ -169,11 +169,11 @@
 
     .field input {
       width: 100%;
-      background: #0f0f1a;
-      border: 1px solid #2d2d4e;
+      background: var(--input-bg);
+      border: 1px solid var(--border);
       border-radius: 8px;
       padding: 9px 12px;
-      color: #e2e8f0;
+      color: var(--text-main);
       font-size: 13px;
       font-family: 'Inter', sans-serif;
       outline: none;
@@ -181,13 +181,13 @@
     }
 
     .field input:focus {
-      border-color: #6366f1;
+      border-color: var(--accent);
     }
 
     .btn-launch {
       width: 100%;
       padding: 11px;
-      background: linear-gradient(135deg, #6366f1, #8b5cf6);
+      background: linear-gradient(135deg, var(--accent), #8b5cf6);
       border: none;
       border-radius: 10px;
       color: #fff;
@@ -203,17 +203,40 @@
       opacity: .9;
     }
 
-    .back-link {
-      font-size: 11px;
-      color: #475569;
-      cursor: pointer;
-      text-align: center;
-      margin-top: 10px;
-      text-decoration: underline;
+    /* Theme Select */
+    .theme-selector {
+      margin-top: 20px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      padding-top: 15px;
+      border-top: 1px solid var(--border);
     }
 
-    .back-link:hover {
-      color: #94a3b8;
+    .theme-btn {
+      background: var(--input-bg);
+      border: 1px solid var(--border);
+      color: var(--text-muted);
+      padding: 5px 12px;
+      border-radius: 20px;
+      font-size: 10px;
+      font-weight: 600;
+      cursor: pointer;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      transition: all 0.2s;
+    }
+
+    .theme-btn:hover {
+      border-color: var(--accent);
+      color: var(--text-main);
+    }
+
+    .theme-btn.active {
+      background: var(--accent);
+      color: white;
+      border-color: var(--accent);
     }
   </style>
 </head>
@@ -258,7 +281,14 @@
       </div>
       <button class="btn-launch" id="btn-launch" onclick="launch()" style="margin-top: 10px;">Connect</button>
 
-      <div style="font-size: 10px; color: #475569; text-align: center; margin-top: 16px; font-style: italic;">
+      <!-- Theme Switcher -->
+      <div class="theme-selector">
+        <button class="theme-btn" id="theme-default" onclick="setTheme('default')">Default</button>
+        <button class="theme-btn" id="theme-light" onclick="setTheme('light')">Light</button>
+        <button class="theme-btn" id="theme-dark" onclick="setTheme('dark')">Dark</button>
+      </div>
+
+      <div style="font-size: 10px; color: var(--text-dim); text-align: center; margin-top: 16px; font-style: italic;">
         If a server does not exist at this address, ChatSys will automatically boot a Primary Server in the background.
       </div>
       <div id="discovery-msg"
@@ -269,6 +299,22 @@
   </div>
 
   <script>
+    // Theme UI sync
+    function setTheme(t) {
+      ThemeManager.apply(t);
+      updateThemeUI();
+    }
+
+    function updateThemeUI() {
+      const current = ThemeManager.getCurrent();
+      document.querySelectorAll('.theme-btn').forEach(btn => btn.classList.remove('active'));
+      const activeBtn = document.getElementById(`theme-${current}`);
+      if (activeBtn) activeBtn.classList.add('active');
+    }
+
+    // Run on start
+    updateThemeUI();
+
     function launch() {
       const username = (document.getElementById('username').value || '').trim();
       if (!username) {
