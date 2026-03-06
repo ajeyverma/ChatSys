@@ -4,8 +4,14 @@
 <head>
     <meta charset="UTF-8" />
     <title>ChatSys — Client</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="themes.css" />
+    <link rel="stylesheet" href="mgmt.css" />
     <script src="theme_manager.js"></script>
+    <script src="mgmt.js"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
     <style>
         * {
             margin: 0;
@@ -41,7 +47,58 @@
         .titlebar-left {
             display: flex;
             align-items: center;
-            gap: 10px;
+            gap: 15px;
+            font-size: 12px;
+            font-weight: 700;
+            color: var(--text-muted);
+            opacity: 0.8;
+        }
+
+        .tb-nav {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            -webkit-app-region: no-drag;
+        }
+
+        .tb-nav-item {
+            padding: 4px 10px;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.2s;
+            color: var(--text-dim);
+            font-weight: 600;
+            font-size: 13px;
+            display: flex;
+            align-items: center;
+
+            color: var(--text-main);
+        }
+
+        .tb-nav-item:hover {
+            background: rgba(255, 255, 255, 0.05);
+            color: var(--text-main);
+        }
+
+        .tb-nav-item.active {
+            background: var(--accent-glow);
+            color: var(--text-main);
+        }
+
+        .titlebar-right {
+            display: flex;
+            align-items: center;
+            height: 100%;
+            -webkit-app-region: no-drag;
+            padding-right: 0;
+            gap: 4px;
+        }
+
+        .tb-session-info {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-right: 8px;
         }
 
         .tb-role-badge {
@@ -265,12 +322,38 @@
             overflow: hidden;
         }
 
+        .view-container {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .view-pane {
+            flex: 1;
+            display: none;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .view-pane.active {
+            display: flex;
+        }
+
         .app-layout {
             flex: 1;
             display: grid;
             grid-template-columns: 190px 1fr;
             overflow: hidden;
             height: 100%;
+        }
+
+        .app-layout.no-sidebar {
+            grid-template-columns: 1fr;
+        }
+
+        .app-layout.no-sidebar .users-sidebar {
+            display: none;
         }
 
         /* ─── Users Sidebar ───────────────────────────────────── */
@@ -1017,18 +1100,30 @@
         <!-- Titlebar -->
         <div class="titlebar">
             <div class="titlebar-left">
-                <span class="tb-user-name" id="tb-user-name">Guest</span>
-                <span class="tb-role-tag" id="tb-role-tag">@client</span>
-                <div class="status-pill">
-                    <div class="status-dot disconnected" id="status-dot"></div>
-                    <span class="status-pill-text" id="status-text">Not connected</span>
+                <span style="font-size:13px; color:var(--text-main);">🗨️</span>
+                <div class="tb-nav">
+                    <div class="tb-nav-item active" id="nav-chat" onclick="setNav('chat')">
+                        Chat
+                    </div>
+                    <div class="tb-nav-item" id="nav-users" onclick="setNav('users')">
+                        Users
+                    </div>
                 </div>
             </div>
-            <div class="titlebar-btns">
-                <!-- Theme Picker Button -->
-                <div class="tb-theme-wrap" id="tb-theme-wrap">
-                    <div class="tb-theme-btn" id="tb-theme-btn" onclick="toggleThemeDrop(event)" title="Change Theme">🎨
+            <div class="titlebar-right">
+                <!-- User Profile & Status -->
+                <div class="tb-session-info">
+                    <span class="tb-user-name" id="tb-user-name">Guest</span>
+                    <span class="tb-role-tag" id="tb-role-tag">@client</span>
+                    <div class="status-pill">
+                        <div class="status-dot disconnected" id="status-dot"></div>
+                        <span class="status-pill-text" id="status-text">Not connected</span>
                     </div>
+                </div>
+
+                <!-- Theme Picker -->
+                <div class="tb-theme-wrap" id="tb-theme-wrap" style="margin-right:4px;">
+                    <div class="tb-theme-btn" id="tb-theme-btn" onclick="toggleThemeDrop(event)" title="Theme">🎨</div>
                     <div class="tb-theme-drop" id="tb-theme-drop">
                         <div class="tb-tdrop-item" id="tdd-default" onclick="setThemeFromTb('default')">
                             <span class="td-icon">🌗</span> System
@@ -1041,21 +1136,26 @@
                         </div>
                     </div>
                 </div>
-                <div class="win-btn win-min" onclick="api.send('win-minimize',{})">
-                    <svg viewBox="0 0 10 1">
-                        <rect x="0" y="0" width="10" height="1"></rect>
-                    </svg>
-                </div>
-                <div class="win-btn win-max" onclick="api.send('win-maximize',{})">
-                    <svg viewBox="0 0 10 10">
-                        <path d="M0,0v10h10V0H0z M9,9H1V1h8V9z"></path>
-                    </svg>
-                </div>
-                <div class="win-btn win-close" onclick="api.send('win-close',{})">
-                    <svg viewBox="0 0 10 10">
-                        <polygon points="10,0.7 9.3,0 5,4.3 0.7,0 0,0.7 4.3,5 0,9.3 0.7,10 5,5.7 9.3,10 10,9.3 5.7,5">
-                        </polygon>
-                    </svg>
+
+                <!-- Window Buttons -->
+                <div class="titlebar-btns">
+                    <div class="win-btn win-min" onclick="api.send('win-minimize',{})">
+                        <svg viewBox="0 0 10 1">
+                            <rect x="0" y="0" width="10" height="1"></rect>
+                        </svg>
+                    </div>
+                    <div class="win-btn win-max" onclick="api.send('win-maximize',{})">
+                        <svg viewBox="0 0 10 10">
+                            <path d="M0,0v10h10V0H0z M9,9H1V1h8V9z"></path>
+                        </svg>
+                    </div>
+                    <div class="win-btn win-close" onclick="api.send('win-close',{})">
+                        <svg viewBox="0 0 10 10">
+                            <polygon
+                                points="10,0.7 9.3,0 5,4.3 0.7,0 0,0.7 4.3,5 0,9.3 0.7,10 5,5.7 9.3,10 10,9.3 5.7,5">
+                            </polygon>
+                        </svg>
+                    </div>
                 </div>
             </div>
         </div>
@@ -1068,39 +1168,233 @@
                 <div class="user-list" id="user-list">
                     <div class="dm-hint">Connect to see users</div>
                 </div>
-                <button class="btn-manage" id="btn-manage" onclick="toggleAdminPanel()">
-                    <span>🛠️</span> Manage Credentials
-                </button>
             </div>
 
-            <!-- Chat -->
+            <!-- Main Content Area -->
             <div class="chat-main">
-                <div class="mode-bar" id="mode-bar">
-                    <span>🌐</span><span class="mode-lbl">Group Chat</span>
-                </div>
-                <div class="messages" id="messages">
-                    <div class="welcome" id="welcome">
-                        <div class="welcome-icon">🔌</div>
-                        <p>Connect to the server to start chatting.<br />Click a user to send a private
-                            message.<br />Use 📎
-                            to share images.</p>
+                <!-- Navigation Panes -->
+                <div class="view-container">
+
+                    <!-- Chat View -->
+                    <div class="view-pane active" id="view-chat">
+                        <div class="mode-bar" id="mode-bar">
+                            <span>🌐</span><span class="mode-lbl">Group Chat</span>
+                        </div>
+                        <div class="messages" id="messages">
+                            <div class="welcome" id="welcome">
+                                <div class="welcome-icon">🔌</div>
+                                <p>Connect to the server to start chatting.<br />Click a user to send a private
+                                    message.<br />Use 📎
+                                    to share images.</p>
+                            </div>
+                        </div>
+                        <!-- Image preview bar -->
+                        <div class="img-preview-bar" id="img-preview-bar">
+                            <img class="img-preview-thumb" id="img-preview-thumb" src="" alt="preview" />
+                            <span class="img-preview-name" id="img-preview-name"></span>
+                            <button class="btn-cancel-img" onclick="cancelImage()">✕ Cancel</button>
+                        </div>
+                        <div class="input-area">
+                            <div class="input-row">
+                                <button class="btn-img" id="btn-img" onclick="pickImage()" disabled
+                                    title="Send image">📎</button>
+                                <textarea class="msg-input" id="msg-input"
+                                    placeholder="Type a message... (Enter to send, Shift+Enter for new line)" rows="1"
+                                    disabled></textarea>
+                                <button class="btn-send" id="btn-send" onclick="sendMsg()" disabled>➤</button>
+                            </div>
+                        </div>
                     </div>
-                </div>
-                <!-- Image preview bar -->
-                <div class="img-preview-bar" id="img-preview-bar">
-                    <img class="img-preview-thumb" id="img-preview-thumb" src="" alt="preview" />
-                    <span class="img-preview-name" id="img-preview-name"></span>
-                    <button class="btn-cancel-img" onclick="cancelImage()">✕ Cancel</button>
-                </div>
-                <div class="input-area">
-                    <div class="input-row">
-                        <button class="btn-img" id="btn-img" onclick="pickImage()" disabled
-                            title="Send image">📎</button>
-                        <textarea class="msg-input" id="msg-input"
-                            placeholder="Type a message... (Enter to send, Shift+Enter for new line)" rows="1"
-                            disabled></textarea>
-                        <button class="btn-send" id="btn-send" onclick="sendMsg()" disabled>➤</button>
+
+                    <!-- Users Management View -->
+                    <div class="view-pane" id="view-users">
+                        <div class="mgmt-layout">
+                            <!-- MGMT Sidebar -->
+                            <div class="mgmt-sidebar">
+                                <div class="mgmt-side-item active" onclick="MgmtManager.setTab('accounts')">
+                                    <i data-lucide="users"></i> Accounts
+                                </div>
+                                <div class="mgmt-side-item" onclick="MgmtManager.setTab('roles')">
+                                    <i data-lucide="shield"></i> Role Management
+                                </div>
+                                <div class="mgmt-side-item" onclick="MgmtManager.setTab('create')">
+                                    <i data-lucide="file-text"></i> Add User
+                                </div>
+                                <div class="mgmt-side-item" onclick="MgmtManager.setTab('approvals')">
+                                    <i data-lucide="user-check"></i> Approval Request
+                                </div>
+                            </div>
+
+                            <!-- MGMT Main Content -->
+                            <div class="mgmt-main">
+                                <!-- Accounts Pane -->
+                                <div class="mgmt-content-pane active" id="pane-accounts">
+                                    <div class="users-mgmt-header">
+                                        <div class="header-top">
+                                            <div>
+                                                <h2>User Management</h2>
+                                                <p>Live registered accounts in public schema</p>
+                                            </div>
+                                            <button class="mgmt-btn" onclick="MgmtManager.setTab('create')">
+                                                <i data-lucide="user-plus"></i> New User
+                                            </button>
+                                        </div>
+
+
+                                        <div class="mgmt-stats">
+                                            <div class="mgmt-card">
+                                                <h3>Total Registered</h3>
+                                                <div class="val" id="mgmt-total-users">0</div>
+                                                <div class="progress-wrap">
+                                                    <div class="progress-bar" style="width: 45%;"></div>
+                                                </div>
+                                            </div>
+                                            <div class="mgmt-card">
+                                                <h3>Sync Status</h3>
+                                                <div class="val" style="color:#10b981;">Online</div>
+                                                <div class="progress-wrap">
+                                                    <div class="progress-bar" style="width: 100%; background: #10b981;">
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div class="mgmt-card">
+                                                <h3>Active Sessions</h3>
+                                                <div class="val">1</div>
+                                                <div class="progress-wrap">
+                                                    <div class="progress-bar" style="width: 15%; background: #f59e0b;">
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <div class="mgmt-search-container">
+                                            <div class="mgmt-search-wrap">
+                                                <i data-lucide="search" class="search-icon"></i>
+                                                <input type="text" id="mgmt-user-search" placeholder="Search users..."
+                                                    oninput="MgmtManager.filterUsers(this.value)">
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="users-mgmt-content">
+                                        <div class="mgmt-table-wrap">
+                                            <div class="mgmt-table-header">
+                                                <div class="col-username">Username</div>
+                                                <div class="col-role">Role</div>
+                                                <div class="col-created">Created At</div>
+                                                <div class="col-actions">Actions</div>
+                                            </div>
+                                            <div id="mgmt-user-list"></div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Role Mgmt Pane -->
+                                <div class="mgmt-content-pane" id="pane-roles">
+                                    <div class="users-mgmt-header">
+                                        <h2>Role Management</h2>
+                                        <p>Neon Infrastructure Permissions</p>
+                                    </div>
+                                    <div class="users-mgmt-content">
+                                        <div class="mgmt-form-card" style="max-width: 100%;">
+                                            <h3>System Notice</h3>
+                                            <p
+                                                style="color:var(--mgmt-text-dim); text-transform:none; font-weight:normal; font-size:13px; margin:15px 0 25px;">
+                                                Advanced role policy configuration is currently managed via CLI.
+                                                UI dashboard integration is in development.
+                                            </p>
+                                            <button class="mgmt-btn" disabled style="opacity:0.5; cursor:default;"><i
+                                                    data-lucide="settings"></i> Configure Policies</button>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Create Account Pane -->
+                                <div class="mgmt-content-pane" id="pane-create">
+                                    <div class="users-mgmt-header">
+                                        <h2>Create New Account</h2>
+                                        <p>Provision local database credentials</p>
+                                    </div>
+                                    <div class="users-mgmt-content">
+                                        <div class="mgmt-split-layout">
+                                            <!-- Main Form -->
+                                            <div class="mgmt-main-col">
+                                                <div class="mgmt-form-card">
+                                                    <div class="mgmt-field">
+                                                        <label>Username</label>
+                                                        <input type="text" id="mgmt-new-user"
+                                                            placeholder="e.g. adarsh_01" />
+                                                    </div>
+                                                    <div class="mgmt-field">
+                                                        <label>Password</label>
+                                                        <input type="password" id="mgmt-new-pass"
+                                                            placeholder="••••••••" />
+                                                    </div>
+                                                    <div class="mgmt-field">
+                                                        <label>Assign Role</label>
+                                                        <select id="mgmt-new-role">
+                                                            <option value="user">User</option>
+                                                            <option value="admin">Admin</option>
+                                                            <option value="readonly">Readonly</option>
+                                                        </select>
+                                                    </div>
+                                                    <button class="mgmt-btn" onclick="MgmtManager.createAccount()"
+                                                        style="width:100%; justify-content:center;">
+                                                        <i data-lucide="user-plus"></i> Create Account
+                                                    </button>
+                                                    <div id="mgmt-new-error"
+                                                        style="color:#f43f5e; font-size:12px; display:none; margin-top:15px; font-weight:600;">
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                            <!-- Info Sidebar -->
+                                            <div class="mgmt-side-col">
+                                                <div class="mgmt-info-card">
+                                                    <h3>Account Guidelines</h3>
+                                                    <p>All new accounts are created in the <code>public</code> schema by
+                                                        default.</p>
+                                                    <ul class="mgmt-info-list">
+                                                        <li><i data-lucide="check-circle"></i> Minimum 4 characters</li>
+                                                        <li><i data-lucide="check-circle"></i> Roles affect global
+                                                            visibility</li>
+                                                        <li><i data-lucide="check-circle"></i> Encryption salt is
+                                                            auto-generated</li>
+                                                    </ul>
+                                                </div>
+
+                                                <div class="mgmt-info-card" style="margin-top:20px;">
+                                                    <h3>Security Notice</h3>
+                                                    <p>Passphrases are hashed using <strong>BCrypt v2.1</strong> before
+                                                        sync.</p>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Approvals Pane -->
+                                <div class="mgmt-content-pane" id="pane-approvals">
+                                    <div class="users-mgmt-header">
+                                        <h2>Approval Requests</h2>
+                                        <p>Pending account authorizations</p>
+                                    </div>
+                                    <div class="users-mgmt-content">
+                                        <div class="mgmt-table-wrap"
+                                            style="padding:60px; text-align:center; color:var(--mgmt-text-muted);">
+                                            <div style="margin-bottom:20px; opacity:0.5;">
+                                                <i data-lucide="clipboard-list" style="width:48px; height:48px;"></i>
+                                            </div>
+                                            <div style="font-weight:600; font-size:14px; color:var(--mgmt-text-main);">
+                                                No Pending Approvals</div>
+                                            <div style="font-size:12px; margin-top:8px;">New registration requests will
+                                                appear here for review.</div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
                     </div>
+
                 </div>
             </div>
         </div>
@@ -1110,38 +1404,7 @@
             <!-- content stays same -->
         </div>
 
-        <!-- User Management Modal -->
-        <div class="modal-overlay" id="admin-modal" style="display:none;">
-            <div class="modal admin-modal">
-                <div class="admin-header">
-                    <h2>🔐 User Management</h2>
-                    <button class="win-btn" onclick="toggleAdminPanel()">✕</button>
-                </div>
-
-                <div class="add-user-form">
-                    <input type="text" id="adm-user" placeholder="Username" />
-                    <input type="password" id="adm-pass" placeholder="Password" />
-                    <select id="adm-role"
-                        style="background:#0f0f1a; color:#fff; border:1px solid #2d2d4e; border-radius:4px; font-size:11px; padding:0 8px;">
-                        <option value="user">User</option>
-                        <option value="admin">Admin</option>
-                        <option value="readonly">Readonly</option>
-                    </select>
-                    <button class="btn-connect" style="padding:6px 12px; width:auto;" onclick="adminAddUser()">+
-                        Add</button>
-                </div>
-
-                <div id="admin-error" style="color:#ef4444; font-size:11px; margin-bottom:10px; display:none;"></div>
-
-                <div class="admin-user-list" id="admin-user-list">
-                    <!-- users listed here -->
-                </div>
-
-                <div style="font-size:10px; color:var(--text-dim); margin-top:15px; text-align:center;">
-                    Note: Changes are automatically replicated to the network via CredSync.
-                </div>
-            </div>
-        </div>
+        <!-- User Management Modal (Removed, integrated into view-users) -->
 
         <script>
             // ─── Global State ──────────────────────────────────────────
@@ -1162,94 +1425,27 @@
                 document.getElementById('tb-user-name').textContent = username;
                 document.getElementById('tb-role-tag').textContent = `@${role}`;
                 if (role === 'admin') {
-                    document.getElementById('btn-manage').style.display = 'flex';
+                    // Admin specific initializations can go here
                 }
             });
 
-            // Admin Actions
-            async function toggleAdminPanel() {
-                const el = document.getElementById('admin-modal');
-                if (el.style.display === 'none') {
-                    el.style.display = 'flex';
-                    loadAdminUserList();
+            // ─── Navigation ───────────────────────────────────────────
+            function setNav(mode) {
+                document.querySelectorAll('.tb-nav-item').forEach(el => el.classList.remove('active'));
+                document.getElementById(`nav-${mode}`).classList.add('active');
+
+                document.querySelectorAll('.view-pane').forEach(el => el.classList.remove('active'));
+
+                const layout = document.querySelector('.app-layout');
+
+                if (mode === 'users') {
+                    document.getElementById('view-users').classList.add('active');
+                    if (layout) layout.classList.add('no-sidebar');
+                    MgmtManager.setTab('accounts');
                 } else {
-                    el.style.display = 'none';
+                    document.getElementById('view-chat').classList.add('active');
+                    if (layout) layout.classList.remove('no-sidebar');
                 }
-            }
-
-            async function loadAdminUserList() {
-                const container = document.getElementById('admin-user-list');
-                container.innerHTML = '<div style="text-align:center; padding:20px; color:var(--text-muted); font-size:12px;">Loading users...</div>';
-
-                const users = await api.invoke('admin:list-users');
-                container.innerHTML = '';
-
-                users.forEach(u => {
-                    const row = document.createElement('div');
-                    row.className = 'user-row';
-                    row.innerHTML = `
-                        <div class="user-row-info">
-                            <div class="user-row-name" onclick="adminRowInfo('${u.user_id}')">${u.username} ${u.username === myUsername ? '<span style="color:var(--accent); font-size:9px;">(You)</span>' : ''}</div>
-                            <div class="user-row-role ${!u.is_active ? 'inactive' : ''}">
-                                ${!u.is_active ? 'DEACTIVATED' : `
-                                    <select onchange="adminChangeRole('${u.username}', this.value)" style="background:none; border:none; color:inherit; font-weight:bold; cursor:pointer;">
-                                        <option value="user" ${u.role === 'user' ? 'selected' : ''}>USER</option>
-                                        <option value="admin" ${u.role === 'admin' ? 'selected' : ''}>ADMIN</option>
-                                        <option value="readonly" ${u.role === 'readonly' ? 'selected' : ''}>READONLY</option>
-                                    </select>
-                                `}
-                            </div>
-                        </div>
-                        <div class="user-row-btns">
-                           ${u.username !== myUsername && u.is_active ? `<button class="row-btn red" onclick="adminDeleteUser('${u.username}')">Deactivate</button>` : ''}
-                           ${u.is_active ? `<button class="row-btn" onclick="adminChangePass('${u.username}')">Pass</button>` : ''}
-                        </div>
-                    `;
-                    container.appendChild(row);
-                });
-            }
-
-            async function adminChangeRole(username, newRole) {
-                const res = await api.invoke('admin:change-role', { username, role: newRole });
-                if (!res.success) alert(res.error);
-                loadAdminUserList();
-            }
-
-            function adminRowInfo(uid) {
-                alert(`Internal ID: ${uid}`);
-            }
-
-            async function adminAddUser() {
-                const username = document.getElementById('adm-user').value.trim();
-                const password = document.getElementById('adm-pass').value.trim();
-                const role = document.getElementById('adm-role').value;
-                const err = document.getElementById('admin-error');
-
-                if (!username || !password) return;
-
-                const res = await api.invoke('admin:add-user', { username, password, role });
-                if (res.success) {
-                    document.getElementById('adm-user').value = '';
-                    document.getElementById('adm-pass').value = '';
-                    loadAdminUserList();
-                    err.style.display = 'none';
-                } else {
-                    err.textContent = res.error;
-                    err.style.display = 'block';
-                }
-            }
-
-            async function adminDeleteUser(username) {
-                if (!confirm(`Deactivate user "${username}"?`)) return;
-                await api.invoke('admin:delete-user', { username });
-                loadAdminUserList();
-            }
-
-            async function adminChangePass(username) {
-                const newPass = prompt(`Enter new password for ${username}:`);
-                if (!newPass) return;
-                await api.invoke('admin:change-password', { username, password: newPass });
-                alert('Password updated.');
             }
 
             // Theme UI sync
@@ -1698,6 +1894,10 @@
                     inp.style.height = Math.min(inp.scrollHeight, 80) + 'px';
                 }
                 hideContextMenu();
+            }
+            // Initialize Lucide icons
+            if (window.lucide) {
+                window.lucide.createIcons();
             }
         </script>
 </body>

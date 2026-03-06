@@ -337,6 +337,31 @@ ipcMain.handle('admin:change-password', async (event, { username, password }) =>
     } catch (e) { return { success: false, error: e.message }; }
 });
 
+// ─── IPC: Registration Requests ──────────────────────────────────────────────
+ipcMain.handle('client:apply-id', async (event, { username, password }) => {
+    try {
+        const credDb = require('./src/credsync/database');
+        credDb.addApprovalRequest(username, password);
+        return { success: true };
+    } catch (e) { return { success: false, error: e.message }; }
+});
+
+ipcMain.handle('admin:list-approvals', async () => {
+    try {
+        const credDb = require('./src/credsync/database');
+        return credDb.listApprovals();
+    } catch (e) { return []; }
+});
+
+ipcMain.handle('admin:approve-request', async (event, { id }) => {
+    try {
+        const credDb = require('./src/credsync/database');
+        const success = credDb.approveRequest(id, 'ui-admin');
+        if (success && credNode) credNode.bumpAndAnnounce();
+        return { success };
+    } catch (e) { return { success: false, error: e.message }; }
+});
+
 // ─── App Lifecycle ────────────────────────────────────────────────────────────
 app.whenReady().then(() => {
     logger.info('Main', 'ChatSys starting up...');

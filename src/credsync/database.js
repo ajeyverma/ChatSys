@@ -43,6 +43,13 @@ function init(dataDir) {
       node_id      TEXT,
       details      TEXT
     );
+    CREATE TABLE IF NOT EXISTS approvals (
+      id           INTEGER PRIMARY KEY AUTOINCREMENT,
+      username     TEXT    NOT NULL,
+      password     TEXT    NOT NULL,
+      status       TEXT    NOT NULL DEFAULT 'pending',
+      created_at   INTEGER NOT NULL
+    );
   `);
 
     if (!db.prepare("SELECT value FROM db_meta WHERE key='version'").get()) {
@@ -84,8 +91,8 @@ function addUser(username, password, role = 'user', permissions = [], by = 'syst
 }
 
 function deleteUser(username, by = 'system', nodeId = '') {
-    const r = db.prepare("UPDATE credentials SET is_active=0, updated_at=? WHERE username=?")
-        .run(Date.now(), username);
+    const r = db.prepare("DELETE FROM credentials WHERE username=?")
+        .run(username);
     if (r.changes) { audit('DELETE_USER', username, by, nodeId); return true; }
     return false;
 }
@@ -158,11 +165,28 @@ function importSnapshot({ meta, credentials, auditLog }) {
     })();
 }
 
+// ── Approvals ────────────────────────────────────────────────────────────────
+function addApprovalRequest(username, password) {
+    db.prepare("INSERT INTO approvals (username, password, created_at) VALUES (?, ?, ?)")
+        .run(username, password, Date.now());
+}
+function listApprovals() {
+    return db.prepare("SELECT * FROM approvals WHERE status = 'pending'").all();
+}
+function approveRequest(id, by, nodeId) {
+    const req = db.prepare("SELECT * FROM approvals WHERE id = ?").get(id);
+    if (!req) return false;
+    addUser(req.username, req.password, 'user', [], by, nodeId);
+    db.prepare("UPDATE approvals SET status = 'approved' WHERE id = ?").run(id);
+    return true;
+}
+
 module.exports = {
     init, getVersion, bumpVersion,
     addUser, deleteUser, changePassword, changeRole,
     verifyLogin, getUser, listUsers,
-    exportSnapshot, importSnapshot
+    exportSnapshot, importSnapshot,
+    addApprovalRequest, listApprovals, approveRequest
 };
 
 

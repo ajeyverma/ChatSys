@@ -131,6 +131,27 @@
       line-height: 1.5;
     }
 
+    .btn-apply {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      margin-top: 16px;
+      padding: 8px 16px;
+      background: rgba(99, 102, 241, 0.1);
+      border: 1px solid rgba(99, 102, 241, 0.2);
+      border-radius: 8px;
+      color: var(--accent);
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .btn-apply:hover {
+      background: rgba(99, 102, 241, 0.15);
+      border-color: var(--accent);
+    }
+
     /* Config Panel */
     .config-panel {
       background: var(--bg-panel);
@@ -337,40 +358,64 @@
       <div class="logo-icon">💬</div>
       <h1>ChatSys</h1>
       <p>Fault-tolerant LAN communication. Join a network or we'll automatically host one for you.</p>
+      <button class="btn-apply" onclick="toggleApplyForm()">
+        <span style="font-size:16px;">📝</span> Apply for ID
+      </button>
     </div>
 
     <!-- Config Panel -->
     <div class="config-panel" id="config-panel">
-      <div class="field">
-        <label>Select User</label>
-        <select id="username">
-          <option value="" disabled selected>Loading users...</option>
-        </select>
-      </div>
-      <div class="field">
-        <label>Network IP</label>
-        <input id="serverHost" placeholder="e.g. 192.168.1.101" value="127.0.0.1" />
-      </div>
-      <div class="field">
-        <label>Password</label>
-        <input id="password" type="password" placeholder="••••••••" maxlength="64" />
-      </div>
-      <div class="field">
-        <label>Port</label>
-        <input id="serverPort" placeholder="65432" value="65432" />
-      </div>
-      <button class="btn-launch" id="btn-launch" onclick="launch()" style="margin-top: 10px;">Connect</button>
-      <div id="login-error"
-        style="font-size: 11px; color: #ef4444; margin-top: 8px; text-align: center; display: none;"></div>
+      <!-- Login Form (Default) -->
+      <div id="login-form">
+        <div class="field">
+          <label>Select User</label>
+          <select id="username">
+            <option value="" disabled selected>Loading users...</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>Network IP</label>
+          <input id="serverHost" placeholder="e.g. 192.168.1.101" value="127.0.0.1" />
+        </div>
+        <div class="field">
+          <label>Password</label>
+          <input id="password" type="password" placeholder="••••••••" maxlength="64" />
+        </div>
+        <div class="field">
+          <label>Port</label>
+          <input id="serverPort" placeholder="65432" value="65432" />
+        </div>
+        <button class="btn-launch" id="btn-launch" onclick="launch()" style="margin-top: 10px;">Connect</button>
+        <div id="login-error"
+          style="font-size: 11px; color: #ef4444; margin-top: 8px; text-align: center; display: none;"></div>
 
-
-
-      <div style="font-size: 10px; color: var(--text-dim); text-align: center; margin-top: 16px; font-style: italic;">
-        If a server does not exist at this address, ChatSys will automatically boot a Primary Server in the background.
+        <div style="font-size: 10px; color: var(--text-dim); text-align: center; margin-top: 16px; font-style: italic;">
+          If a server does not exist at this address, ChatSys will automatically boot a Primary Server in the
+          background.
+        </div>
+        <div id="discovery-msg"
+          style="font-size: 11px; color: #10b981; text-align: center; margin-top: 10px; font-weight: 500; display: none; animation: fadeIn .3s ease;">
+          <!-- Discovered server message goes here -->
+        </div>
       </div>
-      <div id="discovery-msg"
-        style="font-size: 11px; color: #10b981; text-align: center; margin-top: 10px; font-weight: 500; display: none; animation: fadeIn .3s ease;">
-        <!-- Discovered server message goes here -->
+
+      <!-- Apply Form (Hidden by default) -->
+      <div id="apply-form" style="display: none;">
+        <h2 style="font-size: 16px; margin-bottom: 16px; font-weight: 700;">Registration Request</h2>
+        <div class="field">
+          <label>Desired Username</label>
+          <input id="apply-username" placeholder="e.g. user_99" />
+        </div>
+        <div class="field">
+          <label>Set Password</label>
+          <input id="apply-password" type="password" placeholder="••••••••" />
+        </div>
+        <button class="btn-launch" id="btn-apply-submit" onclick="submitApplication()" style="margin-top: 10px;">Submit
+          Request</button>
+        <button class="btn-launch" onclick="toggleApplyForm()"
+          style="margin-top: 8px; background: transparent; border: 1px solid var(--border); color: var(--text-main);">Back
+          to Login</button>
+        <div id="apply-msg" style="font-size: 11px; margin-top: 12px; text-align: center; display: none;"></div>
       </div>
     </div>
   </div>
@@ -443,13 +488,62 @@
       document.getElementById('btn-launch').textContent = 'Connect';
       document.getElementById('btn-launch').disabled = false;
     });
-    document.getElementById('username').addEventListener('change', () => {
-      document.getElementById('username').style.borderColor = 'var(--border)';
-    });
-
     // Run on start
     updateThemeUI();
     loadUsers();
+
+    function toggleApplyForm() {
+      const login = document.getElementById('login-form');
+      const apply = document.getElementById('apply-form');
+      if (login.style.display === 'none') {
+        login.style.display = 'block';
+        apply.style.display = 'none';
+      } else {
+        login.style.display = 'none';
+        apply.style.display = 'block';
+      }
+    }
+
+    async function submitApplication() {
+      const username = document.getElementById('apply-username').value.trim();
+      const password = document.getElementById('apply-password').value.trim();
+      const msg = document.getElementById('apply-msg');
+      const btn = document.getElementById('btn-apply-submit');
+
+      if (!username || !password) {
+        msg.textContent = 'Please fill all fields.';
+        msg.style.color = '#ef4444';
+        msg.style.display = 'block';
+        return;
+      }
+
+      btn.disabled = true;
+      btn.textContent = 'Submitting...';
+
+      const result = await api.invoke('client:apply-id', { username, password });
+      if (result.success) {
+        msg.textContent = 'Application sent! Wait for admin approval.';
+        msg.style.color = '#10b981';
+        msg.style.display = 'block';
+        btn.style.display = 'none';
+        setTimeout(() => {
+          toggleApplyForm();
+          // Reset for next time
+          btn.style.display = 'block';
+          btn.disabled = false;
+          btn.textContent = 'Submit Request';
+          msg.style.display = 'none';
+          document.getElementById('apply-username').value = '';
+          document.getElementById('apply-password').value = '';
+        }, 3000);
+      } else {
+        msg.textContent = result.error || 'Failed to submit.';
+        msg.style.color = '#ef4444';
+        msg.style.display = 'block';
+        btn.disabled = false;
+        btn.textContent = 'Submit Request';
+      }
+    }
 
     async function launch() {
       const username = (document.getElementById('username').value || '').trim();
