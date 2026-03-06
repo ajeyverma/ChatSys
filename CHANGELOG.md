@@ -6,6 +6,20 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ---
+## [2.4.0]
+
+### Changed
+- **Theme Control Relocated**: Moved theme switcher out of the sidebar/config-panel into a dedicated titlebar button (🎨) on both the **Launcher** and **Client** windows.
+  - Clicking the palette icon opens a compact animated dropdown with **System**, **Light**, and **Dark** theme options.
+  - The button icon updates dynamically to reflect the currently active theme (🌗 / ☀️ / 🌙).
+  - Dropdown auto-dismisses on outside click.
+
+### Removed
+- Removed the inline theme toggle buttons from the **Client** sidebar (bottom of the users panel).
+- Removed the theme pill buttons (Default / Light / Dark) from the **Launcher** config panel.
+
+---
+
 ## [2.3.0] 
 
 ### Added
