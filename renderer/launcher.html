@@ -18,7 +18,7 @@
       font-family: 'Inter', sans-serif;
       background: var(--bg-main);
       color: var(--text-main);
-      height: 105vh;
+      height: 100vh;
       display: flex;
       flex-direction: column;
       overflow: hidden;
@@ -95,7 +95,7 @@
       flex-direction: row;
       align-items: center;
       justify-content: center;
-      padding: 32px 48px;
+      padding: 0 48px 0px;
       gap: 40px;
     }
 
@@ -514,8 +514,12 @@
       <div id="apply-form" style="display: none;">
         <h2 style="font-size: 16px; margin-bottom: 16px; font-weight: 700;">Registration Request</h2>
         <div class="field">
-          <label>Desired Username</label>
+          <label>Desired UserID</label>
           <input id="apply-username" placeholder="e.g. user_99" />
+        </div>
+        <div class="field">
+          <label>Full Name</label>
+          <input id="apply-fullname" placeholder="e.g. John Doe" />
         </div>
         <div class="field">
           <label>Set Password</label>
@@ -685,11 +689,12 @@
 
     async function submitApplication() {
       const username = document.getElementById('apply-username').value.trim();
+      const fullName = document.getElementById('apply-fullname').value.trim();
       const password = document.getElementById('apply-password').value.trim();
       const msg = document.getElementById('apply-msg');
       const btn = document.getElementById('btn-apply-submit');
 
-      if (!username || !password) {
+      if (!username || !password || !fullName) {
         msg.textContent = 'Please fill all fields.';
         msg.style.color = '#ef4444';
         msg.style.display = 'block';
@@ -699,7 +704,7 @@
       btn.disabled = true;
       btn.textContent = 'Submitting...';
 
-      const result = await api.invoke('client:apply-id', { username, password });
+      const result = await api.invoke('client:apply-id', { username, password, fullName });
       if (result.success) {
         msg.textContent = 'Application sent! Wait for admin approval.';
         msg.style.color = '#10b981';
@@ -713,6 +718,7 @@
           btn.textContent = 'Submit Request';
           msg.style.display = 'none';
           document.getElementById('apply-username').value = '';
+          document.getElementById('apply-fullname').value = '';
           document.getElementById('apply-password').value = '';
         }, 3000);
       } else {

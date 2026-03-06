@@ -49,10 +49,15 @@ function init(dataDir) {
       id           INTEGER PRIMARY KEY AUTOINCREMENT,
       username     TEXT    NOT NULL,
       password     TEXT    NOT NULL,
+      full_name    TEXT    NOT NULL DEFAULT 'User',
       status       TEXT    NOT NULL DEFAULT 'pending',
       created_at   INTEGER NOT NULL
     );
   `);
+
+    try {
+        db.exec("ALTER TABLE approvals ADD COLUMN full_name TEXT NOT NULL DEFAULT 'User'");
+    } catch (e) { }
 
     try {
         db.exec("ALTER TABLE credentials ADD COLUMN must_change_password INTEGER NOT NULL DEFAULT 0");
@@ -181,9 +186,16 @@ function importSnapshot({ meta, credentials, auditLog }) {
 }
 
 // ── Approvals ────────────────────────────────────────────────────────────────
-function addApprovalRequest(username, password) {
-    db.prepare("INSERT INTO approvals (username, password, created_at) VALUES (?, ?, ?)")
-        .run(username, password, Date.now());
+function isUsernameTaken(username) {
+    const inCreds = db.prepare("SELECT 1 FROM credentials WHERE username = ?").get(username);
+    if (inCreds) return true;
+    const inApprovals = db.prepare("SELECT 1 FROM approvals WHERE username = ? AND status = 'pending'").get(username);
+    return !!inApprovals;
+}
+
+function addApprovalRequest(username, password, fullName = 'User') {
+    db.prepare("INSERT INTO approvals (username, password, full_name, created_at) VALUES (?, ?, ?, ?)")
+        .run(username, password, fullName, Date.now());
 }
 function listApprovals() {
     return db.prepare("SELECT * FROM approvals WHERE status = 'pending'").all();
@@ -191,9 +203,13 @@ function listApprovals() {
 function approveRequest(id, by, nodeId) {
     const req = db.prepare("SELECT * FROM approvals WHERE id = ?").get(id);
     if (!req) return false;
-    addUser(req.username, req.password, 'user', [], by, nodeId, 0); // Self-applied IDs don't MUST change
+    addUser(req.username, req.password, 'user', [], by, nodeId, 0, req.full_name); // Self-applied IDs don't MUST change
     db.prepare("UPDATE approvals SET status = 'approved' WHERE id = ?").run(id);
     return true;
+}
+function rejectRequest(id) {
+    const r = db.prepare("UPDATE approvals SET status = 'rejected' WHERE id = ?").run(id);
+    return r.changes > 0;
 }
 
 module.exports = {
@@ -201,7 +217,7 @@ module.exports = {
     addUser, deleteUser, changePassword, changeRole,
     verifyLogin, getUser, listUsers,
     exportSnapshot, importSnapshot,
-    addApprovalRequest, listApprovals, approveRequest
+    addApprovalRequest, listApprovals, approveRequest, rejectRequest, isUsernameTaken
 };
 
 

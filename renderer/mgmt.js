@@ -176,19 +176,22 @@ window.MgmtManager = {
                 `;
             } else {
                 let html = `<div class="mgmt-table-wrap"><div class="mgmt-table-header">
-                    <div style="flex:1;">Username</div>
+                    <div style="flex:1;">UserID</div>
+                    <div style="flex:1.5;">Full Name</div>
                     <div style="flex:1;">Requested On</div>
-                    <div style="width:120px; text-align:right;">Actions</div>
+                    <div style="width:160px; text-align:right;">Actions</div>
                 </div><div id="approval-list-body">`;
 
                 list.forEach(req => {
                     const date = new Date(req.created_at).toLocaleString();
                     html += `
-                        <div class="user-mgmt-row">
-                            <div style="flex:1; font-weight:600;">${req.username}</div>
-                            <div style="flex:1; color:var(--mgmt-text-muted); font-size:12px;">${date}</div>
-                            <div style="width:120px; display:flex; gap:8px; justify-content:flex-end;">
-                                <button class="mgmt-btn" onclick="MgmtManager.approveRequest(${req.id})" style="padding:4px 12px; font-size:11px;">Approve</button>
+                        <div class="user-mgmt-row" style="font-size:13px;">
+                            <div style="flex:1; font-family:monospace; color:var(--mgmt-text-muted);">${req.username}</div>
+                            <div style="flex:1.5; font-weight:600; color:var(--mgmt-text-main);">${req.full_name || 'Unknown'}</div>
+                            <div style="flex:1; color:var(--mgmt-text-dim); font-size:11px;">${date}</div>
+                            <div style="width:160px; display:flex; gap:8px; justify-content:flex-end; align-items:center;">
+                                <button class="mgmt-btn" onclick="MgmtManager.approveRequest(${req.id})" style="padding:4px 12px; font-size:11px; background:var(--mgmt-accent); color:white;">Approve</button>
+                                <button class="mgmt-btn" onclick="MgmtManager.rejectRequest(${req.id})" style="padding:4px 12px; font-size:11px; background:rgba(239, 68, 68, 0.1); border-color:rgba(239, 68, 68, 0.2); color:#ef4444;">Reject</button>
                             </div>
                         </div>
                     `;
@@ -206,6 +209,16 @@ window.MgmtManager = {
         const res = await window.api.invoke('admin:approve-request', { id });
         if (res.success) {
             alert('Request approved! User added to system.');
+            this.loadApprovals();
+        } else {
+            alert('Failure: ' + res.error);
+        }
+    },
+
+    async rejectRequest(id) {
+        if (!confirm('Reject this registration request?')) return;
+        const res = await window.api.invoke('admin:reject-request', { id });
+        if (res.success) {
             this.loadApprovals();
         } else {
             alert('Failure: ' + res.error);

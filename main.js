@@ -352,10 +352,16 @@ ipcMain.handle('admin:change-password', async (event, { username, password }) =>
 });
 
 // ─── IPC: Registration Requests ──────────────────────────────────────────────
-ipcMain.handle('client:apply-id', async (event, { username, password }) => {
+ipcMain.handle('client:apply-id', async (event, { username, password, fullName }) => {
     try {
         const credDb = require('./src/credsync/database');
-        credDb.addApprovalRequest(username, password);
+        if (credDb.isUsernameTaken(username)) {
+            return {
+                success: false,
+                error: `UserID "${username}" is already taken. If this ID belongs to you, please contact the admin.`
+            };
+        }
+        credDb.addApprovalRequest(username, password, fullName);
         return { success: true };
     } catch (e) { return { success: false, error: e.message }; }
 });
@@ -372,6 +378,14 @@ ipcMain.handle('admin:approve-request', async (event, { id }) => {
         const credDb = require('./src/credsync/database');
         const success = credDb.approveRequest(id, 'ui-admin');
         if (success && credNode) credNode.bumpAndAnnounce();
+        return { success };
+    } catch (e) { return { success: false, error: e.message }; }
+});
+
+ipcMain.handle('admin:reject-request', async (event, { id }) => {
+    try {
+        const credDb = require('./src/credsync/database');
+        const success = credDb.rejectRequest(id);
         return { success };
     } catch (e) { return { success: false, error: e.message }; }
 });
