@@ -82,8 +82,11 @@ window.MgmtManager = {
             const row = document.createElement('div');
             row.className = 'user-mgmt-row';
             row.innerHTML = `
-                <div class="row-username">
-                    ${u.username} ${isMe ? '<span class="me-tag">IT</span>' : ''}
+                <div class="row-username" style="flex:1.5;">
+                    ${u.full_name || u.username} ${isMe ? '<span class="me-tag">IT</span>' : ''}
+                </div>
+                <div class="row-userid" style="flex:1; font-size:12px; color:var(--mgmt-text-muted); font-family:monospace;">
+                    ${u.username}
                 </div>
                 <div class="row-role">
                     <span class="role-pill ${u.role === 'admin' ? 'admin' : 'member'}">
@@ -124,22 +127,24 @@ window.MgmtManager = {
     },
 
     async createAccount() {
+        const fullInp = document.getElementById('mgmt-new-fullname');
         const userInp = document.getElementById('mgmt-new-user');
         const passInp = document.getElementById('mgmt-new-pass');
         const roleInp = document.getElementById('mgmt-new-role');
         const errEl = document.getElementById('mgmt-new-error');
 
+        const fullName = fullInp.value.trim();
         const username = userInp.value.trim();
         const password = passInp.value.trim();
         const role = roleInp.value;
 
-        if (!username || !password) {
-            errEl.textContent = "Username and password required.";
+        if (!username || !password || !fullName) {
+            errEl.textContent = "All fields are required.";
             errEl.style.display = 'block';
             return;
         }
 
-        const res = await window.api.invoke('admin:add-user', { username, password, role });
+        const res = await window.api.invoke('admin:add-user', { username, password, role, fullName });
         if (res.success) {
             userInp.value = '';
             passInp.value = '';

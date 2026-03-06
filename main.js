@@ -151,6 +151,7 @@ ipcMain.on('client-launch', (event, { username, host, port, password, role }) =>
 
     // Always create a Client window
     roleWin = createRoleWindow('client', 860, 640);
+    roleWin.maximize();
     roleWin.once('ready-to-show', () => roleWin.show());
 
     roleWin.webContents.once('did-finish-load', () => {
@@ -267,7 +268,7 @@ ipcMain.on('win-close', () => {
 ipcMain.handle('get-users', async () => {
     try {
         const credDb = require('./src/credsync/database');
-        return credDb.listUsers().map(u => u.username);
+        return credDb.listUsers();
     } catch (e) {
         return [];
     }
@@ -280,11 +281,24 @@ ipcMain.handle('verify-login', async (event, { username, password }) => {
         return {
             success: !!user,
             error: user ? null : 'Invalid password.',
-            user: user ? { username: user.username, role: user.role } : null
+            user: user ? {
+                username: user.username,
+                role: user.role,
+                mustChange: user.must_change_password
+            } : null
         };
     } catch (e) {
         return { success: false, error: e.message };
     }
+});
+
+ipcMain.handle('client:reset-password', async (event, { username, password }) => {
+    try {
+        const credDb = require('./src/credsync/database');
+        const success = credDb.changePassword(username, password, 'self');
+        if (success && credNode) credNode.bumpAndAnnounce();
+        return { success };
+    } catch (e) { return { success: false, error: e.message }; }
 });
 
 // ─── IPC: CredSync Administration ─────────────────────────────────────────────
@@ -295,10 +309,10 @@ ipcMain.handle('admin:list-users', async () => {
     } catch (e) { return []; }
 });
 
-ipcMain.handle('admin:add-user', async (event, { username, password, role }) => {
+ipcMain.handle('admin:add-user', async (event, { username, password, role, fullName }) => {
     try {
         const credDb = require('./src/credsync/database');
-        credDb.addUser(username, password, role, [], 'ui-admin');
+        credDb.addUser(username, password, role, [], 'ui-admin', '', 1, fullName); // 1 = must change
         if (credNode) credNode.bumpAndAnnounce();
         return { success: true };
     } catch (e) { return { success: false, error: e.message }; }

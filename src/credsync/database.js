@@ -23,12 +23,14 @@ function init(dataDir) {
     CREATE TABLE IF NOT EXISTS credentials (
       user_id       TEXT    PRIMARY KEY,
       username      TEXT    UNIQUE NOT NULL,
+      full_name     TEXT    NOT NULL,
       password_hash TEXT    NOT NULL,
       role          TEXT    NOT NULL DEFAULT 'user',
       permissions   TEXT    NOT NULL DEFAULT '[]',
       created_at    INTEGER NOT NULL,
       updated_at    INTEGER NOT NULL,
-      is_active     INTEGER NOT NULL DEFAULT 1
+      is_active     INTEGER NOT NULL DEFAULT 1,
+      must_change_password INTEGER NOT NULL DEFAULT 0
     );
     CREATE TABLE IF NOT EXISTS db_meta (
       key   TEXT PRIMARY KEY,
@@ -51,6 +53,13 @@ function init(dataDir) {
       created_at   INTEGER NOT NULL
     );
   `);
+
+    try {
+        db.exec("ALTER TABLE credentials ADD COLUMN must_change_password INTEGER NOT NULL DEFAULT 0");
+    } catch (e) { }
+    try {
+        db.exec("ALTER TABLE credentials ADD COLUMN full_name TEXT NOT NULL DEFAULT 'Unknown'");
+    } catch (e) { }
 
     if (!db.prepare("SELECT value FROM db_meta WHERE key='version'").get()) {
         db.prepare("INSERT INTO db_meta (key,value) VALUES (?,?)").run('version', '1');
@@ -79,15 +88,15 @@ function audit(action, target, by, nodeId, details) {
 }
 
 // ── CRUD ──────────────────────────────────────────────────────────────────────
-function addUser(username, password, role = 'user', permissions = [], by = 'system', nodeId = '') {
+function addUser(username, password, role = 'user', permissions = [], by = 'system', nodeId = '', mustChange = 0, fullName = 'User') {
     const user_id = uuidv4();
     const hash = bcrypt.hashSync(password, 12);
     const now = Date.now();
-    db.prepare(`INSERT INTO credentials (user_id,username,password_hash,role,permissions,created_at,updated_at,is_active)
-              VALUES (?,?,?,?,?,?,?,1)`)
-        .run(user_id, username, hash, role, JSON.stringify(permissions), now, now);
-    audit('ADD_USER', username, by, nodeId, { role, permissions });
-    return { user_id, username, role, permissions, created_at: now };
+    db.prepare(`INSERT INTO credentials (user_id,username,full_name,password_hash,role,permissions,created_at,updated_at,is_active,must_change_password)
+              VALUES (?,?,?,?,?,?,?,?,1,?)`)
+        .run(user_id, username, fullName, hash, role, JSON.stringify(permissions), now, now, mustChange);
+    audit('ADD_USER', username, by, nodeId, { role, permissions, mustChange, fullName });
+    return { user_id, username, full_name: fullName, role, permissions, created_at: now, must_change_password: mustChange };
 }
 
 function deleteUser(username, by = 'system', nodeId = '') {
@@ -99,7 +108,7 @@ function deleteUser(username, by = 'system', nodeId = '') {
 
 function changePassword(username, newPassword, by = 'system', nodeId = '') {
     const hash = bcrypt.hashSync(newPassword, 12);
-    const r = db.prepare("UPDATE credentials SET password_hash=?, updated_at=? WHERE username=? AND is_active=1")
+    const r = db.prepare("UPDATE credentials SET password_hash=?, must_change_password=0, updated_at=? WHERE username=? AND is_active=1")
         .run(hash, Date.now(), username);
     if (r.changes) { audit('CHANGE_PASSWORD', username, by, nodeId); return true; }
     return false;
@@ -119,7 +128,13 @@ function changeRole(username, newRole, permissions = null, by = 'system', nodeId
 function verifyLogin(username, password) {
     const u = db.prepare("SELECT * FROM credentials WHERE username=? AND is_active=1").get(username);
     if (!u || !bcrypt.compareSync(password, u.password_hash)) return null;
-    return { user_id: u.user_id, username: u.username, role: u.role, permissions: JSON.parse(u.permissions) };
+    return {
+        user_id: u.user_id,
+        username: u.username,
+        role: u.role,
+        permissions: JSON.parse(u.permissions),
+        must_change_password: u.must_change_password
+    };
 }
 
 // ── Queries ───────────────────────────────────────────────────────────────────
@@ -129,8 +144,8 @@ function getUser(username) {
 }
 function listUsers(includeInactive = false) {
     const q = includeInactive
-        ? "SELECT user_id,username,role,permissions,created_at,updated_at,is_active FROM credentials"
-        : "SELECT user_id,username,role,permissions,created_at,updated_at,is_active FROM credentials WHERE is_active=1";
+        ? "SELECT user_id,username,full_name,role,permissions,created_at,updated_at,is_active FROM credentials"
+        : "SELECT user_id,username,full_name,role,permissions,created_at,updated_at,is_active FROM credentials WHERE is_active=1";
     return db.prepare(q).all().map(u => ({ ...u, permissions: JSON.parse(u.permissions) }));
 }
 
@@ -176,7 +191,7 @@ function listApprovals() {
 function approveRequest(id, by, nodeId) {
     const req = db.prepare("SELECT * FROM approvals WHERE id = ?").get(id);
     if (!req) return false;
-    addUser(req.username, req.password, 'user', [], by, nodeId);
+    addUser(req.username, req.password, 'user', [], by, nodeId, 0); // Self-applied IDs don't MUST change
     db.prepare("UPDATE approvals SET status = 'approved' WHERE id = ?").run(id);
     return true;
 }

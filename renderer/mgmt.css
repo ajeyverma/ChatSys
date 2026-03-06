@@ -251,7 +251,7 @@
 
 .mgmt-table-header {
     display: grid;
-    grid-template-columns: 2fr 1fr 1fr 100px;
+    grid-template-columns: 1.5fr 1fr 1fr 1fr 100px;
     padding: 20px 24px;
     border-bottom: 1px solid var(--mgmt-border);
     color: var(--mgmt-text-muted);
@@ -261,7 +261,7 @@
 
 .user-mgmt-row {
     display: grid;
-    grid-template-columns: 2fr 1fr 1fr 100px;
+    grid-template-columns: 1.5fr 1fr 1fr 1fr 100px;
     align-items: center;
     padding: 18px 24px;
     border-bottom: 1px solid var(--mgmt-border);

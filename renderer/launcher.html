@@ -189,23 +189,101 @@
     }
 
     .field input,
-    .field select {
+    .field select,
+    .search-input {
       width: 100%;
       background: var(--input-bg);
       border: 1px solid var(--border);
       border-radius: 8px;
-      padding: 9px 12px;
+      padding: 10px 12px;
       color: var(--text-main);
       font-size: 13px;
       font-family: 'Inter', sans-serif;
       outline: none;
-      transition: border-color .2s;
+      transition: border-color .2s, box-shadow .2s;
       appearance: none;
     }
 
     .field input:focus,
-    .field select:focus {
+    .field select:focus,
+    .search-input:focus {
       border-color: var(--accent);
+      box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.1);
+    }
+
+    /* Searchable Dropdown */
+    .search-dropdown {
+      position: relative;
+      width: 100%;
+    }
+
+    .search-results {
+      position: absolute;
+      top: 100%;
+      left: 0;
+      right: 0;
+      background: var(--bg-panel);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      margin-top: 4px;
+      max-height: 180px;
+      overflow-y: auto;
+      z-index: 1000;
+      display: none;
+      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+    }
+
+    .search-results.show {
+      display: block;
+    }
+
+    .search-item {
+      padding: 7px 12px;
+      cursor: pointer;
+      font-size: 13px;
+      transition: background 0.15s;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.03);
+    }
+
+    .search-item:last-child {
+      border-bottom: none;
+    }
+
+    .search-item:hover {
+      background: rgba(99, 102, 241, 0.1);
+      color: var(--accent);
+    }
+
+    .search-item .uid {
+      font-weight: 700;
+      color: var(--text-main);
+    }
+
+    .search-item .fname {
+      font-size: 12px;
+      color: var(--text-main);
+      margin-left: 6px;
+      font-weight: 500;
+    }
+
+    .search-input {
+      cursor: pointer;
+      padding-right: 32px;
+    }
+
+    .dropdown-arrow {
+      position: absolute;
+      right: 12px;
+      top: 50%;
+      transform: translateY(-50%);
+      pointer-events: none;
+      font-size: 10px;
+      color: var(--text-muted);
+      transition: transform 0.2s;
+    }
+
+    .search-dropdown.open .dropdown-arrow {
+      transform: translateY(-50%) rotate(180deg);
     }
 
     .btn-launch {
@@ -359,7 +437,7 @@
       <h1>ChatSys</h1>
       <p>Fault-tolerant LAN communication. Join a network or we'll automatically host one for you.</p>
       <button class="btn-apply" onclick="toggleApplyForm()">
-        <span style="font-size:16px;">📝</span> Apply for ID
+        <span style="font-size:16px;"></span> Apply for Account
       </button>
     </div>
 
@@ -369,9 +447,15 @@
       <div id="login-form">
         <div class="field">
           <label>Select User</label>
-          <select id="username">
-            <option value="" disabled selected>Loading users...</option>
-          </select>
+          <div class="search-dropdown" id="user-dropdown">
+            <input type="text" id="username-search" class="search-input" placeholder="Search or select user..." readonly
+              onclick="toggleUserDropdown(event)" oninput="filterUserOptions(this.value)">
+            <input type="hidden" id="username" value="">
+            <div class="dropdown-arrow"></div>
+            <div class="search-results" id="user-results">
+              <!-- Population by JS -->
+            </div>
+          </div>
         </div>
         <div class="field">
           <label>Network IP</label>
@@ -399,6 +483,33 @@
         </div>
       </div>
 
+      <!-- Password Reset Modal (Overlay) -->
+      <div id="reset-modal"
+        style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); backdrop-filter: blur(8px); z-index: 9999; align-items: center; justify-content: center;">
+        <div class="config-panel" style="max-width: 340px; border: 1px solid var(--accent);">
+          <h2 style="font-size: 18px; margin-bottom: 8px; color: var(--accent);">Security Update</h2>
+          <p style="font-size: 12px; color: var(--text-muted); margin-bottom: 20px;">You are using a temporary password.
+            Please set a new secure password to continue.</p>
+
+          <div class="field">
+            <label>New Password</label>
+            <input id="new-password" type="password" placeholder="Minimum 6 characters" />
+          </div>
+          <div class="field">
+            <label>Confirm Password</label>
+            <input id="confirm-password" type="password" placeholder="••••••••" />
+          </div>
+
+          <button class="btn-launch" id="btn-reset-password" onclick="confirmResetPassword()">Update & Connect</button>
+          <button class="btn-launch"
+            onclick="document.getElementById('reset-modal').style.display='none'; document.getElementById('btn-launch').disabled=false; document.getElementById('btn-launch').textContent='Connect';"
+            style="margin-top: 8px; background: transparent; border: 1px solid var(--border); color: var(--text-muted);">Cancel</button>
+
+          <div id="reset-error"
+            style="font-size: 11px; color: #ef4444; margin-top: 10px; text-align: center; display: none;"></div>
+        </div>
+      </div>
+
       <!-- Apply Form (Hidden by default) -->
       <div id="apply-form" style="display: none;">
         <h2 style="font-size: 16px; margin-bottom: 16px; font-weight: 700;">Registration Request</h2>
@@ -421,28 +532,91 @@
   </div>
 
   <script>
+    let allUsers = [];
+
     // Load replicated users from CredSync
     async function loadUsers() {
-      const users = await api.invoke('get-users');
-      const select = document.getElementById('username');
-      select.innerHTML = '';
+      allUsers = await api.invoke('get-users');
+      renderUserOptions(allUsers);
+    }
+
+    function renderUserOptions(users) {
+      const resultsCont = document.getElementById('user-results');
+      resultsCont.innerHTML = '';
 
       if (!users || users.length === 0) {
-        const opt = document.createElement('option');
-        opt.value = "";
-        opt.textContent = "No users found. Use CLI.";
-        opt.disabled = true;
-        opt.selected = true;
-        select.appendChild(opt);
+        resultsCont.innerHTML = '<div class="search-item" style="color:var(--text-muted); cursor:default;">No users found</div>';
         return;
       }
 
       users.forEach(u => {
-        const opt = document.createElement('option');
-        opt.value = u;
-        opt.textContent = u;
-        select.appendChild(opt);
+        const item = document.createElement('div');
+        item.className = 'search-item';
+        item.innerHTML = `<span class="uid">${u.username}</span><span class="fname">- ${u.full_name || 'User'}</span>`;
+        item.onclick = () => selectUserOption(u);
+        resultsCont.appendChild(item);
       });
+    }
+
+    function toggleUserDropdown(e) {
+      e.stopPropagation();
+      const dropdown = document.getElementById('user-dropdown');
+      const results = document.getElementById('user-results');
+      const input = document.getElementById('username-search');
+
+      const isOpen = results.classList.contains('show');
+
+      if (!isOpen) {
+        results.classList.add('show');
+        dropdown.classList.add('open');
+        input.readOnly = false;
+        input.focus();
+        input.value = '';
+        renderUserOptions(allUsers); // Reset to full list
+      } else {
+        closeUserDropdown();
+      }
+    }
+
+    function closeUserDropdown() {
+      const dropdown = document.getElementById('user-dropdown');
+      const results = document.getElementById('user-results');
+      const input = document.getElementById('username-search');
+
+      results.classList.remove('show');
+      dropdown.classList.remove('open');
+      input.readOnly = true;
+
+      // If nothing selected, reset display
+      const currentId = document.getElementById('username').value;
+      if (currentId) {
+        const user = allUsers.find(u => u.username === currentId);
+        if (user) input.value = `${user.username} - ${user.full_name || 'User'}`;
+      } else {
+        input.value = '';
+      }
+    }
+
+    function filterUserOptions(query) {
+      const q = query.toLowerCase();
+      const filtered = allUsers.filter(u =>
+        u.username.toLowerCase().includes(q) ||
+        (u.full_name && u.full_name.toLowerCase().includes(q))
+      );
+      renderUserOptions(filtered);
+    }
+
+    function selectUserOption(user) {
+      const inputDisplay = document.getElementById('username-search');
+      const inputVal = document.getElementById('username');
+
+      inputDisplay.value = `${user.username} - ${user.full_name || 'User'}`;
+      inputVal.value = user.username;
+
+      closeUserDropdown();
+
+      // Clear error state if any
+      inputDisplay.style.borderColor = 'var(--border)';
     }
 
     // Theme UI sync
@@ -475,9 +649,14 @@
 
     // Close dropdown when clicking outside
     document.addEventListener('click', function (e) {
-      const wrap = document.getElementById('tb-theme-wrap');
-      if (wrap && !wrap.contains(e.target)) {
+      const themeWrap = document.getElementById('tb-theme-wrap');
+      if (themeWrap && !themeWrap.contains(e.target)) {
         document.getElementById('tb-theme-drop').classList.remove('open');
+      }
+
+      const userDropdown = document.getElementById('user-dropdown');
+      if (userDropdown && !userDropdown.contains(e.target)) {
+        closeUserDropdown();
       }
     });
 
@@ -574,7 +753,56 @@
         return;
       }
 
+      // Check for forced password change
+      if (result.user.mustChange) {
+        window.pendingLaunch = { username, host, port, role: result.user.role };
+        document.getElementById('reset-modal').style.display = 'flex';
+        document.getElementById('new-password').focus();
+        return;
+      }
+
       api.send('client-launch', { username, host, port, password, role: result.user.role });
+    }
+
+    async function confirmResetPassword() {
+      const newPass = document.getElementById('new-password').value;
+      const confPass = document.getElementById('confirm-password').value;
+      const errEl = document.getElementById('reset-error');
+      const btn = document.getElementById('btn-reset-password');
+
+      if (!newPass || newPass.length < 6) {
+        errEl.textContent = 'Password must be at least 6 characters.';
+        errEl.style.display = 'block';
+        return;
+      }
+      if (newPass !== confPass) {
+        errEl.textContent = 'Passwords do not match.';
+        errEl.style.display = 'block';
+        return;
+      }
+
+      btn.disabled = true;
+      btn.textContent = 'Updating...';
+
+      const res = await api.invoke('client:reset-password', {
+        username: window.pendingLaunch.username,
+        password: newPass
+      });
+
+      if (res.success) {
+        api.send('client-launch', {
+          username: window.pendingLaunch.username,
+          host: window.pendingLaunch.host,
+          port: window.pendingLaunch.port,
+          password: newPass,
+          role: window.pendingLaunch.role
+        });
+      } else {
+        errEl.textContent = res.error || 'Update failed.';
+        errEl.style.display = 'block';
+        btn.disabled = false;
+        btn.textContent = 'Update & Connect';
+      }
     }
 
     // Launch on Enter key
