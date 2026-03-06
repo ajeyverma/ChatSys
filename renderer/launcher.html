@@ -167,7 +167,8 @@
       font-weight: 500;
     }
 
-    .field input {
+    .field input,
+    .field select {
       width: 100%;
       background: var(--input-bg);
       border: 1px solid var(--border);
@@ -178,9 +179,11 @@
       font-family: 'Inter', sans-serif;
       outline: none;
       transition: border-color .2s;
+      appearance: none;
     }
 
-    .field input:focus {
+    .field input:focus,
+    .field select:focus {
       border-color: var(--accent);
     }
 
@@ -339,18 +342,26 @@
     <!-- Config Panel -->
     <div class="config-panel" id="config-panel">
       <div class="field">
-        <label>Your Username</label>
-        <input id="username" placeholder="e.g. Alice" maxlength="24" autocomplete="off" />
+        <label>Select User</label>
+        <select id="username">
+          <option value="" disabled selected>Loading users...</option>
+        </select>
       </div>
       <div class="field">
         <label>Network IP</label>
         <input id="serverHost" placeholder="e.g. 192.168.1.101" value="127.0.0.1" />
       </div>
       <div class="field">
+        <label>Password</label>
+        <input id="password" type="password" placeholder="••••••••" maxlength="64" />
+      </div>
+      <div class="field">
         <label>Port</label>
         <input id="serverPort" placeholder="65432" value="65432" />
       </div>
       <button class="btn-launch" id="btn-launch" onclick="launch()" style="margin-top: 10px;">Connect</button>
+      <div id="login-error"
+        style="font-size: 11px; color: #ef4444; margin-top: 8px; text-align: center; display: none;"></div>
 
 
 
@@ -365,6 +376,30 @@
   </div>
 
   <script>
+    // Load replicated users from CredSync
+    async function loadUsers() {
+      const users = await api.invoke('get-users');
+      const select = document.getElementById('username');
+      select.innerHTML = '';
+
+      if (!users || users.length === 0) {
+        const opt = document.createElement('option');
+        opt.value = "";
+        opt.textContent = "No users found. Use CLI.";
+        opt.disabled = true;
+        opt.selected = true;
+        select.appendChild(opt);
+        return;
+      }
+
+      users.forEach(u => {
+        const opt = document.createElement('option');
+        opt.value = u;
+        opt.textContent = u;
+        select.appendChild(opt);
+      });
+    }
+
     // Theme UI sync
     function setTheme(t) {
       ThemeManager.apply(t);
@@ -401,20 +436,51 @@
       }
     });
 
+    // Reset error borders on focus/input
+    document.getElementById('password').addEventListener('input', () => {
+      document.getElementById('password').style.borderColor = 'var(--border)';
+      document.getElementById('login-error').style.display = 'none';
+      document.getElementById('btn-launch').textContent = 'Connect';
+      document.getElementById('btn-launch').disabled = false;
+    });
+    document.getElementById('username').addEventListener('change', () => {
+      document.getElementById('username').style.borderColor = 'var(--border)';
+    });
+
     // Run on start
     updateThemeUI();
+    loadUsers();
 
-    function launch() {
+    async function launch() {
       const username = (document.getElementById('username').value || '').trim();
+      const host = document.getElementById('serverHost').value || '127.0.0.1';
+      const port = document.getElementById('serverPort').value || '65432';
+      const password = document.getElementById('password').value || '';
+      const errDiv = document.getElementById('login-error');
+      const btn = document.getElementById('btn-launch');
+
       if (!username) {
         document.getElementById('username').style.borderColor = '#ef4444';
         return;
       }
 
-      const host = document.getElementById('serverHost').value || '127.0.0.1';
-      const port = document.getElementById('serverPort').value || '65432';
+      errDiv.style.display = 'none';
+      btn.textContent = 'Verifying...';
+      btn.disabled = true;
 
-      api.send('client-launch', { username, host, port });
+      // New: Verify credentials locally before launching
+      const result = await api.invoke('verify-login', { username, password });
+
+      if (!result.success) {
+        errDiv.textContent = result.error || 'Authentication failed.';
+        errDiv.style.display = 'block';
+        btn.textContent = 'Connect';
+        btn.disabled = false;
+        document.getElementById('password').style.borderColor = '#ef4444';
+        return;
+      }
+
+      api.send('client-launch', { username, host, port, password, role: result.user.role });
     }
 
     // Launch on Enter key

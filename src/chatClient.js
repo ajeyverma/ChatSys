@@ -29,13 +29,15 @@ class ChatClient extends EventEmitter {
         this.privateKey = privateKey;
         this.groupKey = null;
         this.userKeys = {}; // username -> publicKey
+        this.password = '';
     }
 
-    connect(host, port, username) {
+    connect(host, port, username, password) {
         if (this.reconnectTimer) clearTimeout(this.reconnectTimer);
         this.currentHost = host;
         this.currentPort = port;
         this.username = username;
+        this.password = password || '';
         this.retryCount = 0;
         this.reconnecting = false;
         this.redirecting = false;
@@ -62,9 +64,10 @@ class ChatClient extends EventEmitter {
             this._log(`Connected to ${this.currentHost}:${this.currentPort}`);
             this._emit('status', { status: 'Connected', host: this.currentHost, port: this.currentPort });
 
-            // Send JOIN handshake with public key
+            // Send JOIN handshake with public key and password for authentication
             this.socket.write(proto.pack(proto.MSG_JOIN, {
                 username: this.username,
+                password: this.password,
                 publicKey: this.publicKey
             }));
         });

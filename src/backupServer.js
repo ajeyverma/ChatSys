@@ -11,6 +11,7 @@ const cfg = require('./config');
 const proto = require('./protocol');
 const cryptoEngine = require('./crypto_engine');
 const logger = require('./logger');
+const credDb = require('./credsync/database'); // Distributed Credential DB
 
 class BackupServer {
     constructor(mainWindow) {
@@ -214,8 +215,22 @@ class BackupServer {
 
                     if (msg.type === proto.MSG_JOIN) {
                         const username = (msg.payload.username || 'Unknown').substring(0, cfg.MAX_USERNAME_LEN);
+                        const password = msg.payload.password || '';
                         const publicKey = msg.payload.publicKey;
-                        clientInfo = { username, address: socket.remoteAddress, publicKey };
+
+                        // Verify credentials against the distributed replicated database
+                        const user = credDb.verifyLogin(username, password);
+                        if (!user) {
+                            this._log(`[PROMOTED] Authentication failed for ${username} from ${socket.remoteAddress}`);
+                            socket.write(proto.pack(proto.MSG_ACK, {
+                                ok: false,
+                                message: 'Invalid credentials. Please check your username and password.'
+                            }));
+                            socket.end();
+                            return;
+                        }
+
+                        clientInfo = { username, address: socket.remoteAddress, publicKey, role: user.role };
                         this.clients.set(socket, clientInfo);
                         this.userMap.set(username, socket);
                         this.userKeys.set(username, publicKey);

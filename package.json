@@ -5,6 +5,7 @@
   "main": "main.js",
   "scripts": {
     "start": "electron .",
+    "cred:admin": "cross-env ELECTRON_RUN_AS_NODE=1 electron src/credsync/cli.js",
     "version:sync": "node scripts/sync-version.js",
     "build:x64": "npm run version:sync && electron-builder --win --x64 --dir",
     "build:x86": "npm run version:sync && electron-builder --win --ia32 --dir",
@@ -12,6 +13,8 @@
     "postversion": "npm run version:sync"
   },
   "devDependencies": {
+    "@electron/rebuild": "^4.0.3",
+    "cross-env": "^10.1.0",
     "electron": "^29.0.0",
     "electron-builder": "^24.9.1"
   },
@@ -28,6 +31,11 @@
   "author": "",
   "license": "MIT",
   "dependencies": {
-    "png-to-ico": "^3.0.1"
+    "bcryptjs": "^2.4.3",
+    "better-sqlite3": "^9.4.3",
+    "png-to-ico": "^3.0.1",
+    "readline-sync": "^1.4.10",
+    "selfsigned": "^2.4.1",
+    "uuid": "^9.0.1"
   }
 }

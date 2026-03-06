@@ -52,6 +52,25 @@
             padding: 3px 10px;
             border-radius: 20px;
             letter-spacing: .6px;
+            text-transform: uppercase;
+        }
+
+        .tb-user-name {
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--text-main);
+            text-transform: capitalize;
+        }
+
+        .tb-role-tag {
+            font-size: 11px;
+            font-weight: 600;
+            color: var(--accent);
+            opacity: 0.8;
+            text-transform: uppercase;
+            background: var(--accent-glow);
+            padding: 3px 10px;
+            border-radius: 20px;
         }
 
         .status-pill {
@@ -788,6 +807,124 @@
             opacity: .9;
         }
 
+        /* ─── Admin Panel ─────────────────────────────────────── */
+        .btn-manage {
+            margin: 10px;
+            height: 34px;
+            background: #1e1e38;
+            border: 1px solid #2d2d4e;
+            border-radius: 8px;
+            color: #94a3b8;
+            font-size: 11px;
+            cursor: pointer;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            flex-shrink: 0;
+            transition: all 0.2s;
+        }
+
+        .btn-manage:hover {
+            color: var(--accent);
+            border-color: var(--accent);
+            background: var(--accent-glow);
+        }
+
+        .admin-modal {
+            max-width: 600px;
+            width: 90%;
+            height: 80vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .admin-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .admin-user-list {
+            flex: 1;
+            overflow-y: auto;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            background: rgba(0, 0, 0, 0.2);
+            padding: 10px;
+        }
+
+        .user-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 10px 14px;
+            background: var(--bg-panel);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            margin-bottom: 8px;
+        }
+
+        .user-row-info {
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+        }
+
+        .user-row-name {
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+        }
+
+        .user-row-role {
+            font-size: 10px;
+            color: var(--text-dim);
+        }
+
+        .user-row-role.inactive {
+            color: #ef4444;
+            font-weight: 600;
+        }
+
+        .user-row-btns {
+            display: flex;
+            gap: 5px;
+        }
+
+        .row-btn {
+            background: none;
+            border: 1px solid #2d2d4e;
+            color: var(--text-muted);
+            font-size: 10px;
+            padding: 4px 8px;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .row-btn:hover {
+            border-color: var(--accent);
+            color: var(--accent);
+        }
+
+        .row-btn.red:hover {
+            border-color: #ef4444;
+            color: #ef4444;
+        }
+
+        .add-user-form {
+            display: grid;
+            grid-template-columns: 1fr 1fr auto;
+            gap: 8px;
+            margin-bottom: 15px;
+            padding: 12px;
+            background: var(--bg-panel);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+        }
+
         /* image lightbox */
         .lightbox {
             position: fixed;
@@ -880,7 +1017,8 @@
         <!-- Titlebar -->
         <div class="titlebar">
             <div class="titlebar-left">
-                <span class="tb-role-badge" id="tb-role-badge">CLIENT</span>
+                <span class="tb-user-name" id="tb-user-name">Guest</span>
+                <span class="tb-role-tag" id="tb-role-tag">@client</span>
                 <div class="status-pill">
                     <div class="status-dot disconnected" id="status-dot"></div>
                     <span class="status-pill-text" id="status-text">Not connected</span>
@@ -930,7 +1068,9 @@
                 <div class="user-list" id="user-list">
                     <div class="dm-hint">Connect to see users</div>
                 </div>
-
+                <button class="btn-manage" id="btn-manage" onclick="toggleAdminPanel()">
+                    <span>🛠️</span> Manage Credentials
+                </button>
             </div>
 
             <!-- Chat -->
@@ -967,19 +1107,151 @@
 
         <!-- Connect Modal -->
         <div class="modal-overlay" id="modal" style="display:none;">
-            <div class="modal">
-                <h2>💬 Join Chat</h2>
-                <p>Enter your details to connect to the LAN server.</p>
-                <div class="field"><label>Username</label><input id="m-username" placeholder="e.g. Alice"
-                        maxlength="24" />
+            <!-- content stays same -->
+        </div>
+
+        <!-- User Management Modal -->
+        <div class="modal-overlay" id="admin-modal" style="display:none;">
+            <div class="modal admin-modal">
+                <div class="admin-header">
+                    <h2>🔐 User Management</h2>
+                    <button class="win-btn" onclick="toggleAdminPanel()">✕</button>
                 </div>
-                <div class="field"><label>Server IP</label><input id="m-host" value="127.0.0.1" /></div>
-                <div class="field"><label>Port</label><input id="m-port" value="65432" /></div>
-                <button class="btn-connect" onclick="doConnect()">Connect →</button>
+
+                <div class="add-user-form">
+                    <input type="text" id="adm-user" placeholder="Username" />
+                    <input type="password" id="adm-pass" placeholder="Password" />
+                    <select id="adm-role"
+                        style="background:#0f0f1a; color:#fff; border:1px solid #2d2d4e; border-radius:4px; font-size:11px; padding:0 8px;">
+                        <option value="user">User</option>
+                        <option value="admin">Admin</option>
+                        <option value="readonly">Readonly</option>
+                    </select>
+                    <button class="btn-connect" style="padding:6px 12px; width:auto;" onclick="adminAddUser()">+
+                        Add</button>
+                </div>
+
+                <div id="admin-error" style="color:#ef4444; font-size:11px; margin-bottom:10px; display:none;"></div>
+
+                <div class="admin-user-list" id="admin-user-list">
+                    <!-- users listed here -->
+                </div>
+
+                <div style="font-size:10px; color:var(--text-dim); margin-top:15px; text-align:center;">
+                    Note: Changes are automatically replicated to the network via CredSync.
+                </div>
             </div>
         </div>
 
         <script>
+            // ─── Global State ──────────────────────────────────────────
+            let myUsername = '';
+            let myRole = '';
+            let isConnected = false;
+            let dmTarget = null;
+            const unreadCounts = {};
+            const dmHistories = {};
+            const groupHistory = [];
+            let onlineUsers = [];
+            let pendingImage = null; // { data, filename, mimeType }
+
+            // ─── Session Initialization ────────────────────────────────
+            api.receive('init-session', ({ username, role }) => {
+                myUsername = username;
+                myRole = role;
+                document.getElementById('tb-user-name').textContent = username;
+                document.getElementById('tb-role-tag').textContent = `@${role}`;
+                if (role === 'admin') {
+                    document.getElementById('btn-manage').style.display = 'flex';
+                }
+            });
+
+            // Admin Actions
+            async function toggleAdminPanel() {
+                const el = document.getElementById('admin-modal');
+                if (el.style.display === 'none') {
+                    el.style.display = 'flex';
+                    loadAdminUserList();
+                } else {
+                    el.style.display = 'none';
+                }
+            }
+
+            async function loadAdminUserList() {
+                const container = document.getElementById('admin-user-list');
+                container.innerHTML = '<div style="text-align:center; padding:20px; color:var(--text-muted); font-size:12px;">Loading users...</div>';
+
+                const users = await api.invoke('admin:list-users');
+                container.innerHTML = '';
+
+                users.forEach(u => {
+                    const row = document.createElement('div');
+                    row.className = 'user-row';
+                    row.innerHTML = `
+                        <div class="user-row-info">
+                            <div class="user-row-name" onclick="adminRowInfo('${u.user_id}')">${u.username} ${u.username === myUsername ? '<span style="color:var(--accent); font-size:9px;">(You)</span>' : ''}</div>
+                            <div class="user-row-role ${!u.is_active ? 'inactive' : ''}">
+                                ${!u.is_active ? 'DEACTIVATED' : `
+                                    <select onchange="adminChangeRole('${u.username}', this.value)" style="background:none; border:none; color:inherit; font-weight:bold; cursor:pointer;">
+                                        <option value="user" ${u.role === 'user' ? 'selected' : ''}>USER</option>
+                                        <option value="admin" ${u.role === 'admin' ? 'selected' : ''}>ADMIN</option>
+                                        <option value="readonly" ${u.role === 'readonly' ? 'selected' : ''}>READONLY</option>
+                                    </select>
+                                `}
+                            </div>
+                        </div>
+                        <div class="user-row-btns">
+                           ${u.username !== myUsername && u.is_active ? `<button class="row-btn red" onclick="adminDeleteUser('${u.username}')">Deactivate</button>` : ''}
+                           ${u.is_active ? `<button class="row-btn" onclick="adminChangePass('${u.username}')">Pass</button>` : ''}
+                        </div>
+                    `;
+                    container.appendChild(row);
+                });
+            }
+
+            async function adminChangeRole(username, newRole) {
+                const res = await api.invoke('admin:change-role', { username, role: newRole });
+                if (!res.success) alert(res.error);
+                loadAdminUserList();
+            }
+
+            function adminRowInfo(uid) {
+                alert(`Internal ID: ${uid}`);
+            }
+
+            async function adminAddUser() {
+                const username = document.getElementById('adm-user').value.trim();
+                const password = document.getElementById('adm-pass').value.trim();
+                const role = document.getElementById('adm-role').value;
+                const err = document.getElementById('admin-error');
+
+                if (!username || !password) return;
+
+                const res = await api.invoke('admin:add-user', { username, password, role });
+                if (res.success) {
+                    document.getElementById('adm-user').value = '';
+                    document.getElementById('adm-pass').value = '';
+                    loadAdminUserList();
+                    err.style.display = 'none';
+                } else {
+                    err.textContent = res.error;
+                    err.style.display = 'block';
+                }
+            }
+
+            async function adminDeleteUser(username) {
+                if (!confirm(`Deactivate user "${username}"?`)) return;
+                await api.invoke('admin:delete-user', { username });
+                loadAdminUserList();
+            }
+
+            async function adminChangePass(username) {
+                const newPass = prompt(`Enter new password for ${username}:`);
+                if (!newPass) return;
+                await api.invoke('admin:change-password', { username, password: newPass });
+                alert('Password updated.');
+            }
+
             // Theme UI sync
             function setTheme(t) {
                 ThemeManager.apply(t);
@@ -1020,15 +1292,6 @@
             // Run on start
             updateThemeUI();
 
-            let myUsername = '';
-            let isConnected = false;
-            let dmTarget = null;
-            const unreadCounts = {};
-            const dmHistories = {};
-            const groupHistory = [];
-            let onlineUsers = [];
-            let pendingImage = null; // { data, filename, mimeType }
-
             // ─── Modal ───────────────────────────────────────────────────
             api.on('request-connect-info', () => {
                 document.getElementById('modal').style.display = 'flex';
@@ -1043,7 +1306,8 @@
                 myUsername = username;
 
                 // Update titlebar to show username
-                document.getElementById('tb-role-badge').textContent = username.toUpperCase();
+                document.getElementById('tb-user-name').textContent = username;
+                document.getElementById('tb-role-tag').textContent = `@user`;
 
                 document.getElementById('modal').style.display = 'none';
                 document.getElementById('welcome').style.display = 'none';
