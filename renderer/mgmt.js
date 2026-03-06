@@ -25,6 +25,8 @@ window.MgmtManager = {
             this.loadUserList();
         } else if (tab === 'approvals') {
             this.loadApprovals();
+        } else if (tab === 'roles') {
+            this.loadRoles();
         }
 
         // Refresh icons for the newly active pane
@@ -222,6 +224,63 @@ window.MgmtManager = {
             this.loadApprovals();
         } else {
             alert('Failure: ' + res.error);
+        }
+    },
+
+    async loadRoles() {
+        const pane = document.getElementById('pane-roles');
+        const content = pane.querySelector('.users-mgmt-content');
+        if (!content) return;
+
+        try {
+            const users = await window.api.invoke('admin:list-users');
+            const roles = [...new Set(users.map(u => u.role))];
+
+            let html = `
+                <div class="mgmt-table-wrap">
+                    <div class="mgmt-table-header">
+                        <div style="flex:1;">Role Identifier</div>
+                        <div style="flex:1;">User Count</div>
+                        <div style="width:120px; text-align:right;">Actions</div>
+                    </div>
+                    <div id="roles-list-body">
+            `;
+
+            roles.forEach(roleName => {
+                const count = users.filter(u => u.role === roleName).length;
+                html += `
+                    <div class="user-mgmt-row" style="padding:12px 16px;">
+                        <div style="flex:1;">
+                            <span class="role-pill ${roleName === 'admin' ? 'admin' : 'member'}" style="font-size:12px;">
+                                ${roleName.charAt(0).toUpperCase() + roleName.slice(1)}
+                            </span>
+                            <span style="font-size:11px; color:var(--mgmt-text-muted); margin-left:8px; font-family:monospace;">(${roleName})</span>
+                        </div>
+                        <div style="flex:1; font-size:13px; color:var(--mgmt-text-main); font-weight:500;">
+                            ${count} users
+                        </div>
+                        <div style="width:120px; display:flex; gap:8px; justify-content:flex-end;">
+                            <button class="mgmt-btn" data-role-name="${roleName}" onclick="MgmtManager.globalRenameRole(this)">Rename</button>
+                        </div>
+                    </div>
+                `;
+            });
+
+            html += `</div></div>`;
+            content.innerHTML = html;
+        } catch (e) {
+            content.innerHTML = `<div style="color:#f43f5e; padding:40px;">Error: ${e.message}</div>`;
+        }
+    },
+
+    async globalRenameRole(btn) {
+        const oldRole = btn.dataset.roleName;
+        if (!oldRole) return;
+        // openRenameModal is defined in client.html script scope
+        if (typeof window.openRenameModal === 'function') {
+            window.openRenameModal(oldRole);
+        } else {
+            alert('Rename modal not available. Please refresh.');
         }
     }
 };

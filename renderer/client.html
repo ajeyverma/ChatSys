@@ -1065,6 +1065,107 @@
             background: #2d2d4e;
             border-radius: 2px;
         }
+
+        /* ─── Rename Role Modal ───────────────────────────────────── */
+        .rename-modal-card {
+            background: var(--bg-panel);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 28px 32px;
+            width: 340px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.4);
+        }
+
+        .rename-modal-title {
+            margin: 0 0 6px;
+            font-size: 16px;
+            font-weight: 700;
+            color: var(--text-main);
+        }
+
+        .rename-modal-desc {
+            font-size: 12px;
+            color: var(--text-muted);
+            margin: 0 0 20px;
+        }
+
+        .rename-modal-label {
+            display: block;
+            font-size: 10px;
+            font-weight: 700;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: .1em;
+            margin-bottom: 8px;
+        }
+
+        .rename-modal-input {
+            width: 100%;
+            background: var(--input-bg, #111128);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 10px 12px;
+            color: var(--text-main);
+            font-size: 13px;
+            font-family: inherit;
+            outline: none;
+            box-sizing: border-box;
+            transition: border-color .2s;
+        }
+
+        .rename-modal-input:focus {
+            border-color: var(--accent);
+        }
+
+        .rename-modal-warn {
+            display: none;
+            margin-top: 10px;
+            padding: 8px 12px;
+            background: rgba(239, 68, 68, 0.1);
+            border: 1px solid rgba(239, 68, 68, 0.3);
+            border-radius: 8px;
+            font-size: 11px;
+            color: #ef4444;
+        }
+
+        .rename-modal-cancel {
+            background: none;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 9px 18px;
+            color: var(--text-muted);
+            font-size: 13px;
+            font-family: inherit;
+            cursor: pointer;
+            transition: all .15s;
+        }
+
+        .rename-modal-cancel:hover {
+            border-color: var(--text-muted);
+            color: var(--text-main);
+        }
+
+        .rename-modal-confirm {
+            background: linear-gradient(135deg, #6366f1, #8b5cf6);
+            border: none;
+            border-radius: 8px;
+            padding: 9px 18px;
+            color: #fff;
+            font-size: 13px;
+            font-weight: 600;
+            font-family: inherit;
+            cursor: pointer;
+            transition: opacity .15s;
+        }
+
+        .rename-modal-confirm:hover {
+            opacity: .88;
+        }
+
+        .rename-modal-confirm:disabled {
+            opacity: .5;
+            cursor: not-allowed;
+        }
     </style>
 </head>
 
@@ -1296,15 +1397,25 @@
                                         <p>Neon Infrastructure Permissions</p>
                                     </div>
                                     <div class="users-mgmt-content">
-                                        <div class="mgmt-form-card" style="max-width: 100%;">
-                                            <h3>System Notice</h3>
-                                            <p
-                                                style="color:var(--mgmt-text-dim); text-transform:none; font-weight:normal; font-size:13px; margin:15px 0 25px;">
-                                                Advanced role policy configuration is currently managed via CLI.
-                                                UI dashboard integration is in development.
-                                            </p>
-                                            <button class="mgmt-btn" disabled style="opacity:0.5; cursor:default;"><i
-                                                    data-lucide="settings"></i> Configure Policies</button>
+                                        <!-- Populated by mgmt.js -->
+                                    </div>
+                                </div>
+
+                                <!-- Rename Role Modal -->
+                                <div id="rename-role-overlay"
+                                    style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.6); z-index:500; align-items:center; justify-content:center; backdrop-filter:blur(4px);">
+                                    <div class="rename-modal-card">
+                                        <h3 class="rename-modal-title">Rename Role</h3>
+                                        <p id="rename-role-desc" class="rename-modal-desc"></p>
+                                        <label class="rename-modal-label">New Role Identifier</label>
+                                        <input id="rename-role-input" type="text" placeholder="e.g. member"
+                                            class="rename-modal-input" />
+                                        <div id="rename-role-warn" class="rename-modal-warn"></div>
+                                        <div style="display:flex; gap:10px; margin-top:20px; justify-content:flex-end;">
+                                            <button onclick="closeRenameModal()"
+                                                class="rename-modal-cancel">Cancel</button>
+                                            <button id="rename-role-confirm" onclick="confirmRenameRole()"
+                                                class="rename-modal-confirm">Rename</button>
                                         </div>
                                     </div>
                                 </div>
@@ -1340,7 +1451,6 @@
                                                         <select id="mgmt-new-role">
                                                             <option value="user">User</option>
                                                             <option value="admin">Admin</option>
-                                                            <option value="readonly">Readonly</option>
                                                         </select>
                                                     </div>
                                                     <button class="mgmt-btn" onclick="MgmtManager.createAccount()"
@@ -1414,8 +1524,8 @@
 
         <script>
             // ─── Global State ──────────────────────────────────────────
-            let myUsername = '';
-            let myRole = '';
+            window.myUsername = '';
+            window.myRole = '';
             let isConnected = false;
             let dmTarget = null;
             const unreadCounts = {};
@@ -1425,10 +1535,11 @@
             let pendingImage = null; // { data, filename, mimeType }
 
             // ─── Session Initialization ────────────────────────────────
-            api.receive('init-session', ({ username, role }) => {
-                myUsername = username;
-                myRole = role;
-                document.getElementById('tb-user-name').textContent = username;
+            api.receive('init-session', ({ username, role, fullName }) => {
+                window.myUsername = username;
+                window.myRole = role;
+                const displayName = fullName ? `${username} - ${fullName}` : username;
+                document.getElementById('tb-user-name').textContent = displayName;
                 document.getElementById('tb-role-tag').textContent = `@${role}`;
                 if (role === 'admin') {
                     // Admin specific initializations can go here
@@ -1505,7 +1616,7 @@
                 const host = document.getElementById('m-host').value.trim() || '127.0.0.1';
                 const port = document.getElementById('m-port').value.trim() || '65432';
                 if (!username) { document.getElementById('m-username').classList.add('err'); return; }
-                myUsername = username;
+                window.myUsername = username;
 
                 // Update titlebar to show username
                 document.getElementById('tb-user-name').textContent = username;
@@ -1574,7 +1685,7 @@
                         api.send('client-send-dm', { to: dmTarget, text });
                     } else {
                         api.send('client-send', { text });
-                        appendGroupMsg({ type: 'chat', from: myUsername, text, ts: Date.now() }, true);
+                        appendGroupMsg({ type: 'chat', from: window.myUsername, text, ts: Date.now() }, true);
                     }
                     input.value = '';
                     input.style.height = 'auto';
@@ -1583,7 +1694,7 @@
 
             // ─── DM Navigation ────────────────────────────────────────────
             function openDM(username) {
-                if (username === myUsername) return;
+                if (username === window.myUsername) return;
                 dmTarget = username;
                 unreadCounts[username] = 0;
                 renderUserList();
@@ -1652,7 +1763,7 @@
                 const c = document.getElementById('messages');
                 c.innerHTML = '';
                 for (const dm of (dmHistories[username] || [])) {
-                    if (dm.isImage) renderImageEl(dm, dm.from === myUsername, true);
+                    if (dm.isImage) renderImageEl(dm, dm.from === window.myUsername, true);
                     else renderDMEl(dm, true);
                 }
                 c.scrollTop = c.scrollHeight;
@@ -1660,7 +1771,7 @@
 
             function renderDMEl(dm, force = false) {
                 const c = document.getElementById('messages');
-                const isSelf = dm.from === myUsername || dm.from === '🖥️ Server' && dm.to === myUsername;
+                const isSelf = dm.from === window.myUsername || dm.from === '🖥️ Server' && dm.to === window.myUsername;
                 const threadUser = isSelf && dm.from !== '🖥️ Server' ? dm.to : dm.from;
                 if (!force && dmTarget !== threadUser) return;
                 const wrap = document.createElement('div');
@@ -1710,7 +1821,7 @@
                 // Always add Group Chat to the list of DM targets
                 const allUsers = [
                     '🌐 Group Chat',
-                    ...onlineUsers.filter(u => u !== myUsername && u !== '🖥️ Server')
+                    ...onlineUsers.filter(u => u !== window.myUsername && u !== '🖥️ Server')
                 ];
 
                 for (const u of allUsers) {
@@ -1752,6 +1863,72 @@
                     isConnected = false; inp.disabled = true; btn.disabled = true; imgBtn.disabled = true;
                 }
             }
+
+            // ─── Rename Role Modal ────────────────────────────────────────
+            window._renameRoleTarget = '';
+
+            window.openRenameModal = function (oldRole) {
+                window._renameRoleTarget = oldRole;
+                const overlay = document.getElementById('rename-role-overlay');
+                const input = document.getElementById('rename-role-input');
+                const desc = document.getElementById('rename-role-desc');
+                const warn = document.getElementById('rename-role-warn');
+                desc.textContent = `Renaming "${oldRole}" will update all users with this role.`;
+                input.value = '';
+                warn.style.display = 'none';
+                overlay.style.display = 'flex';
+                setTimeout(() => input.focus(), 50);
+
+                // Close on Enter
+                input.onkeydown = (e) => { if (e.key === 'Enter') confirmRenameRole(); };
+            };
+
+            window.closeRenameModal = function () {
+                document.getElementById('rename-role-overlay').style.display = 'none';
+                window._renameRoleTarget = '';
+            };
+
+            window.confirmRenameRole = async function () {
+                const oldRole = window._renameRoleTarget;
+                const input = document.getElementById('rename-role-input');
+                const warn = document.getElementById('rename-role-warn');
+                const newRole = input.value.trim().toLowerCase();
+
+                if (!newRole || newRole === oldRole) {
+                    warn.textContent = 'Please enter a different, non-empty role name.';
+                    warn.style.display = 'block';
+                    return;
+                }
+
+                const confirmBtn = document.getElementById('rename-role-confirm');
+                confirmBtn.disabled = true;
+                confirmBtn.textContent = 'Renaming...';
+
+                try {
+                    const res = await window.api.invoke('admin:rename-role', { oldRole, newRole });
+                    if (res.success) {
+                        closeRenameModal();
+                        await MgmtManager.loadUserList();
+                        MgmtManager.loadRoles();
+                        // Show a non-blocking status
+                        const msg = document.createElement('div');
+                        msg.textContent = `✓ Role renamed: "${oldRole}" → "${newRole}" (${res.count} users updated)`;
+                        msg.style.cssText = 'position:fixed; bottom:20px; right:20px; background:#10b981; color:#fff; padding:10px 16px; border-radius:8px; font-size:13px; z-index:9999; box-shadow:0 4px 20px rgba(0,0,0,0.3);';
+                        document.body.appendChild(msg);
+                        setTimeout(() => msg.remove(), 3500);
+                    } else {
+                        warn.textContent = res.error || 'Rename failed. No users with that role found.';
+                        warn.style.display = 'block';
+                        confirmBtn.disabled = false;
+                        confirmBtn.textContent = 'Rename';
+                    }
+                } catch (e) {
+                    warn.textContent = 'Error: ' + e.message;
+                    warn.style.display = 'block';
+                    confirmBtn.disabled = false;
+                    confirmBtn.textContent = 'Rename';
+                }
+            };
 
             // ─── Lightbox ─────────────────────────────────────────────────
             let currentLbFilename = '';

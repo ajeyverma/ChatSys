@@ -129,6 +129,18 @@ function changeRole(username, newRole, permissions = null, by = 'system', nodeId
     return true;
 }
 
+function renameRole(oldRole, newRole, by = 'system', nodeId = '') {
+    const o = oldRole.trim();
+    const n = newRole.trim().toLowerCase();
+    const r = db.prepare("UPDATE credentials SET role=?, updated_at=? WHERE role=? COLLATE NOCASE")
+        .run(n, Date.now(), o);
+    if (r.changes > 0) {
+        audit('RENAME_ROLE_GLOBAL', o, by, nodeId, { newRole: n, count: r.changes });
+        return r.changes;
+    }
+    return 0;
+}
+
 // ── Auth ──────────────────────────────────────────────────────────────────────
 function verifyLogin(username, password) {
     const u = db.prepare("SELECT * FROM credentials WHERE username=? AND is_active=1").get(username);
@@ -136,6 +148,7 @@ function verifyLogin(username, password) {
     return {
         user_id: u.user_id,
         username: u.username,
+        full_name: u.full_name,
         role: u.role,
         permissions: JSON.parse(u.permissions),
         must_change_password: u.must_change_password
@@ -144,7 +157,7 @@ function verifyLogin(username, password) {
 
 // ── Queries ───────────────────────────────────────────────────────────────────
 function getUser(username) {
-    const u = db.prepare("SELECT user_id,username,role,permissions,created_at,updated_at,is_active FROM credentials WHERE username=?").get(username);
+    const u = db.prepare("SELECT user_id,username,full_name,role,permissions,created_at,updated_at,is_active FROM credentials WHERE username=?").get(username);
     return u ? { ...u, permissions: JSON.parse(u.permissions) } : null;
 }
 function listUsers(includeInactive = false) {
@@ -217,7 +230,8 @@ module.exports = {
     addUser, deleteUser, changePassword, changeRole,
     verifyLogin, getUser, listUsers,
     exportSnapshot, importSnapshot,
-    addApprovalRequest, listApprovals, approveRequest, rejectRequest, isUsernameTaken
+    addApprovalRequest, listApprovals, approveRequest, rejectRequest, isUsernameTaken,
+    renameRole
 };
 
 

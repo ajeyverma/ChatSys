@@ -761,13 +761,13 @@
 
       // Check for forced password change
       if (result.user.mustChange) {
-        window.pendingLaunch = { username, host, port, role: result.user.role };
+        window.pendingLaunch = { username, host, port, role: result.user.role, fullName: result.user.fullName };
         document.getElementById('reset-modal').style.display = 'flex';
         document.getElementById('new-password').focus();
         return;
       }
 
-      api.send('client-launch', { username, host, port, password, role: result.user.role });
+      api.send('client-launch', { username, host, port, password, role: result.user.role, fullName: result.user.fullName });
     }
 
     async function confirmResetPassword() {
@@ -801,7 +801,8 @@
           host: window.pendingLaunch.host,
           port: window.pendingLaunch.port,
           password: newPass,
-          role: window.pendingLaunch.role
+          role: window.pendingLaunch.role,
+          fullName: window.pendingLaunch.fullName
         });
       } else {
         errEl.textContent = res.error || 'Update failed.';

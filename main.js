@@ -142,7 +142,7 @@ function startPrimaryServer() {
 }
 
 // ─── IPC: Auto-Host Launch ──────────────────────────────────────────────────────
-ipcMain.on('client-launch', (event, { username, host, port, password, role }) => {
+ipcMain.on('client-launch', (event, { username, host, port, password, role, fullName }) => {
     logger.info('Main', `Client launch requested: username=${username}, role=${role}, host=${host}, port=${port}`);
     if (launcherWin) {
         launcherWin.close();
@@ -159,7 +159,7 @@ ipcMain.on('client-launch', (event, { username, host, port, password, role }) =>
         activeClient = new ChatClient(roleWin);
 
         // Tell renderer about user role immediately
-        roleWin.webContents.send('init-session', { username, role });
+        roleWin.webContents.send('init-session', { username, role, fullName });
 
         // Listen for internal event when connection is refused (meaning no server)
         activeClient.on('server-not-found', ({ host, port, isInitial, isRedirect, err }) => {
@@ -283,6 +283,7 @@ ipcMain.handle('verify-login', async (event, { username, password }) => {
             error: user ? null : 'Invalid password.',
             user: user ? {
                 username: user.username,
+                fullName: user.full_name,
                 role: user.role,
                 mustChange: user.must_change_password
             } : null
@@ -337,6 +338,18 @@ ipcMain.handle('admin:change-role', async (event, { username, role }) => {
             return { success: true };
         }
         return { success: false, error: 'User not found' };
+    } catch (e) { return { success: false, error: e.message }; }
+});
+
+ipcMain.handle('admin:rename-role', async (event, { oldRole, newRole }) => {
+    try {
+        const credDb = require('./src/credsync/database');
+        const count = credDb.renameRole(oldRole, newRole, 'ui-admin');
+        if (count > 0) {
+            if (credNode) credNode.bumpAndAnnounce();
+            return { success: true, count };
+        }
+        return { success: false, error: 'Role not found or no users affected' };
     } catch (e) { return { success: false, error: e.message }; }
 });
 
