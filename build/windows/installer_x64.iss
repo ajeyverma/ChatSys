@@ -1,13 +1,13 @@
 [Setup]
 AppName=ChatSys
-AppVersion=2.6.0
-AppVerName=ChatSys 2.6.0
+AppVersion=2.6.1
+AppVerName=ChatSys 2.6.1
 AppPublisher=ChatSys Org
 AppPublisherURL=https://github.com/ajeyverma/ChatSys
 DefaultDirName={autopf}\ChatSys
 DefaultGroupName=ChatSys
 DisableProgramGroupPage=yes
-OutputBaseFilename=ChatSys-x64-v2.6.0
+OutputBaseFilename=ChatSys-x64-v2.6.1
 DisableWelcomePage=yes
 WizardStyle=modern
 CloseApplications=yes
@@ -19,16 +19,18 @@ Compression=lzma
 SolidCompression=yes
 ArchitecturesAllowed=x64
 ArchitecturesInstallIn64BitMode=x64compatible
+ChangesEnvironment=yes
 
 [Tasks]
 Name: "desktopicon"; Description: "{cm:CreateDesktopIcon}"; GroupDescription: "{cm:AdditionalIcons}"; Flags: unchecked
 
 [Files]
 Source: "..\..\dist\win-unpacked\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs
-Source: "..\..\chatsys.cmd"; DestDir: "{app}"; Flags: ignoreversion
+Source: "..\..\bin\chatsys.cmd"; DestDir: "{app}\bin"; Flags: ignoreversion
+Source: "..\..\bin\chatsys.ps1"; DestDir: "{app}\bin"; Flags: ignoreversion
 
 [Registry]
-Root: HKCU; Subkey: "Environment"; ValueType: expandsz; ValueName: "Path"; ValueData: "{olddata};{app}"; Check: NeedsAddPath(ExpandConstant('{app}'))
+Root: HKCU; Subkey: "Environment"; ValueType: expandsz; ValueName: "Path"; ValueData: "{olddata};{app}\bin"; Check: NeedsAddPath(ExpandConstant('{app}\bin'))
 
 [Icons]
 Name: "{group}\ChatSys"; Filename: "{app}\ChatSys.exe"
@@ -46,17 +48,35 @@ begin
     Result := True;
     exit;
   end;
-  // look for the path with leading and trailing semicolon
-  // Pos() returns 0 if not found
-  Result := Pos(';' + Param + ';', ';' + OrigPath + ';') = 0;
+  Result := Pos(';' + Uppercase(Param) + ';', ';' + Uppercase(OrigPath) + ';') = 0;
+end;
+
+procedure RemovePath(Param: string);
+var
+  OrigPath, NewPath: string;
+  P: Integer;
+begin
+  if RegQueryStringValue(HKEY_CURRENT_USER, 'Environment', 'Path', OrigPath) then begin
+    NewPath := OrigPath;
+    P := Pos(';' + Uppercase(Param) + ';', ';' + Uppercase(NewPath) + ';');
+    if P > 0 then begin
+      Delete(NewPath, P, Length(Param) + 1);
+      RegWriteExpandStringValue(HKEY_CURRENT_USER, 'Environment', 'Path', NewPath);
+    end else if Pos(Uppercase(Param) + ';', Uppercase(NewPath) + ';') = 1 then begin
+      Delete(NewPath, 1, Length(Param) + 1);
+      RegWriteExpandStringValue(HKEY_CURRENT_USER, 'Environment', 'Path', NewPath);
+    end;
+  end;
+end;
+
+procedure CurUninstallStepChanged(UninstallStep: TUninstallStep);
+begin
+  if UninstallStep = usUninstall then begin
+    RemovePath(ExpandConstant('{app}\bin'));
+  end;
 end;
 
 function InitializeSetup(): Boolean;
-var
-  ResultCode: Integer;
 begin
   Result := True;
-  // Try to kill any running instance before starting setup
-  // This is a backup in case CloseApplications fails
-  Exec('taskkill', '/F /IM ChatSys.exe /T', '', SW_HIDE, ewWaitUntilTerminated, ResultCode);
 end;

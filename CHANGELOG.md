@@ -6,6 +6,18 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ---
+## [2.6.1] - 2026-03-12
+
+### Added
+- **Unified CLI Entry Point**: Improved the `chatsys` command to handle both CLI and GUI launches seamlessly.
+- **Dedicated `bin` Folder**: Reorganized command-line scripts into a dedicated `bin` directory to avoid naming collisions with the main application executable.
+- **Python-Style REPL**: Enhanced the interactive admin terminal with a version header and a familiar `>>>` prompt.
+- **`chatsys gui` Command**: Added a specific command to launch the graphical interface from the terminal without holding the process (no terminal "wrapper").
+
+### Changed
+- **Enhanced PATH Management**: Updated the installer to add the new `bin` folder to the system PATH.
+- **Uninstaller Cleanup**: The uninstaller now automatically removes ChatSys from the Windows system PATH, ensuring a clean removal.
+
 ## [2.6.0] - 2026-03-12
 
 ### Added
