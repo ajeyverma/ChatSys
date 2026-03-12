@@ -1,21 +1,33 @@
-MIT License
+END USER LICENSE AGREEMENT (EULA)
 
-Copyright (c) 2026 ChatSys Team
+This End User License Agreement ("Agreement") is a legal agreement between
+the customer ("User") and Ajay Kumar ("Owner") for the use of this software.
 
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions:
+1. License Grant
+   The Owner grants the User a limited, non-exclusive, non-transferable
+   license to use the software according to the purchased plan or subscription.
 
-The above copyright notice and this permission notice shall be included in all
-copies or substantial portions of the Software.
+2. Restrictions
+   The User may NOT:
 
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-SOFTWARE.
+* Copy or redistribute the software
+* Reverse engineer or decompile the software
+* Modify the software
+* Use the software beyond the permitted number of devices
+
+3. Ownership
+   The software and all related intellectual property rights remain the
+   exclusive property of Ajay Kumar.
+
+4. Subscription and Termination
+   Access to the software may be limited by subscription plans.
+   If the subscription expires or terms are violated, the license may be revoked.
+
+5. Disclaimer
+   The software is provided "as is" without warranty of any kind.
+   The Owner is not responsible for any damages resulting from the use
+   of the software.
+
+6. Acceptance
+   By installing or using this software, the User agrees to the terms
+   of this agreement.

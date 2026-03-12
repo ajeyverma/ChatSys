@@ -69,8 +69,8 @@ We are committed to a welcoming and inclusive environment. Please read our [CODE
 
 ## License
 
-This project is licensed under the MIT License - see the [LICENSE](./LICENSE) file for details.
+This project is proprietary software. See the [LICENSE](./LICENSE) and [EULA](./EULA) files for details.
 
 ## Version
 
-Current Version: **2.2.1** (See [VERSION](./VERSION))
+Current Version: **2.6.0** (See [VERSION](./VERSION))
