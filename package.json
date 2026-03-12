@@ -1,6 +1,6 @@
 {
   "name": "chatsys",
-  "version": "2.6.1",
+  "version": "2.7.0",
   "description": "Fault-Tolerant GUI-Based LAN Communication System with Automatic Failover",
   "main": "main.js",
   "scripts": {

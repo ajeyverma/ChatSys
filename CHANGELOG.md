@@ -6,6 +6,24 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ---
+## [2.7.0] - 2026-03-12
+
+### Optimized
+- **Startup Performance**: Implemented lazy-loading for core modules (`ChatClient`, `PrimaryServer`, `CredNode`) to significantly reduce initial application load time.
+- **Resource Footprint**: Removed external CDN dependencies (Google Fonts, Lucide Icons) in favor of system fonts and inline SVGs, enabling faster rendering and offline capability.
+- **App Size Reduction**: Deleted legacy `bin`, `docs`, and `scripts` directories along with unused documentation files to streamline the installation package.
+- **Database Initialization**: Optimized the CredSync database startup sequence to prevent blocking the main UI thread.
+
+### Changed
+- **CLI Removal**: Completely removed the Command Line Interface (CLI) mode to focus exclusively on a premium GUI experience.
+- **Centralized Logging**: Refactored the logging system for better reliability and safer early-boot initialization.
+- **Default Administration**: Added an automatic `admin` user setup on first boot for immediate system access.
+
+### Fixed
+- **Race conditions**: Resolved a critical initialization race condition where the user list would occasionally appear empty on startup.
+- **UI Consistency**: Standardized "YOU" tags in the user management list and matched iconography across all panels.
+
+---
 ## [2.6.1] - 2026-03-12
 
 ### Added
