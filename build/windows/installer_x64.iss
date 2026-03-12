@@ -1,13 +1,13 @@
 [Setup]
 AppName=ChatSys
-AppVersion=2.6.1
-AppVerName=ChatSys 2.6.1
+AppVersion=2.7.0
+AppVerName=ChatSys 2.7.0
 AppPublisher=ChatSys Org
 AppPublisherURL=https://github.com/ajeyverma/ChatSys
 DefaultDirName={autopf}\ChatSys
 DefaultGroupName=ChatSys
 DisableProgramGroupPage=yes
-OutputBaseFilename=ChatSys-x64-v2.6.1
+OutputBaseFilename=ChatSys-x64-v2.7.0
 DisableWelcomePage=yes
 WizardStyle=modern
 CloseApplications=yes
@@ -26,8 +26,8 @@ Name: "desktopicon"; Description: "{cm:CreateDesktopIcon}"; GroupDescription: "{
 
 [Files]
 Source: "..\..\dist\win-unpacked\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs
-Source: "..\..\bin\chatsys.cmd"; DestDir: "{app}\bin"; Flags: ignoreversion
-Source: "..\..\bin\chatsys.ps1"; DestDir: "{app}\bin"; Flags: ignoreversion
+
+
 
 [Registry]
 Root: HKCU; Subkey: "Environment"; ValueType: expandsz; ValueName: "Path"; ValueData: "{olddata};{app}\bin"; Check: NeedsAddPath(ExpandConstant('{app}\bin'))
