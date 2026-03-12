@@ -186,5 +186,7 @@ function handleIncoming(msg) {
         const sender = msg.payload.from === username ? 'You' : msg.payload.fromFullName;
         const color = getSenderColor(sender);
         logToTerminal(`${color}${sender}:\x1b[0m ${text || ''}`);
+    } else if (msg.type === proto.MSG_SYS) {
+        logToTerminal(`\x1b[33m[System]\x1b[0m ${msg.payload.text}`);
     }
 }

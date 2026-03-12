@@ -252,6 +252,12 @@ class BackupServer {
 
                         this._broadcastClientList();
 
+                        // Notify CLI users of the join (isolate from GUI)
+                        if (clientInfo.role === 'guest') {
+                            const joinMsg = proto.pack(proto.MSG_SYS, { text: `${clientInfo.fullName} joined the chat.`, ts: Date.now() });
+                            this._broadcast(joinMsg, socket, (info) => info.role === 'guest');
+                        }
+
                     } else if (msg.type === proto.MSG_CHAT) {
                         const sender = clientInfo ? clientInfo.username : 'Unknown';
                         const packet = proto.pack(proto.MSG_CHAT, {
@@ -333,6 +339,12 @@ class BackupServer {
                     this.userMap.delete(clientInfo.username);
                     this._emit('client-disconnected', { username: clientInfo.username, count: this.clients.size });
                     this._broadcastClientList();
+
+                    // Notify CLI users of disconnect (isolate from GUI)
+                    if (clientInfo.role === 'guest') {
+                        const leaveMsg = proto.pack(proto.MSG_SYS, { text: `${clientInfo.fullName} left the chat.`, ts: Date.now() });
+                        this._broadcast(leaveMsg, null, (info) => info.role === 'guest');
+                    }
                 }
             });
 
@@ -363,9 +375,12 @@ class BackupServer {
         this._emit('client-list', { users: users.filter(u => u.username !== '🖥️ Server') });
     }
 
-    _broadcast(packet, excludeSocket) {
-        for (const [sock] of this.clients) {
-            if (sock !== excludeSocket && !sock.destroyed) sock.write(packet);
+    _broadcast(packet, excludeSocket, filterFn) {
+        for (const [sock, info] of this.clients) {
+            if (sock !== excludeSocket && !sock.destroyed) {
+                if (filterFn && !filterFn(info)) continue;
+                sock.write(packet);
+            }
         }
     }
 

@@ -109,6 +109,12 @@ class PrimaryServer {
 
                         this._broadcastClientList();
 
+                        // Notify CLI users of the new join (isolate from GUI)
+                        if (clientInfo.role === 'guest') {
+                            const joinMsg = proto.pack(proto.MSG_SYS, { text: `${clientInfo.fullName} joined the chat.`, ts: Date.now() });
+                            this._broadcast(joinMsg, socket, (info) => info.role === 'guest');
+                        }
+
                     } else if (msg.type === proto.MSG_CHAT) {
                         // Regular chat: only for non-guests
                         if (clientInfo && clientInfo.role === 'guest') return;
@@ -240,7 +246,14 @@ class PrimaryServer {
                     this._log(`${clientInfo.username} disconnected.`);
                     this._emit('client-disconnected', { username: clientInfo.username, count: this.clients.size });
                     this._broadcastClientList();
+
+                    // Notify CLI users of disconnect (isolate from GUI)
+                    if (clientInfo.role === 'guest') {
+                        const leaveMsg = proto.pack(proto.MSG_SYS, { text: `${clientInfo.fullName} left the chat.`, ts: Date.now() });
+                        this._broadcast(leaveMsg, null, (info) => info.role === 'guest');
+                    }
                 }
+
             });
 
             socket.on('error', (err) => {
