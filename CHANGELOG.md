@@ -6,6 +6,19 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ---
+## [2.8.0] - 2026-03-13
+
+### Added
+- **Anonymous CLI Chatbox**: Introduced a brand new terminal-based chat environment accessible directly from the launcher.
+- **Privacy Isolation Protocol**: Implemented a secondary `ANON_CHAT` protocol that completely isolates terminal users from the regular GUI chat.
+- **ASCII Brand Identity**: Added custom developer-branded ASCII art (Green Design, Red Name, Yellow Links) to the CLI welcome screen.
+- **Optimized Terminal UX**: Engineered a specific line-overwrite mechanism for the CLI to ensure a clean chat feed without visual ghosting or prompt duplication.
+- **Guest Role Logic**: Integrated server-side "Guest" validation that allows instant access while preventing username conflicts with registered accounts.
+
+### Changed
+- **Launcher UI**: Added a dedicated "Anonymous Chatbox" button to the main launcher screen for one-click access.
+
+---
 ## [2.7.0] - 2026-03-12
 
 ### Optimized

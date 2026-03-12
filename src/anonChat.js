@@ -36,6 +36,28 @@ function logOwnMessage(text) {
     rl.prompt(true);
 }
 
+/** Assigns a consistent color to a username based on a simple hash */
+function getSenderColor(name) {
+    if (name === username || name === 'You') return '\x1b[34m'; // Self is always Blue
+    const colors = [
+        '\x1b[31m', // Red
+        '\x1b[32m', // Green
+        '\x1b[35m', // Magenta
+        '\x1b[36m', // Cyan
+        '\x1b[91m', // Bright Red
+        '\x1b[92m', // Bright Green
+        '\x1b[93m', // Bright Yellow
+        '\x1b[95m', // Bright Magenta
+        '\x1b[96m', // Bright Cyan
+    ];
+    let hash = 0;
+    for (let i = 0; i < name.length; i++) {
+        hash = name.charCodeAt(i) + ((hash << 5) - hash);
+    }
+    const index = Math.abs(hash) % colors.length;
+    return colors[index];
+}
+
 let socket = null;
 let username = '';
 let groupKey = null;
@@ -59,16 +81,17 @@ Instagram: https://instagram.com/ajayverma097
 LinkedIn: https://linkedin.com/in/AjeyVerma\x1b[0m
 \x1b[36m_________________________________________________\x1b[0m
 `);
-console.log(' No login required. Join the global LAN chat instantly.');
+console.log('\x1b[31mNo login required. Join the global LAN chat instantly.\x1b[0m');
 console.log('');
 
 rl.question('Enter your display name: ', (name) => {
     username = name.trim() || 'Guest' + Math.floor(Math.random() * 1000);
+    rl.setPrompt(`\x1b[33m${username} > \x1b[0m`);
     startChat();
 });
 
 function startChat() {
-    console.log(`Connecting to ChatSys on 127.0.0.1:${cfg.PRIMARY_PORT}...`);
+    // console.log(`Connecting to ChatSys on 127.0.0.1...`);
 
     socket = new net.Socket();
 
@@ -107,7 +130,7 @@ function handleIncoming(msg) {
         if (msg.payload.ok) {
             try {
                 groupKey = cryptoEngine.decryptRSA(msg.payload.groupKey, myKeys.privateKey);
-                console.log('\x1b[32m%s\x1b[0m', `\n[Success] Connected! Welcome, ${username}.`);
+                console.log('\x1b[32m%s\x1b[0m', `\n[Success] Connected to ChatSys Anonymous Chatbox. Welcome, ${username}.`);
                 console.log('Type your message and press Enter. Ctrl+C to exit.\n');
                 rl.prompt();
 
@@ -144,9 +167,9 @@ function handleIncoming(msg) {
             text = msg.payload.text;
         }
 
-        // Use helper for clean logging
+        // Use helper for clean logging with dynamic coloring
         const sender = msg.payload.from === username ? 'You' : msg.payload.fromFullName;
-        const color = msg.payload.from === username ? '\x1b[34m' : '\x1b[33m';
+        const color = getSenderColor(sender);
         logToTerminal(`${color}${sender}:\x1b[0m ${text || ''}`);
     }
 }

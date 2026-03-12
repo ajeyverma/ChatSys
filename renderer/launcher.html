@@ -439,9 +439,6 @@
       <button class="btn-apply" onclick="toggleApplyForm()">
         <span style="font-size:16px;"></span> Apply for Account
       </button>
-      <button class="btn-apply" onclick="api.send('launch-anon-chat', {})" style="margin-left: 10px; background: rgba(16, 185, 129, 0.1); border-color: rgba(16, 185, 129, 0.2); color: #10b981;">
-        <span style="font-size:16px;"></span> Anonymous Chatbox
-      </button>
     </div>
 
     <!-- Config Panel -->
@@ -468,11 +465,17 @@
           <label>Password</label>
           <input id="password" type="password" placeholder="••••••••" maxlength="64" />
         </div>
-        <div class="field">
-          <label>Port</label>
-          <input id="serverPort" placeholder="65432" value="65432" />
-        </div>
         <button class="btn-launch" id="btn-launch" onclick="launch()" style="margin-top: 10px;">Connect</button>
+        <button class="btn-launch" onclick="api.send('launch-anon-chat', {})"
+          style="margin-top: 8px; background: rgba(16, 185, 129, 0.1); border-color: rgba(16, 185, 129, 0.2); color: #10b981; display: flex; align-items: center; justify-content: center; gap: 8px;">
+          <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none"
+            stroke-linecap="round" stroke-linejoin="round">
+            <rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect>
+            <line x1="8" y1="21" x2="16" y2="21"></line>
+            <line x1="12" y1="17" x2="12" y2="21"></line>
+          </svg>
+          Anonymous Chatbox
+        </button>
         <div id="login-error"
           style="font-size: 11px; color: #ef4444; margin-top: 8px; text-align: center; display: none;"></div>
 
@@ -546,13 +549,13 @@
       try {
         allUsers = await api.invoke('get-users');
         console.log(`Launcher: Load users (attempt ${attempt}):`, allUsers);
-        
+
         if ((!allUsers || allUsers.length === 0) && attempt < 3) {
           console.log('No users found, retrying in 1s...');
           setTimeout(() => loadUsers(attempt + 1), 1000);
           return;
         }
-        
+
         renderUserOptions(allUsers);
       } catch (err) {
         console.error('Failed to load users:', err);
@@ -748,7 +751,7 @@
     async function launch() {
       const username = (document.getElementById('username').value || '').trim();
       const host = document.getElementById('serverHost').value || '127.0.0.1';
-      const port = document.getElementById('serverPort').value || '65432';
+      const port = '65432';
       const password = document.getElementById('password').value || '';
       const errDiv = document.getElementById('login-error');
       const btn = document.getElementById('btn-launch');
@@ -837,13 +840,11 @@
       if (!data || !data.host) return;
 
       const hostInput = document.getElementById('serverHost');
-      const portInput = document.getElementById('serverPort');
       const msgDiv = document.getElementById('discovery-msg');
 
       hostInput.value = data.host;
-      portInput.value = data.port || '65432';
 
-      msgDiv.innerHTML = `🎯 Discovered server at ${data.host}:${data.port || 65432}`;
+      msgDiv.innerHTML = `🎯 Discovered server at ${data.host}`;
       msgDiv.style.display = 'block';
 
       // Slight highlight effect to draw attention
