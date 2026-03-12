@@ -11,12 +11,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 - **Anonymous CLI Chatbox**: Introduced a brand new terminal-based chat environment accessible directly from the launcher.
 - **Privacy Isolation Protocol**: Implemented a secondary `ANON_CHAT` protocol that completely isolates terminal users from the regular GUI chat.
+- **Dynamic User Coloring**: Integrated a name-hashing algorithm to assign unique, consistent colors to different chat participants.
+- **Personalized CLI Prompts**: Replaced generic prompts with a yellow-tinted `[User] >>` identifier for a more immersive terminal experience.
 - **ASCII Brand Identity**: Added custom developer-branded ASCII art (Green Design, Red Name, Yellow Links) to the CLI welcome screen.
-- **Optimized Terminal UX**: Engineered a specific line-overwrite mechanism for the CLI to ensure a clean chat feed without visual ghosting or prompt duplication.
-- **Guest Role Logic**: Integrated server-side "Guest" validation that allows instant access while preventing username conflicts with registered accounts.
+- **Advanced Screen Clearing**: Implemented `\x1b[3J` logic to wipe the entire scrollback buffer upon joining, ensuring a fresh session.
+- **Optimized Terminal UX**: Engineered a specific line-overwrite mechanism (`logOwnMessage`) for the CLI to ensure a clean chat feed without visual ghosting.
+- **Guest Role Logic**: Integrated server-side "Guest" validation that allows instant access while preventing username conflicts.
+- **Improved Signal Handling**: Added explicit `SIGINT` (Ctrl+C) support for graceful CLI exits.
 
 ### Changed
-- **Launcher UI**: Added a dedicated "Anonymous Chatbox" button to the main launcher screen for one-click access.
+- **Launcher UX Refinement**: Removed manual Port entry fields for a cleaner UI and repositioned the "Anonymous Chatbox" button directly under the active login controls.
+- **Visual Feedback**: Added a new terminal icon to the anonymous entry button and fixed server discovery notification logic.
 
 ---
 ## [2.7.0] - 2026-03-12

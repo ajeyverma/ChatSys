@@ -15,6 +15,10 @@ const rl = readline.createInterface({
     historySize: 0 // Disable history to prevent confusion during testing if requested implicitly
 });
 
+rl.on('SIGINT', () => {
+    process.exit(0);
+});
+
 /** Logs an incoming message from the network */
 function logToTerminal(message) {
     readline.cursorTo(process.stdout, 0);
@@ -67,7 +71,7 @@ let currentBuffer = '';
 // Set terminal title
 process.stdout.write(`\x1b]2;ChatSys Anonymous Chatbox\x1b\x5c`);
 
-console.log('\x1b[2J\x1b[0f'); // Clear screen
+process.stdout.write('\x1b[2J\x1b[3J\x1b[H'); // Clear screen and scrollback
 console.log(`\x1b[32m  ___  _             _    ____
  / __|| |__    __ _ | |_ / ___|  _   _  ___
 | |   | '_ \\  / _' || __|\\___ \\ | | | |/ __|
@@ -86,7 +90,8 @@ console.log('');
 
 rl.question('Enter your display name: ', (name) => {
     username = name.trim() || 'Guest' + Math.floor(Math.random() * 1000);
-    rl.setPrompt(`\x1b[33m${username} > \x1b[0m`);
+    process.stdout.write('\x1b[2J\x1b[3J\x1b[H'); // True clear
+    rl.setPrompt(`\x1b[33m${username} >> \x1b[0m`);
     startChat();
 });
 
