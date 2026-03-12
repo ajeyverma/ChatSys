@@ -64,8 +64,22 @@ class PrimaryServer {
                         const password = msg.payload.password || '';
                         const publicKey = msg.payload.publicKey;
 
-                        // Verify credentials against the distributed replicated database
-                        const user = credDb.verifyLogin(username, password);
+                        const isAnon = msg.payload.isAnonymous && cfg.ALLOW_ANONYMOUS;
+                        let user;
+
+                        if (isAnon) {
+                            // Check if username is already taken by a registered user
+                            if (credDb.getUser(username)) {
+                                socket.write(proto.pack(proto.MSG_ACK, { ok: false, message: 'Username is taken by a registered member.' }));
+                                socket.end();
+                                return;
+                            }
+                            user = { username, full_name: username, role: 'guest' };
+                        } else {
+                            // Verify credentials against the distributed replicated database
+                            user = credDb.verifyLogin(username, password);
+                        }
+
                         if (!user) {
                             this._log(`Authentication failed for ${username} from ${socket.remoteAddress}`);
                             socket.write(proto.pack(proto.MSG_ACK, {
@@ -96,27 +110,35 @@ class PrimaryServer {
                         this._broadcastClientList();
 
                     } else if (msg.type === proto.MSG_CHAT) {
+                        // Regular chat: only for non-guests
+                        if (clientInfo && clientInfo.role === 'guest') return;
                         this.msgCount++;
                         const sender = clientInfo ? clientInfo.username : 'Unknown';
                         const senderFullName = clientInfo ? clientInfo.fullName : 'Unknown';
-                        // Relay EXACTLY what was sent to preserve encryption fields
                         const packet = proto.pack(proto.MSG_CHAT, {
                             ...msg.payload,
                             from: sender,
                             fromFullName: senderFullName,
                             ts: Date.now()
                         });
-                        this._broadcast(packet, socket);
+                        this._broadcast(packet, socket, (info) => info.role !== 'guest');
                         this._log(`[MSG] ${senderFullName}: ${msg.payload.encrypted ? '[Encrypted]' : msg.payload.text}`);
                         this._emit('message-relayed', { from: sender, fromFullName: senderFullName, count: this.msgCount });
-                        this._emit('chat-message', {
+                    } else if (msg.type === proto.MSG_ANON_CHAT) {
+                        // Anonymous CLI chat: isolated from GUI
+                        const sender = clientInfo ? clientInfo.username : 'Unknown';
+                        const packet = proto.pack(proto.MSG_ANON_CHAT, {
+                            ...msg.payload,
                             from: sender,
-                            fromFullName: senderFullName,
-                            text: msg.payload.encrypted ? '[Encrypted Payload]' : msg.payload.text,
+                            fromFullName: sender,
                             ts: Date.now()
                         });
+                        this._broadcast(packet, socket, (info) => info.role === 'guest');
+                        this._log(`[ANON-MSG] ${sender}`);
 
                     } else if (msg.type === proto.MSG_IMAGE) {
+                        // Prevent guests from sending/receiving images (GUI only feature)
+                        if (clientInfo && clientInfo.role === 'guest') return;
                         const sender = clientInfo ? clientInfo.username : 'Unknown';
                         const senderFullName = clientInfo ? clientInfo.fullName : 'Unknown';
                         const { to, data, filename, mimeType } = msg.payload;
@@ -140,23 +162,39 @@ class PrimaryServer {
                                 this._emit('image', { from: sender, fromFullName: senderFullName, to: '🖥️ Server', imgData: decryptedData, filename, ts: Date.now() });
                             } else {
                                 const recipientSock = this.userMap.get(to);
-                                if (recipientSock && !recipientSock.destroyed) recipientSock.write(imgPacket);
-                                if (!socket.destroyed) socket.write(imgPacket);
-                                this._log(`[IMG-DM] ${senderFullName} → ${to}: ${filename}`);
-                                this._emit('chat-message', { from: sender, fromFullName: senderFullName, image: true, filename, ts: Date.now() });
+                                if (recipientSock) {
+                                    const recInfo = this.clients.get(recipientSock);
+                                    // Guard: DM only between non-guests
+                                    if (recInfo && recInfo.role !== 'guest') {
+                                        recipientSock.write(imgPacket);
+                                        if (!socket.destroyed) socket.write(imgPacket);
+                                        this._log(`[IMG-DM] ${senderFullName} → ${to}: ${filename}`);
+                                        this._emit('chat-message', { from: sender, fromFullName: senderFullName, image: true, filename, ts: Date.now() });
+                                    }
+                                }
                             }
                         } else {
-                            this._broadcast(imgPacket, socket);
+                            // Only broadcast to non-guests
+                            this._broadcast(imgPacket, socket, (info) => info.role !== 'guest');
                             if (!socket.destroyed) socket.write(imgPacket);
                             this._log(`[IMG] ${senderFullName}: ${filename}`);
                             this._emit('chat-message', { from: sender, fromFullName: senderFullName, image: true, filename, ts: Date.now() });
                         }
 
                     } else if (msg.type === proto.MSG_DM) {
+                        // Prevent guests from sending/receiving DMs (GUI only feature)
+                        if (clientInfo && clientInfo.role === 'guest') return;
                         const sender = clientInfo ? clientInfo.username : 'Unknown';
                         const senderFullName = clientInfo ? clientInfo.fullName : 'Unknown';
                         const toUser = msg.payload.to;
                         const recipientSock = this.userMap.get(toUser);
+
+                        if (recipientSock) {
+                            const recInfo = this.clients.get(recipientSock);
+                            // Guard: DM only if recipient is also not a guest
+                            if (recInfo && recInfo.role === 'guest') return;
+                        }
+
                         let toFullName = toUser;
                         if (toUser === '🖥️ Server') {
                             toFullName = '🖥️ Server';
@@ -286,12 +324,16 @@ class PrimaryServer {
         const users = [{ username: '🖥️ Server', fullName: '🖥️ Server' }];
         const keys = { '🖥️ Server': this.publicKey };
         for (const [, info] of this.clients) {
-            users.push({ username: info.username, fullName: info.fullName });
-            keys[info.username] = info.publicKey;
+            // Only include non-anonymous users for the general list
+            if (info.role !== 'guest') {
+                users.push({ username: info.username, fullName: info.fullName });
+                keys[info.username] = info.publicKey;
+            }
         }
         const packet = proto.pack(proto.MSG_CLIENT_LIST, { users, keys });
-        this._broadcast(packet, null);
-        // Don't emit Server to the client UI list (handled internally)
+        // Send to GUI clients only
+        this._broadcast(packet, null, (info) => info.role !== 'guest');
+        // Update local GUI admin list
         this._emit('client-list', { users: users.filter(u => u.username !== '🖥️ Server') });
     }
 
@@ -326,9 +368,10 @@ class PrimaryServer {
         });
     }
 
-    _broadcast(packet, excludeSocket) {
-        for (const [sock] of this.clients) {
+    _broadcast(packet, excludeSocket, filterFn) {
+        for (const [sock, info] of this.clients) {
             if (sock !== excludeSocket && !sock.destroyed) {
+                if (filterFn && !filterFn(info)) continue;
                 sock.write(packet);
             }
         }

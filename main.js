@@ -2,6 +2,7 @@ const { app, BrowserWindow, ipcMain } = require('electron');
 const path = require('path');
 const fs = require('fs');
 const dgram = require('dgram');
+const { spawn } = require('child_process');
 const cfg = require('./src/config');
 const proto = require('./src/protocol');
 const logger = require('./src/logger');
@@ -139,6 +140,29 @@ function startPrimaryServer() {
     activeServer = new PrimaryServer(dummyWin, '127.0.0.1');
     activeServer.start();
 }
+
+// ─── IPC: Anonymous CLI Chat ────────────────────────────────────────────────────
+ipcMain.on('launch-anon-chat', () => {
+    logger.info('Main', 'Launching Anonymous CLI Chat...');
+    const scriptPath = path.join(__dirname, 'src', 'anonChat.js');
+    
+    // Ensure server is running for local anon chat
+    if (!activeServer) {
+        startPrimaryServer();
+    }
+
+    if (process.platform === 'win32') {
+        spawn('cmd.exe', ['/c', 'start', '"ChatSys Anonymous Chatbox"', 'node', scriptPath], {
+            detached: true,
+            stdio: 'ignore',
+            shell: true
+        });
+    } else {
+        const term = process.platform === 'darwin' ? 'open' : 'x-terminal-emulator';
+        const args = process.platform === 'darwin' ? ['-a', 'Terminal', 'node', scriptPath] : ['-e', 'node', scriptPath];
+        spawn(term, args, { detached: true });
+    }
+});
 
 // ─── IPC: Auto-Host Launch ──────────────────────────────────────────────────────
 ipcMain.on('client-launch', (event, { username, host, port, password, role, fullName }) => {

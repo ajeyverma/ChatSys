@@ -13,5 +13,7 @@ module.exports = {
   RECONNECT_ATTEMPTS: 5,
   DISCOVERY_PORT: 65430,      // UDP: discovery beacon port
   DISCOVERY_INTERVAL: 2000,   // ms: primary broadcasts discovery
+  ALLOW_ANONYMOUS: true,      // Allow guest joining via CLI
+  ANON_PREFIX: 'Anon_',       // Prefix for anonymous users
   VERSION: require('../package.json').version
 };
