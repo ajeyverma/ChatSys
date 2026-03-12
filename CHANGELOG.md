@@ -6,7 +6,18 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ---
-## [2.5.0]
+## [2.6.0] - 2026-03-12
+
+### Added
+- **Integrated CLI**: The main executable now supports a standalone `--cli` flag for managing user accounts and database versioning without the GUI.
+- **Command-Line Wrappers**: Added `chatsys` command utilities (.cmd/.ps1) to the root and installation directory.
+- **Automatic PATH Registration**: The installer now automatically adds the ChatSys installation directory to the Windows System PATH.
+
+### Changed
+- **Username Display Migration**: All chat interfaces, including the online user list, group chat bubbles, and DM headers, now prioritize the **Full Name** instead of the UserID.
+- **Standardized Shortcut Name**: Renamed the Start Menu shortcut from "ChatSys (64-bit)" to simply "**ChatSys**".
+
+## [2.5.0] - 2026-03-11
 
 ### Added
 - **Credential Sync CLI**: Added a new CLI tool for managing user credentials.

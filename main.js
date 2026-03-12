@@ -13,6 +13,17 @@ let activeClient = null;
 let discoveryListener = null;
 let credNode = null; // CredSync node
 
+// ─── Direct CLI Mode ──────────────────────────────────────────────────────────
+// Allows running: ChatSys.exe --cli [command] [args...]
+if (process.argv.includes('--cli')) {
+    const cliIdx = process.argv.indexOf('--cli');
+    const cliArgs = process.argv.slice(cliIdx + 1);
+    // Format argv so cli.js slice(2) works: [exe, cli.js, command, ...]
+    process.argv = [process.argv[0], 'cli.js', ...cliArgs];
+    require('./src/credsync/cli.js');
+    return; // Stop here, do not boot Electron GUI
+}
+
 function createLauncher() {
     launcherWin = new BrowserWindow({
         width: 700,
