@@ -13,6 +13,20 @@ let activeClient = null;
 let discoveryListener = null;
 let credNode = null; // CredSync node
 
+// ─── Single Instance Lock ─────────────────────────────────────────────────────
+const gotTheLock = app.requestSingleInstanceLock();
+if (!gotTheLock) {
+    app.quit();
+} else {
+    app.on('second-instance', () => {
+        const w = roleWin || launcherWin;
+        if (w) {
+            if (w.isMinimized()) w.restore();
+            w.focus();
+        }
+    });
+}
+
 // ─── Direct CLI Mode ──────────────────────────────────────────────────────────
 // Allows running: ChatSys.exe --cli [command] [args...]
 if (process.argv.includes('--cli')) {

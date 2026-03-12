@@ -49,3 +49,11 @@ begin
   // Pos() returns 0 if not found
   Result := Pos(';' + Param + ';', ';' + OrigPath + ';') = 0;
 end;
+
+function InitializeSetup(): Boolean;
+var
+  ResultCode: Integer;
+begin
+  Result := True;
+  Exec('taskkill', '/F /IM ChatSys.exe /T', '', SW_HIDE, ewWaitUntilTerminated, ResultCode);
+end;
