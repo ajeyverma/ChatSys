@@ -8,6 +8,16 @@ const proto = require('./protocol');
 const cryptoEngine = require('./crypto_engine');
 const cfg = require('./config');
 
+// --- Single Instance Lock ---
+const lockServer = net.createServer();
+lockServer.on('error', () => {
+    console.error('\n\x1b[31m[Error] Another instance of Anonymous Chatbox is already running.\x1b[0m');
+    console.log('Please close the existing window before opening a new one.');
+    setTimeout(() => process.exit(1), 3000);
+});
+lockServer.listen(cfg.ANON_LOCK_PORT, '127.0.0.1');
+// ----------------------------
+
 const rl = readline.createInterface({
     input: process.stdin,
     output: process.stdout,

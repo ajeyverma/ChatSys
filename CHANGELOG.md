@@ -18,6 +18,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Optimized Terminal UX**: Engineered a specific line-overwrite mechanism (`logOwnMessage`) for the CLI to ensure a clean chat feed without visual ghosting.
 - **Guest Role Logic**: Integrated server-side "Guest" validation that allows instant access while preventing username conflicts.
 - **Improved Signal Handling**: Added explicit `SIGINT` (Ctrl+C) support for graceful CLI exits.
+- **Single Instance Lock**: Restructured the CLI to prevent multiple simultaneous anonymous chat sessions per machine, ensuring focused communication.
 
 ### Changed
 - **Launcher UX Refinement**: Removed manual Port entry fields for a cleaner UI and repositioned the "Anonymous Chatbox" button directly under the active login controls.
