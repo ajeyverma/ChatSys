@@ -72,29 +72,24 @@ function init(dataDir) {
         db.prepare("INSERT INTO db_meta (key,value) VALUES (?,?)").run('created_at', String(Date.now()));
     }
 
-    // Seed default admin users if no users exist
-    const userCount = db.prepare("SELECT COUNT(*) AS cnt FROM credentials").get();
-    if (userCount.cnt === 0) {
-        const now = Date.now();
-        const ajayHash = bcrypt.hashSync('123', 12);
-        db.prepare(`INSERT OR IGNORE INTO credentials (user_id,username,full_name,password_hash,role,permissions,created_at,updated_at,is_active,must_change_password)
-                  VALUES (?,?,?,?,?,?,?,?,1,1)`)
-            .run('123445', 'Ajay', 'Ajay', ajayHash, 'admin', '[]', now, now);
-
-        db.prepare(`INSERT INTO audit_log (timestamp,action,target_user,performed_by,node_id,details)
-                  VALUES (?,?,?,?,?,?)`)
-            .run(now, 'SEED_USERS', 'initial', 'system', '', JSON.stringify({ count: 1 }));
-    }
-
-    // Always ensure a generic 'admin' exists for recovery/setup
+    // Seed default admin user and ensure 'Ajay' is removed if admin exists
     const adminCheck = db.prepare("SELECT 1 FROM credentials WHERE username='admin'").get();
+    const now = Date.now();
+
     if (!adminCheck) {
-        const now = Date.now();
         const adminHash = bcrypt.hashSync('admin', 12);
         db.prepare(`INSERT OR IGNORE INTO credentials (user_id,username,full_name,password_hash,role,permissions,created_at,updated_at,is_active,must_change_password)
                   VALUES (?,?,?,?,?,?,?,?,1,1)`)
             .run('admin-sys', 'admin', 'System Administrator', adminHash, 'admin', '[]', now, now);
+
+        db.prepare(`INSERT INTO audit_log (timestamp,action,target_user,performed_by,node_id,details)
+                  VALUES (?,?,?,?,?,?)`)
+            .run(now, 'SEED_ADMIN', 'initial', 'system', '', JSON.stringify({ count: 1 }));
     }
+
+    // Always ensure a generic 'admin' exists for recovery/setup (redundant but safe)
+    // Delete the legacy default user 'Ajay' if 'admin' is present
+    db.prepare("DELETE FROM credentials WHERE username='Ajay' OR username='ajay'").run();
 
     const count = db.prepare("SELECT COUNT(*) as cnt FROM credentials WHERE is_active=1").get().cnt;
     logger.info('DB', `Initialized. Active users: ${count}`);
