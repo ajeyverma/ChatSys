@@ -9,6 +9,7 @@ ChatSys is a **fault-tolerant, GUI-based LAN communication system** designed for
 -   **Group Chat**: Open broadcast channels for everyone on the network.
 -   **Image Sharing**: Share images directly in the chat with a mini thumbnail and high-resolution preview.
 -   **Modern UI**: Sleek, theme-aware interface with both Light and Dark modes.
+-   **Anonymous CLI Chatbox**: High-performance terminal interface for instant, login-free communication.
 -   **Cross-Platform**: Built on Electron, ensuring compatibility across various operating systems.
 
 ## Getting Started
@@ -73,4 +74,4 @@ This project is proprietary software. See the [LICENSE](./LICENSE) and [EULA](./
 
 ## Version
 
-Current Version: **2.6.0** (See [VERSION](./VERSION))
+Current Version: **2.8.0**

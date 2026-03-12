@@ -1,3 +1,148 @@
+# Release Notes v2.8.0 - The Anonymous CLI Update
+
+## High-Performance Terminal Communication
+
+This major update introduces the **Anonymous CLI Chatbox**, a powerful, login-free terminal interface designed for instant LAN communication. This release bridges the gap between traditional GUI interaction and lightning-fast command-line chatting.
+
+---
+
+## What’s Changed
+
+*   Introduced a brand new terminal-based chat environment.
+*   Implemented `ANON_CHAT` protocol for privacy isolation.
+*   Added dynamic name-hashing for participant coloring.
+*   Integrated custom developer-branded ASCII identity.
+*   Added `SIGINT` (Ctrl+C) support for graceful terminal exits.
+
+---
+
+## Key Enhancements
+
+### Anonymous CLI Chatbox
+A dedicated, high-performance terminal client accessible directly from the launcher. It allows users to join the conversation instantly without requiring a full account login.
+
+### Privacy Isolation Protocol
+The `ANON_CHAT` protocol completely isolates terminal users from the regular GUI chat bubbles, ensuring a secure and focused anonymous environment.
+
+### Pro Terminal UX
+Engineered with advanced screen clearing (`\x1b[3J`) and a specific line-overwrite mechanism to prevent visual ghosting and ensure a clean chat feed.
+
+---
+
+## Technical Improvements
+
+*   Integrated server-side "Guest" validation.
+*   Single-instance locking for anonymous sessions.
+*   Optimized launcher UI with terminal icon feedback.
+*   Fixed server discovery notification logic.
+
+---
+
+## Contributors
+
+**@ajeyverma**  
+Founder & Lead Developer  
+Architect of the new Anonymous CLI Chatbox and Isolated Chat Protocol.
+
+---
+
+# Release Notes v2.7.0 - Performance & Optimization
+
+## Streamlining Core Systems
+
+This release focuses on making ChatSys faster, lighter, and more reliable by optimizing internal modules and removing external weight.
+
+---
+
+## What’s Changed
+
+*   Implemented lazy-loading for core application modules.
+*   Removed all external CDN dependencies.
+*   Standardized "YOU" tags and iconography across the UI.
+*   Refactored the logging system for early-boot stability.
+
+---
+
+## Key Enhancements
+
+### Startup Performance
+Module lazy-loading significantly reduces initial application load time, ensuring the launcher and client windows open faster than ever.
+
+### Zero-External Footprint
+By migrating Google Fonts and Lucide Icons to system-local alternatives and inline SVGs, ChatSys is now 100% offline-ready with no external pings required.
+
+---
+
+## Technical Improvements
+
+*   Optimized CredSync database startup sequence.
+*   Reduced installer package size by cleaning legacy directories.
+*   Fixed critical race conditions in the user list initialization.
+
+---
+
+# Release Notes v2.6.0 & v2.6.1 - System Integration
+
+## CLI Mastery and PATH Support
+
+This version establishes ChatSys as a first-class citizen in the Windows environment, introducing deep system integration and professional command-line tools.
+
+---
+
+## What’s Changed
+
+*   Added unified `chatsys` entry point for CLI and GUI.
+*   Implemented automatic Windows PATH registration.
+*   Migrated all chat interfaces to prioritize Full Names over UserIDs.
+*   Added dedicated `bin` folder for binary utilities.
+
+---
+
+## Key Enhancements
+
+### Unified Command-Line Interface
+The `chatsys` command now acts as a versatile tool. Use it to launch the interactive management REPL or start the GUI directly from the terminal.
+
+### Automatic System PATH Support
+The installer now automatically registers the installation directory to the system environment, allowing you to type `chatsys` in any terminal or PowerShell window.
+
+---
+
+## Technical Improvements
+
+*   Enhanced interactive REPL with a Python-style `>>>` prompt.
+*   Added standalone `--cli` flag for account management.
+*   Improved uninstaller cleanup for environment variables.
+
+---
+
+# Release Notes v2.3.0 - v2.5.0 - UI Polish & Interactions
+
+## Refining the User Experience
+
+These updates focus on message interaction, credential management, and titlebar-integrated theme controls.
+
+---
+
+## What’s Changed
+
+*   Moved theme switcher to a dedicated titlebar palette icon.
+*   Added right-click context menus for chat messages.
+*   Introduced Credential Sync CLI tool.
+*   Integrated Reply and Quote functionality.
+
+---
+
+## Key Enhancements
+
+### Advanced Message Interactions
+Right-click any message to Copy, Reply, or Quote. Replies are clearly threaded, making complex conversations easier to follow.
+
+### Dynamic Theme Palette
+The theme switcher has been moved from the sidebar to a compact animated dropdown in the titlebar, featuring dynamic icons that reflect the active mode.
+
+---
+
 # Release Notes v2.2.1
  
 This update fixes a critical crash that occurred when the client could not initialy find a server on start-up.
