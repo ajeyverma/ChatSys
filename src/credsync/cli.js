@@ -122,11 +122,15 @@ const startREPL = () => {
     const rl = readline.createInterface({
         input: process.stdin,
         output: process.stdout,
-        prompt: '>>> '
+        prompt: 'ChatSys >>> ',
+        terminal: true
     });
 
-    console.log(`ChatSys ${version} (official, ${new Date().toLocaleDateString()})`);
-    console.log('Type "help" for commands, "exit" to quit.');
+    console.log(`\x1b[36m
+    ChatSys CredSync Terminal v${version}
+    Official Build (${new Date().toLocaleDateString()})
+    \x1b[0m`);
+    console.log('Type "\x1b[33mhelp\x1b[0m" for commands, "\x1b[31mexit\x1b[0m" to quit.\n');
     rl.prompt();
 
     rl.on('line', (line) => {
@@ -141,7 +145,7 @@ const startREPL = () => {
             rl.prompt();
         }
     }).on('close', () => {
-        console.log('Exiting ChatSys Terminal.');
+        console.log('\nExiting ChatSys Terminal.');
         process.exit(0);
     }).on('error', (err) => {
         console.error('Terminal Error:', err);

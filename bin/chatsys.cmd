@@ -18,7 +18,7 @@ if "%~1"=="gui" (
     if exist "%APP_ROOT%\%EXE_NAME%" (
         "%APP_ROOT%\%EXE_NAME%" "%APP_ROOT%\resources\app.asar\src\credsync\cli.js" %*
     ) else (
-        "%APP_ROOT%\node_modules\.bin\electron.cmd" "%APP_ROOT%\src\credsync\cli.js" %*
+        CALL "%APP_ROOT%\node_modules\.bin\electron.cmd" "%APP_ROOT%\src\credsync\cli.js" %*
     )
 )
 endlocal
