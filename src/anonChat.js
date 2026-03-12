@@ -24,9 +24,20 @@ let currentBuffer = '';
 process.stdout.write(`\x1b]2;ChatSys Anonymous Chatbox\x1b\x5c`);
 
 console.log('\x1b[2J\x1b[0f'); // Clear screen
-console.log('\x1b[36m%s\x1b[0m', '====================================================');
-console.log('\x1b[36m%s\x1b[0m', '          CHATSYS ANONYMOUS CHATBOX                ');
-console.log('\x1b[36m%s\x1b[0m', '====================================================');
+console.log(`
+\x1b[32m  ___  _             _    ____
+ / __|| |__    __ _ | |_ / ___|  _   _  ___
+| |   | '_ \\  / _' || __|\\___ \\ | | | |/ __|
+| |__ | | | || (_| || |_  ___) || |_| |\\__ \\
+ \\___||_| |_| \\__,_| \\__||____/  \\__, ||___/
+                                 |___/\x1b[0m
+\x1b[31m@Ajay Chaudhary\x1b[0m
+
+\x1b[33mGitHub: https://github.com/AjeyVerma
+Instagram: https://instagram.com/ajayverma097
+LinkedIn: https://linkedin.com/in/AjeyVerma\x1b[0m
+\x1b[36m_________________________________________________\x1b[0m
+`);
 console.log(' No login required. Join the global LAN chat instantly.');
 console.log('');
 
@@ -37,9 +48,9 @@ rl.question('Enter your display name: ', (name) => {
 
 function startChat() {
     console.log(`Connecting to ChatSys on 127.0.0.1:${cfg.PRIMARY_PORT}...`);
-    
+
     socket = new net.Socket();
-    
+
     socket.connect(cfg.PRIMARY_PORT, '127.0.0.1', () => {
         socket.write(proto.pack(proto.MSG_JOIN, {
             username: username,
@@ -78,7 +89,7 @@ function handleIncoming(msg) {
                 console.log('\x1b[32m%s\x1b[0m', `\n[Success] Connected! Welcome, ${username}.`);
                 console.log('Type your message and press Enter. Ctrl+C to exit.\n');
                 rl.prompt();
-                
+
                 rl.on('line', (line) => {
                     const text = line.trim();
                     if (text) {
@@ -112,7 +123,7 @@ function handleIncoming(msg) {
         } else {
             text = msg.payload.text;
         }
-        
+
         // Clear current line, print message, and restore prompt
         process.stdout.write('\r\x1b[K'); // Clear line
         const sender = msg.payload.from === username ? 'You' : msg.payload.fromFullName;
