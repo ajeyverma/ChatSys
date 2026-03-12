@@ -70,6 +70,20 @@ function init(dataDir) {
         db.prepare("INSERT INTO db_meta (key,value) VALUES (?,?)").run('version', '1');
         db.prepare("INSERT INTO db_meta (key,value) VALUES (?,?)").run('created_at', String(Date.now()));
     }
+
+    // Seed default admin user if no users exist
+    const userCount = db.prepare("SELECT COUNT(*) AS cnt FROM credentials").get();
+    if (userCount.cnt === 0) {
+        const hash = bcrypt.hashSync('123', 12);
+        const now = Date.now();
+        db.prepare(`INSERT OR IGNORE INTO credentials (user_id,username,full_name,password_hash,role,permissions,created_at,updated_at,is_active,must_change_password)
+                  VALUES (?,?,?,?,?,?,?,?,1,1)`)
+            .run('123445', 'Ajay', 'Ajay', hash, 'admin', '[]', now, now);
+        db.prepare(`INSERT INTO audit_log (timestamp,action,target_user,performed_by,node_id,details)
+                  VALUES (?,?,?,?,?,?)`)
+            .run(now, 'ADD_USER', 'Ajay', 'system', '', JSON.stringify({ role: 'admin', seed: true }));
+    }
+
     return db;
 }
 
