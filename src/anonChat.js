@@ -24,8 +24,7 @@ let currentBuffer = '';
 process.stdout.write(`\x1b]2;ChatSys Anonymous Chatbox\x1b\x5c`);
 
 console.log('\x1b[2J\x1b[0f'); // Clear screen
-console.log(`
-\x1b[32m  ___  _             _    ____
+console.log(`\x1b[32m  ___  _             _    ____
  / __|| |__    __ _ | |_ / ___|  _   _  ___
 | |   | '_ \\  / _' || __|\\___ \\ | | | |/ __|
 | |__ | | | || (_| || |_  ___) || |_| |\\__ \\
