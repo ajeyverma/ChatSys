@@ -120,6 +120,7 @@ class ChatClient extends EventEmitter {
                 this._emit('message', {
                     type: 'chat',
                     from: msg.payload.from,
+                    fromFullName: msg.payload.fromFullName || msg.payload.from,
                     text: text || '[Encrypted Message - Decryption Failed]',
                     ts: msg.ts
                 });
@@ -194,7 +195,9 @@ class ChatClient extends EventEmitter {
                 }
                 this._emit('dm', {
                     from: msg.payload.from,
+                    fromFullName: msg.payload.fromFullName || msg.payload.from,
                     to: msg.payload.to,
+                    toFullName: msg.payload.toFullName || msg.payload.to,
                     text: text,
                     ts: msg.payload.ts || Date.now()
                 });
@@ -225,6 +228,7 @@ class ChatClient extends EventEmitter {
                 }
                 this._emit('image', {
                     from: msg.payload.from,
+                    fromFullName: msg.payload.fromFullName || msg.payload.from,
                     to: msg.payload.to || null,
                     data: data,
                     filename: msg.payload.filename,

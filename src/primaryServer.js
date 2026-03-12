@@ -77,13 +77,13 @@ class PrimaryServer {
                         }
 
                         const address = socket.remoteAddress;
-                        clientInfo = { username, address, publicKey, role: user.role };
+                        clientInfo = { username, fullName: user.full_name, address, publicKey, role: user.role };
                         this.clients.set(socket, clientInfo);
                         this.userMap.set(username, socket);
                         this.userKeys.set(username, publicKey);
 
-                        this._log(`${username} joined from ${address}`);
-                        this._emit('client-connected', { username, address, count: this.clients.size });
+                        this._log(`${username} (${user.full_name}) joined from ${address}`);
+                        this._emit('client-connected', { username, fullName: user.full_name, address, count: this.clients.size });
 
                         // Encrypt group key for the new member
                         const encryptedGroupKey = cryptoEngine.encryptRSA(this.groupKey, publicKey);
@@ -98,27 +98,32 @@ class PrimaryServer {
                     } else if (msg.type === proto.MSG_CHAT) {
                         this.msgCount++;
                         const sender = clientInfo ? clientInfo.username : 'Unknown';
+                        const senderFullName = clientInfo ? clientInfo.fullName : 'Unknown';
                         // Relay EXACTLY what was sent to preserve encryption fields
                         const packet = proto.pack(proto.MSG_CHAT, {
                             ...msg.payload,
                             from: sender,
+                            fromFullName: senderFullName,
                             ts: Date.now()
                         });
                         this._broadcast(packet, socket);
-                        this._log(`[MSG] ${sender}: ${msg.payload.encrypted ? '[Encrypted]' : msg.payload.text}`);
-                        this._emit('message-relayed', { from: sender, count: this.msgCount });
+                        this._log(`[MSG] ${senderFullName}: ${msg.payload.encrypted ? '[Encrypted]' : msg.payload.text}`);
+                        this._emit('message-relayed', { from: sender, fromFullName: senderFullName, count: this.msgCount });
                         this._emit('chat-message', {
                             from: sender,
+                            fromFullName: senderFullName,
                             text: msg.payload.encrypted ? '[Encrypted Payload]' : msg.payload.text,
                             ts: Date.now()
                         });
 
                     } else if (msg.type === proto.MSG_IMAGE) {
                         const sender = clientInfo ? clientInfo.username : 'Unknown';
+                        const senderFullName = clientInfo ? clientInfo.fullName : 'Unknown';
                         const { to, data, filename, mimeType } = msg.payload;
                         const imgPacket = proto.pack(proto.MSG_IMAGE, {
                             ...msg.payload,
                             from: sender,
+                            fromFullName: senderFullName,
                             ts: Date.now()
                         });
                         if (to) {
@@ -131,28 +136,40 @@ class PrimaryServer {
                                     } catch (e) { decryptedData = null; }
                                 }
                                 if (!socket.destroyed) socket.write(imgPacket);
-                                this._log(`[IMG-DM] ${sender} → Server: ${filename}`);
-                                this._emit('image', { from: sender, to: '🖥️ Server', imgData: decryptedData, filename, ts: Date.now() });
+                                this._log(`[IMG-DM] ${senderFullName} → Server: ${filename}`);
+                                this._emit('image', { from: sender, fromFullName: senderFullName, to: '🖥️ Server', imgData: decryptedData, filename, ts: Date.now() });
                             } else {
                                 const recipientSock = this.userMap.get(to);
                                 if (recipientSock && !recipientSock.destroyed) recipientSock.write(imgPacket);
                                 if (!socket.destroyed) socket.write(imgPacket);
-                                this._log(`[IMG-DM] ${sender} → ${to}: ${filename}`);
-                                this._emit('chat-message', { from: sender, image: true, filename, ts: Date.now() });
+                                this._log(`[IMG-DM] ${senderFullName} → ${to}: ${filename}`);
+                                this._emit('chat-message', { from: sender, fromFullName: senderFullName, image: true, filename, ts: Date.now() });
                             }
                         } else {
                             this._broadcast(imgPacket, socket);
                             if (!socket.destroyed) socket.write(imgPacket);
-                            this._log(`[IMG] ${sender}: ${filename}`);
-                            this._emit('chat-message', { from: sender, image: true, filename, ts: Date.now() });
+                            this._log(`[IMG] ${senderFullName}: ${filename}`);
+                            this._emit('chat-message', { from: sender, fromFullName: senderFullName, image: true, filename, ts: Date.now() });
                         }
 
                     } else if (msg.type === proto.MSG_DM) {
                         const sender = clientInfo ? clientInfo.username : 'Unknown';
+                        const senderFullName = clientInfo ? clientInfo.fullName : 'Unknown';
                         const toUser = msg.payload.to;
+                        const recipientSock = this.userMap.get(toUser);
+                        let toFullName = toUser;
+                        if (toUser === '🖥️ Server') {
+                            toFullName = '🖥️ Server';
+                        } else if (recipientSock) {
+                            const recipientInfo = this.clients.get(recipientSock);
+                            if (recipientInfo) toFullName = recipientInfo.fullName;
+                        }
+
                         const dmPacket = proto.pack(proto.MSG_DM, {
                             ...msg.payload,
                             from: sender,
+                            fromFullName: senderFullName,
+                            toFullName: toFullName,
                             ts: Date.now()
                         });
 
@@ -165,14 +182,13 @@ class PrimaryServer {
                                 } catch (e) { decryptedText = '[Decryption Failed]'; }
                             }
                             if (!socket.destroyed) socket.write(dmPacket);
-                            this._log(`[DM] ${sender} → Server: ${decryptedText}`);
-                            this._emit('dm-message', { from: sender, to: toUser, text: decryptedText, ts: Date.now() });
+                            this._log(`[DM] ${senderFullName} → Server: ${decryptedText}`);
+                            this._emit('dm-message', { from: sender, fromFullName: senderFullName, to: toUser, toFullName, text: decryptedText, ts: Date.now() });
                         } else {
-                            const recipientSock = this.userMap.get(toUser);
                             if (recipientSock && !recipientSock.destroyed) recipientSock.write(dmPacket);
                             if (!socket.destroyed) socket.write(dmPacket);
-                            this._log(`[DM] ${sender} → ${toUser}: ${msg.payload.encrypted ? '[Encrypted]' : msg.payload.text}`);
-                            this._emit('dm-message', { from: sender, to: toUser, text: msg.payload.encrypted ? '[Encrypted]' : msg.payload.text, ts: Date.now() });
+                            this._log(`[DM] ${senderFullName} → ${toFullName}: ${msg.payload.encrypted ? '[Encrypted]' : msg.payload.text}`);
+                            this._emit('dm-message', { from: sender, fromFullName: senderFullName, to: toUser, toFullName, text: msg.payload.encrypted ? '[Encrypted]' : msg.payload.text, ts: Date.now() });
                         }
                     }
                 }
@@ -267,16 +283,16 @@ class PrimaryServer {
     }
 
     _broadcastClientList() {
-        const users = ['🖥️ Server'];
+        const users = [{ username: '🖥️ Server', fullName: '🖥️ Server' }];
         const keys = { '🖥️ Server': this.publicKey };
         for (const [, info] of this.clients) {
-            users.push(info.username);
+            users.push({ username: info.username, fullName: info.fullName });
             keys[info.username] = info.publicKey;
         }
         const packet = proto.pack(proto.MSG_CLIENT_LIST, { users, keys });
         this._broadcast(packet, null);
         // Don't emit Server to the client UI list (handled internally)
-        this._emit('client-list', { users: users.filter(u => u !== '🖥️ Server') });
+        this._emit('client-list', { users: users.filter(u => u.username !== '🖥️ Server') });
     }
 
     _startDiscoveryBeacon() {

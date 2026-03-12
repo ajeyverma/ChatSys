@@ -4,7 +4,7 @@ AppVersion=2.5.0
 AppVerName=ChatSys 2.5.0
 AppPublisher=ChatSys Team
 AppPublisherURL=https://github.com/AjayVerma/ChatSys
-DefaultDirName={pf}\ChatSys
+DefaultDirName={autopf}\ChatSys
 DefaultGroupName=ChatSys
 DisableProgramGroupPage=yes
 OutputBaseFilename=ChatSys-x64-v2.5.0
@@ -15,10 +15,10 @@ AppMutex=ChatSysAppMutex
 PrivilegesRequired=lowest
 LicenseFile=LICENSE.txt
 OutputDir=..\Output\windows\x64
-Compression=lzma2/ultra64
+Compression=lzma
 SolidCompression=yes
 ArchitecturesAllowed=x64
-ArchitecturesInstallIn64BitMode=x64
+ArchitecturesInstallIn64BitMode=x64compatible
 
 [Tasks]
 Name: "desktopicon"; Description: "{cm:CreateDesktopIcon}"; GroupDescription: "{cm:AdditionalIcons}"; Flags: unchecked

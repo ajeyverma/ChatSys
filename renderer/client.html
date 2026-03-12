@@ -1525,6 +1525,7 @@
         <script>
             // ─── Global State ──────────────────────────────────────────
             window.myUsername = '';
+            window.myFullName = '';
             window.myRole = '';
             let isConnected = false;
             let dmTarget = null;
@@ -1537,6 +1538,7 @@
             // ─── Session Initialization ────────────────────────────────
             api.receive('init-session', ({ username, role, fullName }) => {
                 window.myUsername = username;
+                window.myFullName = fullName || username;
                 window.myRole = role;
                 const displayName = fullName ? `${username} - ${fullName}` : username;
                 document.getElementById('tb-user-name').textContent = displayName;
@@ -1685,7 +1687,7 @@
                         api.send('client-send-dm', { to: dmTarget, text });
                     } else {
                         api.send('client-send', { text });
-                        appendGroupMsg({ type: 'chat', from: window.myUsername, text, ts: Date.now() }, true);
+                        appendGroupMsg({ type: 'chat', from: window.myUsername, fromFullName: window.myFullName, text, ts: Date.now() }, true);
                     }
                     input.value = '';
                     input.style.height = 'auto';
@@ -1699,9 +1701,12 @@
                 unreadCounts[username] = 0;
                 renderUserList();
 
+                const uObj = onlineUsers.find(u => u.username === username);
+                const dispName = uObj ? uObj.fullName : username;
+
                 const bar = document.getElementById('mode-bar');
                 bar.className = 'mode-bar dm';
-                bar.innerHTML = `<span>🔒</span><span class="mode-lbl">Private: <strong>${escH(username)}</strong></span>
+                bar.innerHTML = `<span>🔒</span><span class="mode-lbl">Private: <strong>${escH(dispName)}</strong></span>
                 <button class="btn-back" onclick="openGroup()">← Group Chat</button>`;
 
                 const inp = document.getElementById('msg-input');
@@ -1751,7 +1756,7 @@
                 } else {
                     wrap.className = `msg-wrap ${isSelf ? 'self' : 'other'}`;
                     const time = fmtTime(msg.ts);
-                    if (!isSelf) wrap.innerHTML += `<div class="msg-name">${escH(msg.from)}</div>`;
+                    if (!isSelf) wrap.innerHTML += `<div class="msg-name">${escH(msg.fromFullName || msg.from)}</div>`;
                     wrap.innerHTML += `<div class="msg-bubble">${escH(msg.text)}</div>`;
                     wrap.innerHTML += `<div class="msg-meta">${time}</div>`;
                 }
@@ -1778,9 +1783,9 @@
                 wrap.className = `msg-wrap ${isSelf ? 'dm-self' : 'dm-other'}`;
                 const time = fmtTime(dm.ts);
                 if (isSelf)
-                    wrap.innerHTML += `<div class="dm-lbl" style="justify-content:flex-end">🔒 to ${escH(dm.to)}</div>`;
+                    wrap.innerHTML += `<div class="dm-lbl" style="justify-content:flex-end">🔒 to ${escH(dm.toFullName || dm.to)}</div>`;
                 else
-                    wrap.innerHTML += `<div class="dm-lbl">🔒 ${escH(dm.from)}</div>`;
+                    wrap.innerHTML += `<div class="dm-lbl">🔒 ${escH(dm.fromFullName || dm.from)}</div>`;
                 wrap.innerHTML += `<div class="msg-bubble">${escH(dm.text)}</div>`;
                 wrap.innerHTML += `<div class="msg-meta">${time}</div>`;
                 c.appendChild(wrap);
@@ -1795,7 +1800,7 @@
                 const wrap = document.createElement('div');
                 wrap.className = `msg-wrap ${wrapClass}`;
                 const time = fmtTime(img.ts);
-                if (!isSelf) wrap.innerHTML += `<div class="msg-name">${escH(img.from)}</div>`;
+                if (!isSelf) wrap.innerHTML += `<div class="msg-name">${escH(img.fromFullName || img.from)}</div>`;
                 wrap.innerHTML += `
                 <div class="img-bubble" onclick="openLightbox('${img.data}', '${escH(img.filename)}')">
                     <img src="${img.data}" alt="${escH(img.filename)}" loading="lazy"/>
@@ -1820,25 +1825,25 @@
 
                 // Always add Group Chat to the list of DM targets
                 const allUsers = [
-                    '🌐 Group Chat',
-                    ...onlineUsers.filter(u => u !== window.myUsername && u !== '🖥️ Server')
+                    { username: '🌐 Group Chat', fullName: '🌐 Group Chat' },
+                    ...onlineUsers.filter(u => u.username !== window.myUsername && u.username !== '🖥️ Server')
                 ];
 
                 for (const u of allUsers) {
-                    const isGroup = u === '🌐 Group Chat';
-                    const isActive = isGroup ? !dmTarget : dmTarget === u;
+                    const isGroup = u.username === '🌐 Group Chat';
+                    const isActive = isGroup ? !dmTarget : dmTarget === u.username;
 
                     const item = document.createElement('div');
                     item.className = 'user-item' + (isActive ? ' active-dm' : '');
-                    item.onclick = () => isGroup ? openGroup() : openDM(u);
+                    item.onclick = () => isGroup ? openGroup() : openDM(u.username);
 
-                    const unread = unreadCounts[u] || 0;
-                    let avatarChar = escH(u.charAt(0).toUpperCase());
+                    const unread = unreadCounts[u.username] || 0;
+                    let avatarChar = escH(u.fullName.charAt(0).toUpperCase());
                     if (isGroup) avatarChar = '🌐';
 
                     item.innerHTML = `
                     <div class="u-avatar">${avatarChar}</div>
-                    <span class="u-name">${escH(u)}</span>
+                    <span class="u-name">${escH(u.fullName)}</span>
                     ${unread > 0 ? `<div class="unread-dot">${unread}</div>` : ''}`;
                     list.appendChild(item);
                 }
