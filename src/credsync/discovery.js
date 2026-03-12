@@ -2,7 +2,7 @@
 // Broadcasts CREDNODE_HELLO every 5s; emits 'newer-version' and 'peer-joined' events
 const dgram = require('dgram');
 const { EventEmitter } = require('events');
-const logger = require('./logger');
+const logger = require('../logger');
 
 const ANNOUNCE_INTERVAL = 5000;
 const PEER_TIMEOUT = 15000;

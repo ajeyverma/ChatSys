@@ -6,6 +6,14 @@ const cfg = require('./src/config');
 const proto = require('./src/protocol');
 const logger = require('./src/logger');
 
+// Lazy-loaded modules
+const lazy = {
+    get ChatClient() { return require('./src/chatClient'); },
+    get PrimaryServer() { return require('./src/primaryServer'); },
+    get CredNode() { return require('./src/credsync/node'); },
+    get credDb() { return require('./src/credsync/database'); }
+};
+
 let launcherWin = null;
 let roleWin = null;
 let activeServer = null;
@@ -14,26 +22,31 @@ let discoveryListener = null;
 let credNode = null; // CredSync node
 
 
+const WIN_DEFAULTS = {
+    backgroundColor: '#0f0f1a',
+    show: false,
+    webPreferences: {
+        preload: path.join(__dirname, 'preload.js'),
+        contextIsolation: true,
+        nodeIntegration: false
+    }
+};
 
 function createLauncher() {
     launcherWin = new BrowserWindow({
+        ...WIN_DEFAULTS,
         width: 700,
         height: 520,
         resizable: false,
         frame: false,
-        webPreferences: {
-            preload: path.join(__dirname, 'preload.js'),
-            contextIsolation: true,
-            nodeIntegration: false
-        },
-        icon: path.join(__dirname, 'assets', 'icon.png'),
-        backgroundColor: '#0f0f1a'
+        icon: path.join(__dirname, 'assets', 'icon.png')
     });
     launcherWin.loadFile(path.join(__dirname, 'renderer', 'launcher.html'));
+    launcherWin.once('ready-to-show', () => {
+        launcherWin.show();
+        startDiscoveryListener();
+    });
     logger.info('Main', 'Launcher window created');
-
-    // Start listening for UDP discovery broadcasts
-    startDiscoveryListener();
 
     launcherWin.on('closed', () => {
         logger.info('Main', 'Launcher closed');
@@ -44,17 +57,12 @@ function createLauncher() {
 
 function createRoleWindow(role, width, height) {
     const win = new BrowserWindow({
+        ...WIN_DEFAULTS,
         width,
         height,
         minWidth: width - 100,
         minHeight: height - 100,
-        frame: false,
-        webPreferences: {
-            preload: path.join(__dirname, 'preload.js'),
-            contextIsolation: true,
-            nodeIntegration: false
-        },
-        backgroundColor: '#0f0f1a'
+        frame: false
     });
     win.loadFile(path.join(__dirname, 'renderer', `${role}.html`));
     logger.info('Main', `Created ${role} window`);
@@ -120,27 +128,16 @@ function stopDiscoveryListener() {
 
 // ─── Server Management ────────────────────────────────────────────────────────
 function startPrimaryServer() {
-    if (activeServer) {
-        logger.warn('Main', 'Primary server already active, not starting new one.');
-        return;
-    }
-    logger.info('Main', 'Booting local back-end PrimaryServer...');
-    const PrimaryServer = require('./src/primaryServer');
-    // Provide a dummy window for the UI emitting so it doesn't crash on `_emit`
+    if (activeServer) return;
+    logger.info('Main', 'Booting local PrimaryServer...');
+    const PrimaryServer = lazy.PrimaryServer;
     const dummyWin = {
-        webContents: {
-            send: (evt, data) => {
-                if (evt === 'status' && data.status === 'ACTIVE') {
-                    // Notify logic removed for UI decluttering
-                }
-            }
-        },
+        webContents: { send: () => {} },
         isDestroyed: () => false
     };
 
     activeServer = new PrimaryServer(dummyWin, '127.0.0.1');
     activeServer.start();
-    logger.info('Main', 'PrimaryServer started.');
 }
 
 // ─── IPC: Auto-Host Launch ──────────────────────────────────────────────────────
@@ -157,31 +154,21 @@ ipcMain.on('client-launch', (event, { username, host, port, password, role, full
     roleWin.once('ready-to-show', () => roleWin.show());
 
     roleWin.webContents.once('did-finish-load', () => {
-        const ChatClient = require('./src/chatClient');
+        const ChatClient = lazy.ChatClient;
         activeClient = new ChatClient(roleWin);
 
-        // Tell renderer about user role immediately
         roleWin.webContents.send('init-session', { username, role, fullName });
 
-        // Listen for internal event when connection is refused (meaning no server)
         activeClient.on('server-not-found', ({ host, port, isInitial, isRedirect, err }) => {
-            logger.info('Client', `Connection error: ${err.message}. ${isInitial ? 'First attempt failed.' : ''}`);
-
             if (isInitial && !isRedirect) {
-                logger.warn('Main', `No server found at ${host}:${port}. Booting local back-end...`);
+                logger.warn('Main', `No server found. Booting local back-end...`);
                 startPrimaryServer();
-
-                // Retry connecting client once server is ready
                 setTimeout(() => {
-                    if (activeClient) {
-                        logger.info('Main', 'Retrying client connection after auto-host...');
-                        activeClient.connect(host, port, username, password);
-                    }
-                }, 1500);
+                    if (activeClient) activeClient.connect(host, port, username, password);
+                }, 1000);
             }
         });
 
-        // Trigger immediate connection. ChatClient now handles its own status emitting
         activeClient.connect(host, parseInt(port), username, password);
     });
 
@@ -269,17 +256,18 @@ ipcMain.on('win-close', () => {
 // ─── IPC: CredSync Metadata ────────────────────────────────────────────────────
 ipcMain.handle('get-users', async () => {
     try {
-        const credDb = require('./src/credsync/database');
-        return credDb.listUsers();
+        const users = lazy.credDb.listUsers();
+        logger.debug('Main', `get-users: found ${users.length} users`);
+        return users;
     } catch (e) {
+        logger.error('Main', `get-users error: ${e.message}`);
         return [];
     }
 });
 
 ipcMain.handle('verify-login', async (event, { username, password }) => {
     try {
-        const credDb = require('./src/credsync/database');
-        const user = credDb.verifyLogin(username, password);
+        const user = lazy.credDb.verifyLogin(username, password);
         return {
             success: !!user,
             error: user ? null : 'Invalid password.',
@@ -290,15 +278,12 @@ ipcMain.handle('verify-login', async (event, { username, password }) => {
                 mustChange: user.must_change_password
             } : null
         };
-    } catch (e) {
-        return { success: false, error: e.message };
-    }
+    } catch (e) { return { success: false, error: e.message }; }
 });
 
 ipcMain.handle('client:reset-password', async (event, { username, password }) => {
     try {
-        const credDb = require('./src/credsync/database');
-        const success = credDb.changePassword(username, password, 'self');
+        const success = lazy.credDb.changePassword(username, password, 'self');
         if (success && credNode) credNode.bumpAndAnnounce();
         return { success };
     } catch (e) { return { success: false, error: e.message }; }
@@ -307,9 +292,11 @@ ipcMain.handle('client:reset-password', async (event, { username, password }) =>
 // ─── IPC: CredSync Administration ─────────────────────────────────────────────
 ipcMain.handle('admin:list-users', async () => {
     try {
-        const credDb = require('./src/credsync/database');
-        return credDb.listUsers(true);
-    } catch (e) { return []; }
+        return lazy.credDb.listUsers(true);
+    } catch (e) {
+        logger.error('Main', `Failed to list users: ${e.message}`);
+        return [];
+    }
 });
 
 ipcMain.handle('admin:add-user', async (event, { username, password, role, fullName }) => {
@@ -407,36 +394,40 @@ ipcMain.handle('admin:reject-request', async (event, { id }) => {
 
 // ─── App Lifecycle ────────────────────────────────────────────────────────────
 app.whenReady().then(() => {
-    logger.info('Main', 'ChatSys starting up...');
-    logger.info('Main', `Logs are being saved to: ${path.join(app.getPath('userData'), 'logs')}`);
-
-    // ── Start CredSync node ────────────────────────────────────────────────────
+    const credDataDir = path.join(app.getPath('userData'), 'credsync');
+    
+    // 1. Initialize DB immediately so IPC 'get-users' works for the launcher
     try {
-        const CredNode = require('./src/credsync/node');
-        const credDataDir = path.join(app.getPath('userData'), 'credsync');
-        const credCfgPath = path.join(credDataDir, 'config.json');
-
-        // Auto-create a default config if none exists
-        if (!fs.existsSync(credCfgPath)) {
-            fs.mkdirSync(credDataDir, { recursive: true });
-            fs.writeFileSync(credCfgPath, JSON.stringify({
-                networkName: 'chatsys-lab',
-                networkSecret: 'chatsys-default-secret-change-me',
-                isAdmin: false,
-                tcpPort: 55431,
-                udpPort: 55430
-            }, null, 2));
-        }
-        const credCfg = JSON.parse(fs.readFileSync(credCfgPath, 'utf8'));
-        credCfg.dataDir = credDataDir; // store keys/db in userData
-        credNode = new CredNode(credCfg);
-        credNode.start().catch(e => logger.error('CredSync', `Startup error: ${e.message}`));
-        logger.info('Main', 'CredSync node started');
+        lazy.credDb.init(credDataDir);
     } catch (e) {
-        logger.warn('Main', `CredSync not started: ${e.message}`);
+        logger.error('Main', `DB Init Error: ${e.message}`);
     }
 
+    // 2. Open UI
     createLauncher();
+
+    // 3. Start Peer Node in background
+    setTimeout(() => {
+        try {
+            const credCfgPath = path.join(credDataDir, 'config.json');
+            if (!fs.existsSync(credCfgPath)) {
+                fs.mkdirSync(credDataDir, { recursive: true });
+                fs.writeFileSync(credCfgPath, JSON.stringify({
+                    networkName: 'chatsys-lab',
+                    networkSecret: 'chatsys-default-secret-change-me',
+                    isAdmin: false,
+                    tcpPort: 55431,
+                    udpPort: 55430
+                }, null, 2));
+            }
+            const credCfg = JSON.parse(fs.readFileSync(credCfgPath, 'utf8'));
+            credCfg.dataDir = credDataDir;
+            credNode = new (lazy.CredNode)(credCfg);
+            credNode.start().catch(e => logger.error('CredSync', `Startup error: ${e.message}`));
+        } catch (e) {
+            logger.warn('Main', `CredSync node not started: ${e.message}`);
+        }
+    }, 1000);
 });
 
 app.on('window-all-closed', () => {

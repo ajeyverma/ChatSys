@@ -28,9 +28,6 @@ window.MgmtManager = {
         } else if (tab === 'roles') {
             this.loadRoles();
         }
-
-        // Refresh icons for the newly active pane
-        if (window.lucide) window.lucide.createIcons();
     },
 
     async loadUserList() {
@@ -85,7 +82,7 @@ window.MgmtManager = {
             row.className = 'user-mgmt-row';
             row.innerHTML = `
                 <div class="row-username" style="flex:1.5;">
-                    ${u.full_name || u.username} ${isMe ? '<span class="me-tag">IT</span>' : ''}
+                    ${u.full_name || u.username} ${isMe ? '<span class="me-tag">YOU</span>' : ''}
                 </div>
                 <div class="row-userid" style="flex:1; font-size:12px; color:var(--mgmt-text-muted); font-family:monospace;">
                     ${u.username}
@@ -101,7 +98,7 @@ window.MgmtManager = {
                 <div class="user-row-btns">
                     ${!isMe ? `
                         <button class="icon-btn delete" onclick="MgmtManager.deleteUser('${u.username}')" title="Delete">
-                            <i data-lucide="trash-2" style="width:14px; height:14px;"></i>
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"></path><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"></path><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg>
                         </button>
                     ` : ''}
                 </div>
@@ -109,10 +106,6 @@ window.MgmtManager = {
             container.appendChild(row);
         });
 
-        // Initialize Lucide icons
-        if (window.lucide) {
-            window.lucide.createIcons();
-        }
     },
 
     async deleteUser(username) {
@@ -169,8 +162,8 @@ window.MgmtManager = {
             if (list.length === 0) {
                 content.innerHTML = `
                     <div class="mgmt-table-wrap" style="padding:60px; text-align:center; color:var(--mgmt-text-muted);">
-                        <div style="margin-bottom:20px; opacity:0.5;">
-                            <i data-lucide="clipboard-list" style="width:48px; height:48px;"></i>
+                        <div style="margin-bottom:20px; opacity:0.3;">
+                            <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="8" y="2" width="8" height="4" rx="1" ry="1"></rect><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"></path><path d="M12 11h4"></path><path d="M12 16h4"></path><path d="M8 11h.01"></path><path d="M8 16h.01"></path></svg>
                         </div>
                         <div style="font-weight:600; font-size:14px; color:var(--mgmt-text-main);">No Pending Approvals</div>
                         <div style="font-size:12px; margin-top:8px;">New registration requests will appear here for review.</div>
@@ -201,7 +194,6 @@ window.MgmtManager = {
                 html += `</div></div>`;
                 content.innerHTML = html;
             }
-            if (window.lucide) window.lucide.createIcons();
         } catch (e) {
             content.innerHTML = `<div style="color:#f43f5e; padding:40px;">Error: ${e.message}</div>`;
         }

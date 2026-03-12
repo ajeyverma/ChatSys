@@ -230,12 +230,12 @@ class BackupServer {
                             return;
                         }
 
-                        clientInfo = { username, address: socket.remoteAddress, publicKey, role: user.role };
+                        clientInfo = { username, fullName: user.full_name, address: socket.remoteAddress, publicKey, role: user.role };
                         this.clients.set(socket, clientInfo);
                         this.userMap.set(username, socket);
                         this.userKeys.set(username, publicKey);
 
-                        this._log(`[PROMOTED] ${username} reconnected.`);
+                        this._log(`[PROMOTED] ${username} (${user.full_name}) reconnected.`);
                         this._emit('client-connected', { username: username, count: this.clients.size });
 
                         // Encrypt group key for re-joining member
@@ -352,14 +352,15 @@ class BackupServer {
     }
 
     _broadcastClientList() {
-        const users = [];
-        const keys = {};
+        const users = [{ username: '🖥️ Server', fullName: '🖥️ Server' }];
+        const keys = { '🖥️ Server': this.publicKey };
         for (const [, info] of this.clients) {
-            users.push(info.username);
+            users.push({ username: info.username, fullName: info.fullName });
             keys[info.username] = info.publicKey;
         }
         const packet = proto.pack(proto.MSG_CLIENT_LIST, { users, keys });
         this._broadcast(packet, null);
+        this._emit('client-list', { users: users.filter(u => u.username !== '🖥️ Server') });
     }
 
     _broadcast(packet, excludeSocket) {

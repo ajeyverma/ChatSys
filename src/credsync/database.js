@@ -5,6 +5,7 @@ const bcrypt = require('bcryptjs');
 const { v4: uuidv4 } = require('uuid');
 const fs = require('fs');
 const path = require('path');
+const logger = require('../logger');
 
 let DATA_DIR = path.join(process.cwd(), 'data');
 let DB_PATH = path.join(DATA_DIR, 'credentials.db');
@@ -71,19 +72,32 @@ function init(dataDir) {
         db.prepare("INSERT INTO db_meta (key,value) VALUES (?,?)").run('created_at', String(Date.now()));
     }
 
-    // Seed default admin user if no users exist
+    // Seed default admin users if no users exist
     const userCount = db.prepare("SELECT COUNT(*) AS cnt FROM credentials").get();
     if (userCount.cnt === 0) {
-        const hash = bcrypt.hashSync('123', 12);
         const now = Date.now();
+        const ajayHash = bcrypt.hashSync('123', 12);
         db.prepare(`INSERT OR IGNORE INTO credentials (user_id,username,full_name,password_hash,role,permissions,created_at,updated_at,is_active,must_change_password)
                   VALUES (?,?,?,?,?,?,?,?,1,1)`)
-            .run('123445', 'Ajay', 'Ajay', hash, 'admin', '[]', now, now);
+            .run('123445', 'Ajay', 'Ajay', ajayHash, 'admin', '[]', now, now);
+
         db.prepare(`INSERT INTO audit_log (timestamp,action,target_user,performed_by,node_id,details)
                   VALUES (?,?,?,?,?,?)`)
-            .run(now, 'ADD_USER', 'Ajay', 'system', '', JSON.stringify({ role: 'admin', seed: true }));
+            .run(now, 'SEED_USERS', 'initial', 'system', '', JSON.stringify({ count: 1 }));
     }
 
+    // Always ensure a generic 'admin' exists for recovery/setup
+    const adminCheck = db.prepare("SELECT 1 FROM credentials WHERE username='admin'").get();
+    if (!adminCheck) {
+        const now = Date.now();
+        const adminHash = bcrypt.hashSync('admin', 12);
+        db.prepare(`INSERT OR IGNORE INTO credentials (user_id,username,full_name,password_hash,role,permissions,created_at,updated_at,is_active,must_change_password)
+                  VALUES (?,?,?,?,?,?,?,?,1,1)`)
+            .run('admin-sys', 'admin', 'System Administrator', adminHash, 'admin', '[]', now, now);
+    }
+
+    const count = db.prepare("SELECT COUNT(*) as cnt FROM credentials WHERE is_active=1").get().cnt;
+    logger.info('DB', `Initialized. Active users: ${count}`);
     return db;
 }
 
@@ -175,10 +189,16 @@ function getUser(username) {
     return u ? { ...u, permissions: JSON.parse(u.permissions) } : null;
 }
 function listUsers(includeInactive = false) {
+    if (!db) return [];
     const q = includeInactive
         ? "SELECT user_id,username,full_name,role,permissions,created_at,updated_at,is_active FROM credentials"
         : "SELECT user_id,username,full_name,role,permissions,created_at,updated_at,is_active FROM credentials WHERE is_active=1";
-    return db.prepare(q).all().map(u => ({ ...u, permissions: JSON.parse(u.permissions) }));
+    try {
+        const users = db.prepare(q).all().map(u => ({ ...u, permissions: JSON.parse(u.permissions) }));
+        return users;
+    } catch (e) {
+        return [];
+    }
 }
 
 // ── Snapshot Export / Import ─────────────────────────────────────────────────

@@ -4,15 +4,28 @@ const path = require('path');
 
 class Logger {
     constructor() {
-        // Use the user's local AppData folder for persistent logs
-        this.logDir = path.join(app.getPath('userData'), 'logs');
-        this._initDir();
-        this.logFile = path.join(this.logDir, `${new Date().toISOString().split('T')[0]}.log`);
+        this.buffer = [];
+        this.logDir = null;
+        this.logFile = null;
+        
+        if (app && app.isReady()) {
+            this._setupDir();
+        } else if (app) {
+            app.once('ready', () => this._setupDir());
+        }
     }
 
-    _initDir() {
+    _setupDir() {
+        this.logDir = path.join(app.getPath('userData'), 'logs');
         if (!fs.existsSync(this.logDir)) {
             fs.mkdirSync(this.logDir, { recursive: true });
+        }
+        this.logFile = path.join(this.logDir, `${new Date().toISOString().split('T')[0]}.log`);
+        
+        // Flush buffer
+        if (this.buffer.length > 0) {
+            fs.appendFileSync(this.logFile, this.buffer.join('\n') + '\n', 'utf8');
+            this.buffer = [];
         }
     }
 
@@ -26,17 +39,18 @@ class Logger {
         const timestamp = new Date().toLocaleTimeString();
         const fullMsg = `[${timestamp}] [${level}] [${context}] ${message}`;
 
-        // 1. Terminal Output
         console.log(fullMsg);
 
-        // 2. Disk Output (Append with newline)
-        try {
-            fs.appendFileSync(this.logFile, fullMsg + '\n', 'utf8');
-        } catch (err) {
-            console.error('Failed to write to log file:', err.message);
+        if (this.logFile) {
+            try {
+                fs.appendFileSync(this.logFile, fullMsg + '\n', 'utf8');
+            } catch (err) { }
+        } else {
+            this.buffer.push(fullMsg);
         }
     }
 
+    success(context, message) { this.log('INFO', context, message); }
     info(context, message) { this.log('INFO', context, message); }
     warn(context, message) { this.log('WARN', context, message); }
     error(context, message) { this.log('ERROR', context, message); }

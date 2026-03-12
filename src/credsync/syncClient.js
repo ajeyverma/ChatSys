@@ -1,7 +1,7 @@
 // ─── TLS Sync Client ──────────────────────────────────────────────────────────
 // Connects to a peer's sync server, requests DB snapshot, verifies + imports it
 const tls = require('tls');
-const logger = require('./logger');
+const logger = require('../logger');
 const db = require('./database');
 const { decrypt, verify } = require('./crypto');
 

@@ -539,9 +539,21 @@
     let allUsers = [];
 
     // Load replicated users from CredSync
-    async function loadUsers() {
-      allUsers = await api.invoke('get-users');
-      renderUserOptions(allUsers);
+    async function loadUsers(attempt = 1) {
+      try {
+        allUsers = await api.invoke('get-users');
+        console.log(`Launcher: Load users (attempt ${attempt}):`, allUsers);
+        
+        if ((!allUsers || allUsers.length === 0) && attempt < 3) {
+          console.log('No users found, retrying in 1s...');
+          setTimeout(() => loadUsers(attempt + 1), 1000);
+          return;
+        }
+        
+        renderUserOptions(allUsers);
+      } catch (err) {
+        console.error('Failed to load users:', err);
+      }
     }
 
     function renderUserOptions(users) {

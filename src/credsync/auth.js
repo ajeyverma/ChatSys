@@ -1,7 +1,7 @@
 // ─── Authentication ───────────────────────────────────────────────────────────
 // Local login verification + permission check (no network round-trip needed)
 const db = require('./database');
-const logger = require('./logger');
+const logger = require('../logger');
 
 /** Verify username + password against local DB. Returns user object or null. */
 function login(username, password) {

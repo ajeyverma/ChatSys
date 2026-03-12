@@ -3,7 +3,7 @@
 const { v4: uuidv4 } = require('uuid');
 const fs = require('fs');
 const path = require('path');
-const logger = require('./logger');
+const logger = require('../logger');
 const db = require('./database');
 const { generateOrLoadKeyPair } = require('./crypto');
 const { getOrCreateCerts } = require('./certManager');

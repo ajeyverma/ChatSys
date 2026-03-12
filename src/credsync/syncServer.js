@@ -2,7 +2,7 @@
 // Serves encrypted + signed DB snapshots to replica nodes over TLS TCP
 const tls = require('tls');
 const { EventEmitter } = require('events');
-const logger = require('./logger');
+const logger = require('../logger');
 const db = require('./database');
 const { sign, encrypt } = require('./crypto');
 
