@@ -11,8 +11,30 @@ const cfg = require('./config');
 const rl = readline.createInterface({
     input: process.stdin,
     output: process.stdout,
-    prompt: 'Message > '
+    prompt: 'Message > ',
+    historySize: 0 // Disable history to prevent confusion during testing if requested implicitly
 });
+
+/** Logs an incoming message from the network */
+function logToTerminal(message) {
+    readline.cursorTo(process.stdout, 0);
+    readline.clearLine(process.stdout, 0);
+    console.log(message);
+    rl.prompt(true);
+}
+
+/** Specific helper to overwrite the user's just-typed input line */
+function logOwnMessage(text) {
+    // 1. Move up 1 line (where the user hit Enter)
+    readline.moveCursor(process.stdout, 0, -1);
+    // 2. Clear that line entirely
+    readline.clearLine(process.stdout, 0);
+    readline.cursorTo(process.stdout, 0);
+    // 3. Print the formatted "You: text" line
+    console.log(`\x1b[34mYou:\x1b[0m ${text}`);
+    // 4. Show a fresh prompt underneath
+    rl.prompt(true);
+}
 
 let socket = null;
 let username = '';
@@ -97,11 +119,10 @@ function handleIncoming(msg) {
                             encrypted: true,
                             ...encrypted
                         }));
-                        // Print locally since server excludes sender from broadcast
-                        process.stdout.write('\r\x1b[K');
-                        console.log(`\x1b[34mYou:\x1b[0m ${text}`);
+                        logOwnMessage(text);
+                    } else {
+                        rl.prompt();
                     }
-                    rl.prompt();
                 });
             } catch (e) {
                 console.error('[Crypto Error] Failed to secure connection.');
@@ -123,11 +144,9 @@ function handleIncoming(msg) {
             text = msg.payload.text;
         }
 
-        // Clear current line, print message, and restore prompt
-        process.stdout.write('\r\x1b[K'); // Clear line
+        // Use helper for clean logging
         const sender = msg.payload.from === username ? 'You' : msg.payload.fromFullName;
         const color = msg.payload.from === username ? '\x1b[34m' : '\x1b[33m';
-        console.log(`${color}${sender}:\x1b[0m ${text || ''}`);
-        rl.prompt(true);
+        logToTerminal(`${color}${sender}:\x1b[0m ${text || ''}`);
     }
 }
