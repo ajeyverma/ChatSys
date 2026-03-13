@@ -12,7 +12,8 @@ const lazy = {
     get ChatClient() { return require('./src/chatClient'); },
     get PrimaryServer() { return require('./src/primaryServer'); },
     get CredNode() { return require('./src/credsync/node'); },
-    get credDb() { return require('./src/credsync/database'); }
+    get credDb() { return require('./src/credsync/database'); },
+    get sharedDrive() { return require('./src/extensions/sharedDrive'); }
 };
 
 let launcherWin = null;
@@ -575,6 +576,25 @@ ipcMain.handle('admin:reject-request', async (event, { id }) => {
         return { success };
     } catch (e) { return { success: false, error: e.message }; }
 });
+ipcMain.handle('ext:get-list', async () => {
+    const extRootDir = path.join(__dirname, 'extensions');
+    if (!fs.existsSync(extRootDir)) return [];
+    
+    const extensions = [];
+    const dirs = fs.readdirSync(extRootDir);
+    dirs.forEach(dir => {
+        const jsonPath = path.join(extRootDir, dir, 'extension.json');
+        if (fs.existsSync(jsonPath)) {
+            try {
+                const info = JSON.parse(fs.readFileSync(jsonPath, 'utf8'));
+                extensions.push(info);
+            } catch (e) {
+                logger.warn('Main', `Error parsing extension.json for ${dir}: ${e.message}`);
+            }
+        }
+    });
+    return extensions;
+});
 
 // ─── App Lifecycle ────────────────────────────────────────────────────────────
 app.whenReady().then(() => {
@@ -587,7 +607,27 @@ app.whenReady().then(() => {
         logger.error('Main', `DB Init Error: ${e.message}`);
     }
 
-    // 2. Open UI
+    // 2. Load Root Extensions
+    try {
+        const extRootDir = path.join(__dirname, 'extensions');
+        if (fs.existsSync(extRootDir)) {
+            const dirs = fs.readdirSync(extRootDir);
+            dirs.forEach(dir => {
+                const extPath = path.join(extRootDir, dir, 'main.js');
+                if (fs.existsSync(extPath)) {
+                    const extension = require(extPath);
+                    if (extension && typeof extension.init === 'function') {
+                        extension.init();
+                        logger.info('Main', `Loaded root extension: ${dir}`);
+                    }
+                }
+            });
+        }
+    } catch (e) {
+        logger.warn('Main', `Failed to load some root extensions: ${e.message}`);
+    }
+
+    // 3. Open UI
     createLauncher();
 
     // 3. Start Peer Node in background

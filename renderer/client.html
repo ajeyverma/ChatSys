@@ -1162,6 +1162,128 @@
             opacity: .5;
             cursor: not-allowed;
         }
+        /* ─── Extensions View Styling ───────────────────────────── */
+        .extensions-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 20px;
+            padding: 24px;
+            overflow-y: auto;
+        }
+
+        .extension-card {
+            background: var(--bg-panel);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            transition: transform 0.2s, border-color 0.2s;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .extension-card:hover {
+            transform: translateY(-4px);
+            border-color: var(--accent);
+        }
+
+        .ext-header {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .ext-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 10px;
+            background: var(--accent-glow);
+            color: var(--accent);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+        }
+
+        .ext-info h3 {
+            font-size: 15px;
+            font-weight: 700;
+            color: var(--text-main);
+            margin-bottom: 2px;
+        }
+
+        .ext-info p {
+            font-size: 12px;
+            color: var(--text-muted);
+            line-height: 1.4;
+        }
+
+        .ext-actions {
+            display: flex;
+            gap: 10px;
+            margin-top: auto;
+            padding-top: 15px;
+        }
+
+        .ext-btn {
+            flex: 1;
+            padding: 8px;
+            border-radius: 8px;
+            font-size: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            font-family: inherit;
+        }
+
+        .ext-btn.download {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid var(--border);
+            color: var(--text-main);
+        }
+
+        .ext-btn.download:hover {
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        .ext-btn.enable {
+            background: var(--accent);
+            border: none;
+            color: #fff;
+        }
+
+        .ext-btn.disable {
+            background: rgba(239, 68, 68, 0.1);
+            border: 1px solid rgba(239, 68, 68, 0.2);
+            color: #ef4444;
+        }
+
+        .ext-status-badge {
+            position: absolute;
+            top: 12px;
+            right: 12px;
+            font-size: 10px;
+            font-weight: 700;
+            padding: 3px 8px;
+            border-radius: 12px;
+            text-transform: uppercase;
+        }
+
+        .ext-status-badge.active {
+            background: rgba(16, 185, 129, 0.1);
+            color: #10b981;
+        }
+
+        .ext-status-badge.inactive {
+            background: rgba(245, 158, 11, 0.1);
+            color: #f59e0b;
+        }
     </style>
 </head>
 
@@ -1204,6 +1326,10 @@
                     </div>
                     <div class="tb-nav-item" id="nav-users" onclick="setNav('users')">
                         Users
+                    </div>
+                    <div id="dynamic-tabs"></div> <!-- Placeholder for extension tabs -->
+                    <div class="tb-nav-item" id="nav-extensions" onclick="setNav('extensions')">
+                        Extensions
                     </div>
                 </div>
             </div>
@@ -1551,6 +1677,15 @@
                         </div>
                     </div>
 
+                    <!-- Extensions View -->
+                    <div class="view-pane" id="view-extensions">
+                        <div class="mode-bar">
+                            <span>🧩</span><span class="mode-lbl">Extensions & Add-ons</span>
+                        </div>
+                        <div class="extensions-grid" id="ext-market-grid">
+                            <!-- Dynamic extentions will be loaded here -->
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -1601,11 +1736,166 @@
                     document.getElementById('view-users').classList.add('active');
                     if (layout) layout.classList.add('no-sidebar');
                     MgmtManager.setTab('accounts');
+                } else if (mode === 'extensions') {
+                    document.getElementById('view-extensions').classList.add('active');
+                    if (layout) layout.classList.add('no-sidebar');
+                } else if (document.getElementById(`view-${mode}`)) {
+                    // Dynamic Extension Tab
+                    document.getElementById(`view-${mode}`).classList.add('active');
+                    if (layout) layout.classList.add('no-sidebar');
                 } else {
                     document.getElementById('view-chat').classList.add('active');
                     if (layout) layout.classList.remove('no-sidebar');
                 }
             }
+
+            // ─── Extension Management ────────────────────────────────
+            const extStates = {};
+            const extMap = {};
+
+            async function initExtensions() {
+                const list = await api.invoke('ext:get-list');
+                const grid = document.getElementById('ext-market-grid');
+                if (!grid) return;
+                
+                grid.innerHTML = '';
+                list.forEach(ext => {
+                    // Update state and map
+                    extStates[ext.id] = false; // default off
+                    extMap[ext.id] = { 
+                        id: ext.id, 
+                        name: ext.name, 
+                        file: `../extensions/${ext.id}/renderer.js` 
+                    };
+
+                    // Render Card
+                    const card = document.createElement('div');
+                    card.className = 'extension-card';
+                    card.innerHTML = `
+                        <div class="ext-status-badge inactive" id="status-${ext.id}">Disabled</div>
+                        <div class="ext-header">
+                            <div class="ext-icon">${ext.icon || '🧩'}</div>
+                            <div class="ext-info">
+                                <h3>${ext.name}</h3>
+                                <p>${ext.description}</p>
+                                <div style="font-size:10px; opacity:0.6; margin-top:4px;">v${ext.version} by ${ext.author}</div>
+                            </div>
+                        </div>
+                        <div class="ext-actions">
+                            <button class="ext-btn download" onclick="handleExt('${ext.id}', 'download')">
+                                <span>⬇️</span> Download
+                            </button>
+                            <button class="ext-btn enable" id="btn-${ext.id}-toggle" onclick="handleExt('${ext.id}', 'toggle')">
+                                Enable
+                            </button>
+                        </div>
+                    `;
+                    grid.appendChild(card);
+                });
+            }
+
+            async function handleExt(id, action) {
+                try {
+                    if (action === 'download') {
+                        const btn = event.currentTarget;
+                        btn.innerHTML = '<span>⏳</span> Downloading...';
+                        btn.disabled = true;
+                        setTimeout(() => {
+                            btn.innerHTML = '<span>✓</span> Installed';
+                        }, 1500);
+                    } else if (action === 'toggle') {
+                        extStates[id] = !extStates[id];
+                        if (extStates[id]) {
+                            await enableExtension(id);
+                        } else {
+                            disableExtension(id);
+                        }
+                        updateExtUI(id);
+                    }
+                } catch (err) {
+                    console.error('Extension error:', err);
+                    alert('Error handling extension: ' + err.message);
+                }
+            }
+
+            async function enableExtension(id) {
+                const info = extMap[id];
+                if (!info) throw new Error('Extension metadata not found for ' + id);
+
+                // Load Script if not loaded
+                const extVar = info.id + 'Ext';
+                if (!window[extVar]) {
+                    try {
+                        await new Promise((resolve, reject) => {
+                            const s = document.createElement('script');
+                            s.src = info.file;
+                            s.onload = resolve;
+                            s.onerror = () => reject(new Error(`Failed to load script: ${info.file}`));
+                            document.head.appendChild(s);
+                        });
+                    } catch (e) {
+                        throw e;
+                    }
+                }
+
+                const ext = window[extVar];
+                if (!ext || typeof ext.render !== 'function') {
+                    throw new Error(`Extension ${id} does not expose a render function via window.${extVar}`);
+                }
+                
+                // Create Tab
+                const tabs = document.getElementById('dynamic-tabs');
+                if (tabs && !document.getElementById(`nav-${id}`)) {
+                    const tab = document.createElement('div');
+                    tab.className = 'tb-nav-item';
+                    tab.id = `nav-${id}`;
+                    tab.textContent = ext.name || info.name;
+                    tab.onclick = () => setNav(id);
+                    tabs.appendChild(tab);
+                }
+
+                // Create View Pane
+                const views = document.querySelector('.view-container');
+                if (views && !document.getElementById(`view-${id}`)) {
+                    const pane = document.createElement('div');
+                    pane.className = 'view-pane';
+                    pane.id = `view-${id}`;
+                    views.appendChild(pane);
+                    ext.render(pane);
+                }
+                
+                // Auto-switch to new tab
+                setNav(id);
+            }
+
+            function disableExtension(id) {
+                const tab = document.getElementById(`nav-${id}`);
+                if (tab) tab.remove();
+                const pane = document.getElementById(`view-${id}`);
+                if (pane) pane.remove();
+                if (document.querySelectorAll('.view-pane.active').length === 0) {
+                    setNav('extensions');
+                }
+            }
+
+            function updateExtUI(id) {
+                const status = document.getElementById(`status-${id}`);
+                const btn = document.getElementById(`btn-${id}-toggle`);
+                if (extStates[id]) {
+                    status.textContent = 'Active';
+                    status.className = 'ext-status-badge active';
+                    btn.textContent = 'Disable';
+                    btn.className = 'ext-btn disable';
+                } else {
+                    status.textContent = 'Disabled';
+                    status.className = 'ext-status-badge inactive';
+                    btn.textContent = 'Enable';
+                    btn.className = 'ext-btn enable';
+                }
+            }
+
+            // Call initializations
+            initExtensions();
 
             // Theme UI sync
             function setTheme(t) {
