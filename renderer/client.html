@@ -2061,6 +2061,35 @@
                 }
             });
 
+            // ─── Shared File Handling ─────────────────────────────────────
+            api.on('handle-shared-file', (fileData) => {
+                if (!fileData || !fileData.data) return;
+                
+                // Set as pending image
+                pendingImage = { 
+                    data: fileData.data, 
+                    filename: fileData.filename, 
+                    mimeType: fileData.mimeType 
+                };
+
+                // Show preview UI
+                const thumb = document.getElementById('img-preview-thumb');
+                const nameTxt = document.getElementById('img-preview-name');
+                const previewBar = document.getElementById('img-preview-bar');
+                const msgInput = document.getElementById('msg-input');
+
+                if (thumb) thumb.src = fileData.data;
+                if (nameTxt) nameTxt.textContent = fileData.filename;
+                if (previewBar) previewBar.classList.add('visible');
+                if (msgInput) {
+                    msgInput.placeholder = 'Add a caption (optional)...';
+                    msgInput.focus();
+                }
+
+                // If not in chat view, switch to it
+                setNav('chat');
+            });
+
             // ─── Input behavior ───────────────────────────────────────────
             const inp = document.getElementById('msg-input');
             inp.addEventListener('keydown', (e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMsg(); } });

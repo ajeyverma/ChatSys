@@ -35,6 +35,71 @@ const WIN_DEFAULTS = {
     }
 };
 
+// ─── Single Instance & File Handling ──────────────────────────────────────────
+const gotTheLock = app.requestSingleInstanceLock();
+let pendingFileData = null;
+
+// Simple check for file arguments (skip electron/app path)
+function getFileDataFromArgs(args) {
+    const lastArg = args[args.length - 1];
+    if (lastArg && fs.existsSync(lastArg) && fs.lstatSync(lastArg).isFile()) {
+        try {
+            const buffer = fs.readFileSync(lastArg);
+            const mimeType = getMimeType(lastArg);
+            const base64 = buffer.toString('base64');
+            return {
+                filePath: lastArg,
+                data: `data:${mimeType};base64,${base64}`,
+                filename: path.basename(lastArg),
+                mimeType: mimeType
+            };
+        } catch (e) {
+            logger.error('Main', `Failed to read shared file: ${e.message}`);
+        }
+    }
+    return null;
+}
+
+function getMimeType(filePath) {
+    const ext = path.extname(filePath).toLowerCase();
+    const map = {
+        '.png': 'image/png',
+        '.jpg': 'image/jpeg',
+        '.jpeg': 'image/jpeg',
+        '.gif': 'image/gif',
+        '.txt': 'text/plain',
+        '.pdf': 'application/pdf',
+        '.zip': 'application/zip'
+    };
+    return map[ext] || 'application/octet-stream';
+}
+
+if (!gotTheLock) {
+    app.quit();
+} else {
+    app.on('second-instance', (event, commandLine, workingDirectory) => {
+        // Someone tried to run a second instance, focus our window and handle file
+        if (launcherWin) {
+            if (launcherWin.isMinimized()) launcherWin.restore();
+            launcherWin.focus();
+        } else if (roleWin) {
+            if (roleWin.isMinimized()) roleWin.restore();
+            roleWin.focus();
+            
+            const fileData = getFileDataFromArgs(commandLine);
+            if (fileData) {
+                roleWin.webContents.send('handle-shared-file', fileData);
+            }
+        } else if (anonWin) {
+            if (anonWin.isMinimized()) anonWin.restore();
+            anonWin.focus();
+        }
+    });
+
+    // Check initial args
+    pendingFilePath = getFileDataFromArgs(process.argv);
+}
+
 function createLauncher() {
     launcherWin = new BrowserWindow({
         ...WIN_DEFAULTS,
@@ -282,6 +347,12 @@ ipcMain.on('client-launch', (event, { username, host, port, password, role, full
         activeClient = new ChatClient(roleWin);
 
         roleWin.webContents.send('init-session', { username, role, fullName });
+
+        // Handle file passed via sharing (on initial launch)
+        if (pendingFileData) {
+            roleWin.webContents.send('handle-shared-file', pendingFileData);
+            pendingFileData = null; // Reset so it's only handled once
+        }
 
         activeClient.on('server-not-found', ({ host, port, isInitial, isRedirect, err }) => {
             if (isInitial && !isRedirect) {
