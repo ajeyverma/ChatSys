@@ -107,12 +107,14 @@ class PrimaryServer {
                             groupKey: encryptedGroupKey
                         }));
 
-                        this._broadcastClientList();
-
                         // Notify CLI users of the new join (isolate from GUI)
                         if (clientInfo.role === 'guest') {
                             const joinMsg = proto.pack(proto.MSG_SYS, { text: `${clientInfo.fullName} joined the chat.`, ts: Date.now() });
                             this._broadcast(joinMsg, socket, (info) => info.role === 'guest');
+                            // Also broadcast updated guest list to all guests
+                            this._broadcastClientList();
+                        } else {
+                            this._broadcastClientList();
                         }
 
                     } else if (msg.type === proto.MSG_CHAT) {
@@ -128,7 +130,7 @@ class PrimaryServer {
                             ts: Date.now()
                         });
                         this._broadcast(packet, socket, (info) => info.role !== 'guest');
-                        this._log(`[MSG] ${senderFullName}: ${msg.payload.encrypted ? '[Encrypted]' : msg.payload.text}`);
+                        this._log(`[MSG] ${senderFullName}: ${msg.payload.encrypted ? '[Encrypted]' : '[Content Redacted]'}`);
                         this._emit('message-relayed', { from: sender, fromFullName: senderFullName, count: this.msgCount });
                     } else if (msg.type === proto.MSG_ANON_CHAT) {
                         // Anonymous CLI chat: isolated from GUI
@@ -140,7 +142,16 @@ class PrimaryServer {
                             ts: Date.now()
                         });
                         this._broadcast(packet, socket, (info) => info.role === 'guest');
-                        this._log(`[ANON-MSG] ${sender}`);
+                        this._log(`[ANON-MSG] ${sender} (Broadcasted to guests)`);
+                        
+                        // Emit for server-side tracking (GUI admin)
+                        let text = msg.payload.text;
+                        if (msg.payload.encrypted) {
+                            try {
+                                text = cryptoEngine.decryptAES(msg.payload.data, this.groupKey, msg.payload.iv, msg.payload.tag);
+                            } catch (e) { text = '[Encrypted]'; }
+                        }
+                        this._emit('anon-message', { from: sender, text, ts: Date.now() });
 
                     } else if (msg.type === proto.MSG_IMAGE) {
                         // Prevent guests from sending/receiving images (GUI only feature)
@@ -334,20 +345,32 @@ class PrimaryServer {
     }
 
     _broadcastClientList() {
-        const users = [{ username: '🖥️ Server', fullName: '🖥️ Server' }];
-        const keys = { '🖥️ Server': this.publicKey };
+        // 1. Regular user list (for GUI)
+        const regularUsers = [{ username: '🖥️ Server', fullName: '🖥️ Server' }];
+        const regularKeys = { '🖥️ Server': this.publicKey };
+        
+        // 2. Guest list (for anonymous chat)
+        const guests = [];
+
         for (const [, info] of this.clients) {
-            // Only include non-anonymous users for the general list
-            if (info.role !== 'guest') {
-                users.push({ username: info.username, fullName: info.fullName });
-                keys[info.username] = info.publicKey;
+            if (info.role === 'guest') {
+                guests.push(info.username);
+            } else {
+                regularUsers.push({ username: info.username, fullName: info.fullName });
+                regularKeys[info.username] = info.publicKey;
             }
         }
-        const packet = proto.pack(proto.MSG_CLIENT_LIST, { users, keys });
-        // Send to GUI clients only
-        this._broadcast(packet, null, (info) => info.role !== 'guest');
+
+        // Broadcast to regular users
+        const regularPacket = proto.pack(proto.MSG_CLIENT_LIST, { users: regularUsers, keys: regularKeys });
+        this._broadcast(regularPacket, null, (info) => info.role !== 'guest');
+
+        // Broadcast to guests
+        const guestPacket = proto.pack(proto.MSG_CLIENT_LIST, { clients: guests });
+        this._broadcast(guestPacket, null, (info) => info.role === 'guest');
+
         // Update local GUI admin list
-        this._emit('client-list', { users: users.filter(u => u.username !== '🖥️ Server') });
+        this._emit('client-list', { users: regularUsers.filter(u => u.username !== '🖥️ Server') });
     }
 
     _startDiscoveryBeacon() {

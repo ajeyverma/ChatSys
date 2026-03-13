@@ -466,7 +466,7 @@
           <input id="password" type="password" placeholder="••••••••" maxlength="64" />
         </div>
         <button class="btn-launch" id="btn-launch" onclick="launch()" style="margin-top: 10px;">Connect</button>
-        <button class="btn-launch" onclick="api.send('launch-anon-chat', {})"
+        <button class="btn-launch" onclick="launchAnonChat()"
           style="margin-top: 8px; background: rgba(16, 185, 129, 0.1); border-color: rgba(16, 185, 129, 0.2); color: #10b981; display: flex; align-items: center; justify-content: center; gap: 8px;">
           <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none"
             stroke-linecap="round" stroke-linejoin="round">
@@ -513,6 +513,24 @@
 
           <div id="reset-error"
             style="font-size: 11px; color: #ef4444; margin-top: 10px; text-align: center; display: none;"></div>
+        </div>
+      </div>
+
+      <!-- Anonymous Chat Display Name Modal -->
+      <div id="anon-name-modal"
+        style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); backdrop-filter: blur(8px); z-index: 9999; align-items: center; justify-content: center;">
+        <div class="config-panel" style="max-width: 340px; border: 1px solid #10b981;">
+          <h2 style="font-size: 18px; margin-bottom: 8px; color: #10b981;">Anonymous Chat</h2>
+          <p style="font-size: 12px; color: var(--text-muted); margin-bottom: 16px;">Enter your display name for this anonymous session:</p>
+          
+          <div class="field">
+            <label>Display Name</label>
+            <input id="anon-display-name" type="text" placeholder="e.g. Guest123" maxlength="32" />
+          </div>
+          
+          <button class="btn-launch" id="btn-anon-join" onclick="confirmAnonChat()" style="background: rgba(16, 185, 129, 0.2); border-color: rgba(16, 185, 129, 0.4); color: #10b981;">Join Anonymous Chat</button>
+          <button class="btn-launch" onclick="closeAnonModal()"
+            style="margin-top: 8px; background: transparent; border: 1px solid var(--border); color: var(--text-muted);">Cancel</button>
         </div>
       </div>
 
@@ -788,6 +806,38 @@
       api.send('client-launch', { username, host, port, password, role: result.user.role, fullName: result.user.fullName });
     }
 
+    function launchAnonChat() {
+      console.log('launchAnonChat called - opening modal');
+      document.getElementById('anon-display-name').value = '';
+      document.getElementById('anon-name-modal').style.display = 'flex';
+      document.getElementById('anon-display-name').focus();
+    }
+
+    function confirmAnonChat() {
+      console.log('confirmAnonChat called');
+      try {
+        const displayName = (document.getElementById('anon-display-name').value || '').trim();
+        const resolvedName = displayName || `Guest${Math.floor(Math.random() * 1000)}`;
+        
+        console.log('Display name resolved:', resolvedName);
+        console.log('Sending IPC: launch-anon-chat with displayName:', resolvedName);
+        
+        // Close modal and send IPC
+        closeAnonModal();
+        api.send('launch-anon-chat', { displayName: resolvedName });
+        
+        console.log('IPC sent successfully');
+      } catch (err) {
+        console.error('Error in confirmAnonChat:', err);
+        alert('Error: ' + err.message);
+      }
+    }
+
+    function closeAnonModal() {
+      document.getElementById('anon-name-modal').style.display = 'none';
+      document.getElementById('anon-display-name').value = '';
+    }
+
     async function confirmResetPassword() {
       const newPass = document.getElementById('new-password').value;
       const confPass = document.getElementById('confirm-password').value;
@@ -830,9 +880,39 @@
       }
     }
 
-    // Launch on Enter key
+    // Keyboard shortcuts
     document.addEventListener('keydown', e => {
-      if (e.key === 'Enter') launch();
+      const anonModal = document.getElementById('anon-name-modal');
+      const resetModal = document.getElementById('reset-modal');
+      
+      if (e.key === 'Escape') {
+        // Close open modals
+        if (anonModal && anonModal.style.display === 'flex') {
+          closeAnonModal();
+          return;
+        }
+        if (resetModal && resetModal.style.display === 'flex') {
+          document.getElementById('reset-modal').style.display = 'none';
+          return;
+        }
+      }
+      
+      // In anonymous chat modal: Enter to submit
+      if (e.key === 'Enter' && anonModal && anonModal.style.display === 'flex') {
+        confirmAnonChat();
+        return;
+      }
+      
+      // In password reset modal: Enter to submit
+      if (e.key === 'Enter' && resetModal && resetModal.style.display === 'flex') {
+        confirmResetPassword();
+        return;
+      }
+      
+      // Default: Enter launches normal login
+      if (e.key === 'Enter' && (!anonModal || anonModal.style.display === 'none') && (!resetModal || resetModal.style.display === 'none')) {
+        launch();
+      }
     });
 
     // Handle incoming discovered server

@@ -1,40 +1,40 @@
-# Release Notes v2.8.0 - The Anonymous CLI Update
+# Release Notes v2.8.0 - Premium GUI Anonymous Chat
 
-## High-Performance Terminal Communication
+## Secure, Instant, and Beautiful
 
-This major update introduces the **Anonymous CLI Chatbox**, a powerful, login-free terminal interface designed for instant LAN communication. This release bridges the gap between traditional GUI interaction and lightning-fast command-line chatting.
+This major update introduces the **Premium GUI Anonymous Chatbox**, a modern, login-free communication interface built for instant LAN privacy. Moving beyond terminal limits, this release brings a high-fidelity graphical experience featuring glassmorphism, end-to-end encryption visibility, and full theme synchronization.
 
 ---
 
 ## What’s Changed
 
-*   Introduced a brand new terminal-based chat environment.
-*   Implemented `ANON_CHAT` protocol for privacy isolation.
-*   Added dynamic name-hashing for participant coloring.
-*   Integrated custom developer-branded ASCII identity.
-*   Added `SIGINT` (Ctrl+C) support for graceful terminal exits.
+*   Reimagined the anonymous chat as a high-fidelity **GUI experience**.
+*   Added a dedicated **Theme Picker** and Identity Badge to the titlebar.
+*   Implemented **E2EE Visibility** indicators for all messages.
+*   Enforced **Privacy Hardening** by redacting plaintext messages from terminal logs.
+*   Refined **Message Layouts** with auto-scaling bubbles and optimized spacing.
 
 ---
 
 ## Key Enhancements
 
-### Anonymous CLI Chatbox
-A dedicated, high-performance terminal client accessible directly from the launcher. It allows users to join the conversation instantly without requiring a full account login.
+### Premium GUI Chatbox
+A dedicated, high-performance chat window accessible directly from the launcher. Join the conversation instantly with a beautiful, theme-aware interface that matches the premium ChatSys aesthetic.
 
-### Privacy Isolation Protocol
-The `ANON_CHAT` protocol completely isolates terminal users from the regular GUI chat bubbles, ensuring a secure and focused anonymous environment.
+### Titlebar-Integrated Identity
+The new titlebar now displays your persistent display name in a bold, green-accented badge. It also houses an intuitive theme switcher for toggling between Light, Dark, and System modes.
 
-### Pro Terminal UX
-Engineered with advanced screen clearing (`\x1b[3J`) and a specific line-overwrite mechanism to prevent visual ghosting and ensure a clean chat feed.
+### End-to-End Encryption Visibility
+Your conversation is protected by RSA+AES-256-GCM encryption.
 
 ---
 
 ## Technical Improvements
 
-*   Integrated server-side "Guest" validation.
-*   Single-instance locking for anonymous sessions.
-*   Optimized launcher UI with terminal icon feedback.
-*   Fixed server discovery notification logic.
+*   Resolved critical client initialization race conditions.
+*   Redacted plaintext message content from all backend logs.
+*   Optimized chat history renderer.
+*   Refined server discovery logic for faster automatic IP resolution.
 
 ---
 
@@ -42,7 +42,7 @@ Engineered with advanced screen clearing (`\x1b[3J`) and a specific line-overwri
 
 **@ajeyverma**  
 Founder & Lead Developer  
-Architect of the new Anonymous CLI Chatbox and Isolated Chat Protocol.
+Architect of the Premium GUI Anonymous Chat and E2EE Privacy Hardening.
 
 ---
 

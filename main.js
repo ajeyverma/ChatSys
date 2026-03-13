@@ -2,13 +2,13 @@ const { app, BrowserWindow, ipcMain } = require('electron');
 const path = require('path');
 const fs = require('fs');
 const dgram = require('dgram');
-const { spawn } = require('child_process');
 const cfg = require('./src/config');
 const proto = require('./src/protocol');
 const logger = require('./src/logger');
 
 // Lazy-loaded modules
 const lazy = {
+    get AnonWindowClient() { return require('./src/anonWindowClient'); },
     get ChatClient() { return require('./src/chatClient'); },
     get PrimaryServer() { return require('./src/primaryServer'); },
     get CredNode() { return require('./src/credsync/node'); },
@@ -17,8 +17,10 @@ const lazy = {
 
 let launcherWin = null;
 let roleWin = null;
+let anonWin = null;
 let activeServer = null;
 let activeClient = null;
+let activeAnonClient = null;
 let discoveryListener = null;
 let credNode = null; // CredSync node
 
@@ -45,6 +47,7 @@ function createLauncher() {
     launcherWin.loadFile(path.join(__dirname, 'renderer', 'launcher.html'));
     launcherWin.once('ready-to-show', () => {
         launcherWin.show();
+        // launcherWin.webContents.openDevTools(); // Debug only
         startDiscoveryListener();
     });
     logger.info('Main', 'Launcher window created');
@@ -74,6 +77,79 @@ function createRoleWindow(role, width, height) {
     });
     return win;
 }
+
+function createAnonWindow(displayName) {
+    if (anonWin && !anonWin.isDestroyed()) {
+        anonWin.focus();
+        if (anonWin.isMinimized()) anonWin.restore();
+        return anonWin;
+    }
+
+    anonWin = new BrowserWindow({
+        ...WIN_DEFAULTS,
+        width: 920,
+        height: 680,
+        minWidth: 760,
+        minHeight: 520,
+        frame: false,
+        icon: path.join(__dirname, 'assets', 'icon.png')
+    });
+
+    anonWin.displayName = displayName; // Store for handshake
+
+    anonWin.loadFile(path.join(__dirname, 'renderer', 'anon.html'));
+    anonWin.once('ready-to-show', () => {
+        anonWin.show();
+        // anonWin.webContents.openDevTools(); // Debug only
+    });
+
+    anonWin.webContents.once('did-finish-load', () => {
+        logger.info('Main', 'Anonymous window loaded, waiting for renderer sync...');
+        if (!activeAnonClient) {
+            const AnonWindowClient = lazy.AnonWindowClient;
+            activeAnonClient = new AnonWindowClient(anonWin);
+        } else {
+            logger.info('Main', 'activeAnonClient already exists, skipping re-init');
+        }
+    });
+
+    anonWin.on('closed', () => {
+        if (activeAnonClient) {
+            activeAnonClient.disconnect();
+            activeAnonClient = null;
+        }
+        anonWin = null;
+        logger.info('Main', 'Anonymous chat window closed');
+    });
+
+    logger.info('Main', `Created anonymous chat window for ${displayName}`);
+    return anonWin;
+}
+
+// ─── IPC: Anonymous Chat Ready Handshake ─────────────────────────────────────────
+ipcMain.on('anon-renderer-ready', (event) => {
+    logger.info('Main', 'Anonymous renderer ready, initializing...');
+    const webContents = event.sender;
+    const win = BrowserWindow.fromWebContents(webContents);
+    
+    // Retrieve display name stored on the window instance
+    const displayName = win?.displayName || 'Guest';
+
+    // Ensure client is initialized (fallback for timing issues)
+    if (!activeAnonClient) {
+        logger.info('Main', 'Initializing activeAnonClient during handshake (fallback)');
+        const AnonWindowClient = lazy.AnonWindowClient;
+        activeAnonClient = new AnonWindowClient(win);
+    }
+
+    logger.info('Main', `Sending anon-init IPC with displayName: ${displayName}`);
+    webContents.send('anon-init', { displayName });
+    
+    if (activeAnonClient) {
+        logger.info('Main', `Connecting activeAnonClient for ${displayName}`);
+        activeAnonClient.connect('127.0.0.1', cfg.PRIMARY_PORT, displayName);
+    }
+});
 
 // ─── UDP Discovery Listener ───────────────────────────────────────────────────
 function startDiscoveryListener() {
@@ -142,25 +218,49 @@ function startPrimaryServer() {
 }
 
 // ─── IPC: Anonymous CLI Chat ────────────────────────────────────────────────────
-ipcMain.on('launch-anon-chat', () => {
-    logger.info('Main', 'Launching Anonymous CLI Chat...');
-    const scriptPath = path.join(__dirname, 'src', 'anonChat.js');
-    
-    // Ensure server is running for local anon chat
-    if (!activeServer) {
-        startPrimaryServer();
-    }
+ipcMain.on('launch-anon-chat', (event, payload = {}) => {
+    try {
+        const displayName = typeof payload.displayName === 'string' ? payload.displayName.trim() : '';
+        const resolvedName = displayName || `${cfg.ANON_PREFIX}${Math.floor(Math.random() * 1000)}`;
+        logger.info('Main', `Anonymous chat launch requested for ${resolvedName}`);
+        
+        // Close launcher
+        if (launcherWin) {
+            launcherWin.close();
+            launcherWin = null;
+            logger.debug('Main', 'Launcher window closed');
+        }
 
-    if (process.platform === 'win32') {
-        spawn('cmd.exe', ['/c', 'start', '"ChatSys Anonymous Chatbox"', 'node', scriptPath], {
-            detached: true,
-            stdio: 'ignore',
-            shell: true
-        });
-    } else {
-        const term = process.platform === 'darwin' ? 'open' : 'x-terminal-emulator';
-        const args = process.platform === 'darwin' ? ['-a', 'Terminal', 'node', scriptPath] : ['-e', 'node', scriptPath];
-        spawn(term, args, { detached: true });
+        // Ensure server is running for local anon chat
+        if (!activeServer) {
+            logger.debug('Main', 'Starting primary server for anonymous chat');
+            startPrimaryServer();
+        }
+
+        // Create anonymous chat window
+        logger.debug('Main', 'Creating anonymous window...');
+        createAnonWindow(resolvedName);
+        logger.info('Main', 'Anonymous window created successfully');
+    } catch (err) {
+        logger.error('Main', `Error launching anonymous chat: ${err.message}`);
+        logger.error('Main', err.stack);
+    }
+});
+
+// ─── IPC: Send Anonymous Message ────────────────────────────────────────────────
+ipcMain.on('anon-send-message', (event, payload = {}) => {
+    try {
+        const text = payload.text || '';
+        if (activeAnonClient && text.trim()) {
+            const sent = activeAnonClient.sendMessage(text);
+            if (sent) {
+                logger.debug('Main', 'Anonymous message sent (Content Redacted)');
+            } else {
+                logger.warn('Main', 'Failed to send anonymous message');
+            }
+        }
+    } catch (err) {
+        logger.error('Main', `Error sending anonymous message: ${err.message}`);
     }
 });
 
@@ -250,31 +350,20 @@ ipcMain.on('server-broadcast', (event, { text }) => {
 });
 
 // ─── IPC: Window Controls ─────────────────────────────────────────────────────
-ipcMain.on('win-minimize', () => {
-    const w = roleWin || launcherWin;
+ipcMain.on('win-minimize', (event) => {
+    const w = BrowserWindow.fromWebContents(event.sender);
+    if (w) w.minimize();
+});
+ipcMain.on('win-maximize', (event) => {
+    const w = BrowserWindow.fromWebContents(event.sender);
     if (w) {
-        w.minimize();
-        logger.debug('Main', 'Window minimized');
+        if (w.isMaximized()) w.unmaximize();
+        else w.maximize();
     }
 });
-ipcMain.on('win-maximize', () => {
-    const w = roleWin || launcherWin;
-    if (w) {
-        if (w.isMaximized()) {
-            w.unmaximize();
-            logger.debug('Main', 'Window unmaximized');
-        } else {
-            w.maximize();
-            logger.debug('Main', 'Window maximized');
-        }
-    }
-});
-ipcMain.on('win-close', () => {
-    const w = roleWin || launcherWin;
-    if (w) {
-        w.close();
-        logger.debug('Main', 'Window close requested');
-    }
+ipcMain.on('win-close', (event) => {
+    const w = BrowserWindow.fromWebContents(event.sender);
+    if (w) w.close();
 });
 
 // ─── IPC: CredSync Metadata ────────────────────────────────────────────────────

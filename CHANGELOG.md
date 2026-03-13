@@ -9,20 +9,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [2.8.0] - 2026-03-13
 
 ### Added
-- **Anonymous CLI Chatbox**: Introduced a brand new terminal-based chat environment accessible directly from the launcher.
-- **Privacy Isolation Protocol**: Implemented a secondary `ANON_CHAT` protocol that completely isolates terminal users from the regular GUI chat.
-- **Dynamic User Coloring**: Integrated a name-hashing algorithm to assign unique, consistent colors to different chat participants.
-- **Personalized CLI Prompts**: Replaced generic prompts with a yellow-tinted `[User] >>` identifier for a more immersive terminal experience.
-- **ASCII Brand Identity**: Added custom developer-branded ASCII art (Green Design, Red Name, Yellow Links) to the CLI welcome screen.
-- **Advanced Screen Clearing**: Implemented `\x1b[3J` logic to wipe the entire scrollback buffer upon joining, ensuring a fresh session.
-- **Optimized Terminal UX**: Engineered a specific line-overwrite mechanism (`logOwnMessage`) for the CLI to ensure a clean chat feed without visual ghosting.
-- **Guest Role Logic**: Integrated server-side "Guest" validation that allows instant access while preventing username conflicts.
-- **Improved Signal Handling**: Added explicit `SIGINT` (Ctrl+C) support for graceful CLI exits.
-- **Single Instance Lock**: Restructured the CLI to prevent multiple simultaneous anonymous chat sessions per machine, ensuring focused communication.
+- **Premium GUI Anonymous Chat**: Reimagined the anonymous chat experience with a modern, glassmorphism-inspired GUI.
+- **Titlebar Integration**: Added a dedicated theme picker (🎨) and an uppercased user identity badge directly in the chat title bar.
+- **E2EE Visibility**: Implemented a "Secure Decryption" indicator (🔒) that confirms end-to-end encryption for both incoming and outgoing messages.
+- **Privacy Hardening**: Completely redacted plaintext message content from terminal logs in the main process and servers.
+- **Auto-Scalable Bubbles**: Optimized the chat layout to dynamically fit message content width, fixing issues with stretched bubbles.
 
 ### Changed
-- **Launcher UX Refinement**: Removed manual Port entry fields for a cleaner UI and repositioned the "Anonymous Chatbox" button directly under the active login controls.
-- **Visual Feedback**: Added a new terminal icon to the anonymous entry button and fixed server discovery notification logic.
+- **Compact UX**: Refined the chat history spacing (7px gap for users, 0px for system) for a denser, more readable conversation feed.
+- **Enhanced Interactions**: Added smoother hover transitions to titlebar buttons and interactive "lift" effects to the send button.
+- **Display Name Normalization**: Enforced uppercase formatting for all display name tokens in the chat UI.
+- **Launcher Redesign**: Repositioned the Anonymous Chat trigger button for better ergonomic access under the login controls.
+
+### Removed
+- **Legacy CLI Chat**: Deleted the obsolete `anonChat.js` and removed all CLI-specific configuration (`ANON_LOCK_PORT`, spawn-wrappers) for a cleaner codebase.
+
+### Fixed
+- **Connection Stability**: Resolved a race condition during client initialization that caused "Socket not connected" errors on cold starts.
+- **Discovery Logic**: Fixed a bug in server discovery notification that prevented automatic IP population in some network conditions.
 
 ---
 ## [2.7.0] - 2026-03-12

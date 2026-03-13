@@ -1,0 +1,799 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link rel="stylesheet" href="themes.css" />
+  <script src="theme_manager.js"></script>
+  <title>Anonymous Chat</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      font-family: 'Inter', 'Segoe UI', system-ui, -apple-system, sans-serif;
+    }
+
+    body {
+      background: var(--bg-main);
+      color: var(--text-main);
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    /* Title Bar */
+    .titlebar {
+      height: 38px;
+      background: var(--bg-titlebar);
+      display: flex;
+      padding: 0 0 0 16px;
+      border-bottom: 1px solid var(--border);
+      -webkit-app-region: drag;
+    }
+
+    .titlebar-left {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      flex: 1;
+      min-width: 0;
+    }
+
+    .titlebar-title {
+      font-size: 12px;
+      color: var(--text-muted);
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .user-badge {
+      font-size: 11px;
+      background: rgba(16, 185, 129, 0.15);
+      color: #10b981;
+      padding: 3px 10px;
+      border-radius: 12px;
+      border: 1px solid rgba(16, 185, 129, 0.3);
+      text-transform: uppercase;
+      font-weight: 700;
+      letter-spacing: 0.5px;
+    }
+
+    .titlebar-btns {
+      display: flex;
+      height: 100%;
+      margin-left: auto;
+      -webkit-app-region: no-drag;
+    }
+
+    .win-btn {
+      width: 46px;
+      height: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: background 0.1s;
+    }
+
+    .win-btn svg {
+      width: 10px;
+      height: 10px;
+      fill: var(--text-muted);
+    }
+
+    .win-btn:hover {
+      background: rgba(255, 255, 255, 0.1);
+    }
+
+    .win-btn:hover svg {
+      fill: var(--text-main);
+    }
+
+    .win-btn.win-min:hover {
+      background: rgba(99, 102, 241, 0.4);
+    }
+
+    .win-btn.win-close:hover {
+      background: #e81123;
+    }
+
+    .win-btn.win-close:hover svg {
+      fill: #ffffff;
+    }
+
+    /* ─── Titlebar Theme Button ─────────────────────────────── */
+    .tb-theme-wrap {
+      position: relative;
+      display: flex;
+      align-items: center;
+      height: 100%;
+    }
+
+    .tb-theme-btn {
+      width: 38px;
+      height: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: background 0.15s;
+      font-size: 13px;
+      -webkit-app-region: no-drag;
+      border-right: 1px solid rgba(255, 255, 255, 0.06);
+    }
+
+    .tb-theme-btn:hover {
+      background: rgba(255, 255, 255, 0.08);
+    }
+
+    [data-theme="light"] .tb-theme-btn:hover {
+      background: rgba(0, 0, 0, 0.06);
+    }
+
+    .tb-theme-drop {
+      position: absolute;
+      top: calc(100% + 4px);
+      right: 0;
+      background: var(--bg-panel, #1a1a30);
+      border: 1px solid var(--border, #252545);
+      border-radius: 10px;
+      padding: 5px;
+      display: none;
+      flex-direction: column;
+      gap: 2px;
+      z-index: 999;
+      min-width: 130px;
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+      animation: dropIn 0.15s ease;
+    }
+
+    @keyframes dropIn {
+      from {
+        opacity: 0;
+        transform: translateY(-6px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    .tb-theme-drop.open {
+      display: flex;
+    }
+
+    .tb-tdrop-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 7px 10px;
+      border-radius: 7px;
+      cursor: pointer;
+      font-size: 12px;
+      color: var(--text-muted, #94a3b8);
+      transition: background 0.15s, color 0.15s;
+      white-space: nowrap;
+    }
+
+    .tb-tdrop-item:hover {
+      background: rgba(99, 102, 241, 0.12);
+      color: var(--accent, #6366f1);
+    }
+
+    .tb-tdrop-item.active {
+      background: rgba(99, 102, 241, 0.18);
+      color: var(--accent, #6366f1);
+      font-weight: 600;
+    }
+
+    .tb-tdrop-item .td-icon {
+      font-size: 14px;
+      width: 18px;
+      text-align: center;
+    }
+
+    /* Main Container */
+    .main {
+      flex: 1;
+      display: flex;
+      flex-direction: row;
+      gap: 0;
+      overflow: hidden;
+    }
+
+    /* Messages Panel */
+    .messages-panel {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      background: var(--bg-main);
+      border-right: 1px solid var(--border);
+    }
+
+    .messages-container {
+      flex: 1;
+      overflow-y: auto;
+      padding: 7px;
+      display: flex;
+      flex-direction: column;
+      gap: 0;
+    }
+
+    .messages-container::-webkit-scrollbar {
+      width: 8px;
+    }
+
+    .messages-container::-webkit-scrollbar-track {
+      background: transparent;
+    }
+
+    .messages-container::-webkit-scrollbar-thumb {
+      background: var(--border);
+      border-radius: 4px;
+    }
+
+    .messages-container::-webkit-scrollbar-thumb:hover {
+      background: rgba(255, 255, 255, 0.2);
+    }
+
+    .message {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      animation: slideIn 0.2s ease;
+      margin-bottom: 0;
+    }
+
+    .message.own,
+    .message.other {
+      margin-bottom: 7px;
+    }
+
+    @keyframes slideIn {
+      from {
+        opacity: 0;
+        transform: translateY(8px);
+      }
+
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    .message.own {
+      align-items: flex-end;
+    }
+
+    .message.other {
+      align-items: flex-start;
+    }
+
+    .message-header {
+      font-size: 11px;
+      color: var(--text-muted);
+      font-weight: 600;
+      padding: 0 12px;
+      text-transform: uppercase;
+    }
+
+    .message.own .message-header {
+      text-align: right;
+    }
+
+    .lock-icon {
+      font-size: 10px;
+      margin-left: 4px;
+      opacity: 0.7;
+      vertical-align: middle;
+    }
+
+    .message-bubble {
+      max-width: 60%;
+      padding: 10px 14px;
+      border-radius: 12px;
+      word-wrap: break-word;
+      font-size: 13px;
+      line-height: 1.4;
+    }
+
+    .message.own .message-bubble {
+      background: linear-gradient(135deg, var(--accent), #8b5cf6);
+      color: white;
+      border-bottom-right-radius: 4px;
+    }
+
+    .message.other .message-bubble {
+      background: var(--bg-panel);
+      border: 1px solid var(--border);
+      border-bottom-left-radius: 4px;
+      color: var(--text-main);
+    }
+
+    .message.system .message-bubble {
+      background: transparent;
+      color: var(--text-muted);
+      font-size: 12px;
+      font-style: italic;
+      align-self: center;
+      max-width: 80%;
+      text-align: center;
+    }
+
+    /* Input Area */
+    .input-area {
+      padding: 12px 16px;
+      border-top: 1px solid var(--border);
+      display: flex;
+      gap: 8px;
+      align-items: flex-end;
+    }
+
+    .input-wrapper {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      background: var(--input-bg);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 0 12px;
+      transition: border-color 0.2s;
+    }
+
+    .input-wrapper:focus-within {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.1);
+    }
+
+    #message-input {
+      flex: 1;
+      background: transparent;
+      border: none;
+      outline: none;
+      padding: 10px 0;
+      color: var(--text-main);
+      font-size: 13px;
+      font-family: 'Inter', sans-serif;
+    }
+
+    #message-input::placeholder {
+      color: var(--text-muted);
+    }
+
+    .send-btn {
+      padding: 8px 14px;
+      background: linear-gradient(135deg, var(--accent), #8b5cf6);
+      align-self: center;
+      border: none;
+      border-radius: 8px;
+      color: white;
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: opacity 0.2s;
+      white-space: nowrap;
+    }
+
+    .send-btn:hover {
+      opacity: 0.95;
+      transform: translateY(-1px);
+      filter: brightness(1.1);
+    }
+
+    .send-btn:active {
+      transform: translateY(0);
+    }
+
+    .send-btn:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    /* Users Panel (sidebar) */
+    .users-panel {
+      width: 200px;
+      background: var(--bg-panel);
+      border-left: 1px solid var(--border);
+      display: flex;
+      flex-direction: column;
+    }
+
+    .users-header {
+      padding: 12px 14px;
+      border-bottom: 1px solid var(--border);
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .users-list {
+      flex: 1;
+      overflow-y: auto;
+      padding: 8px;
+    }
+
+    .users-list::-webkit-scrollbar {
+      width: 6px;
+    }
+
+    .users-list::-webkit-scrollbar-track {
+      background: transparent;
+    }
+
+    .users-list::-webkit-scrollbar-thumb {
+      background: var(--border);
+      border-radius: 3px;
+    }
+
+    .user-item {
+      padding: 8px 10px;
+      border-radius: 6px;
+      font-size: 12px;
+      margin-bottom: 4px;
+      cursor: default;
+      transition: background 0.15s;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .user-item:hover {
+      background: rgba(99, 102, 241, 0.1);
+    }
+
+    .user-item.self {
+      background: rgba(16, 185, 129, 0.15);
+      color: #10b981;
+      font-weight: 600;
+    }
+
+    .user-dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: #10b981;
+    }
+
+    .user-item.self .user-dot {
+      background: #10b981;
+    }
+
+    .user-item:not(.self) .user-dot {
+      background: var(--text-muted);
+    }
+
+    /* Status */
+    .status-line {
+      padding: 8px 14px;
+      border-top: 1px solid var(--border);
+      font-size: 11px;
+      color: var(--text-muted);
+    }
+
+    .status-dot {
+      display: inline-block;
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: #10b981;
+      margin-right: 6px;
+    }
+
+    .status-dot.offline {
+      background: #ef4444;
+    }
+
+    .status-dot.connecting {
+      background: #f59e0b;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="titlebar">
+    <div class="titlebar-left">
+      <span class="titlebar-title">💬 ChatSys Anonymous Chatbox</span>
+      <span class="user-badge" id="display-name-badge">Guest</span>
+    </div>
+    <div class="titlebar-btns">
+      <!-- Theme Picker Button -->
+      <div class="tb-theme-wrap" id="tb-theme-wrap">
+        <div class="tb-theme-btn" id="tb-theme-btn" onclick="toggleThemeDrop(event)" title="Change Theme">🎨</div>
+        <div class="tb-theme-drop" id="tb-theme-drop">
+          <div class="tb-tdrop-item" id="tdd-default" onclick="setThemeFromTb('default')">
+            <span class="td-icon">🌗</span> System
+          </div>
+          <div class="tb-tdrop-item" id="tdd-light" onclick="setThemeFromTb('light')">
+            <span class="td-icon">☀️</span> Light
+          </div>
+          <div class="tb-tdrop-item" id="tdd-dark" onclick="setThemeFromTb('dark')">
+            <span class="td-icon">🌙</span> Dark
+          </div>
+        </div>
+      </div>
+      <div class="win-btn win-min" onclick="api.send('win-minimize',{})">
+        <svg viewBox="0 0 10 1">
+          <rect x="0" y="0" width="10" height="1"></rect>
+        </svg>
+      </div>
+      <div class="win-btn win-close" onclick="api.send('win-close',{})">
+        <svg viewBox="0 0 10 10">
+          <polygon points="10,0.7 9.3,0 5,4.3 0.7,0 0,0.7 4.3,5 0,9.3 0.7,10 5,5.7 9.3,10 10,9.3 5.7,5"></polygon>
+        </svg>
+      </div>
+    </div>
+  </div>
+
+  <div class="main">
+    <!-- Messages Panel -->
+    <div class="messages-panel">
+      <div class="messages-container" id="messages-container">
+        <div class="message system">
+          <div class="message-bubble">Welcome to Anonymous Chat</div>
+        </div>
+      </div>
+
+      <!-- Input Area -->
+      <div class="input-area">
+        <div class="input-wrapper">
+          <input id="message-input" type="text" placeholder="Connecting..." autocomplete="off" />
+        </div>
+        <button class="send-btn" id="send-btn" onclick="sendMessage()" disabled>Send</button>
+      </div>
+    </div>
+
+    <!-- Users Panel -->
+    <div class="users-panel">
+      <div class="users-header">Connected Users</div>
+      <div class="users-list" id="users-list">
+        <!-- Users populated by JS -->
+      </div>
+      <div class="status-line">
+        <span class="status-dot" id="status-dot"></span>
+        <span id="status-text">Connecting...</span>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    let displayName = 'Guest';
+    let connectedUsers = [];
+    let isConnected = false;
+
+    // ─── Listeners First ────────────────────────────────────────────────────────
+
+    // Receive initialization data from main process
+    api.receive('anon-init', (data) => {
+      console.log('Received anon-init:', data);
+      displayName = data.displayName || 'Guest';
+
+      const badge = document.getElementById('display-name-badge');
+      if (badge) {
+        badge.textContent = displayName;
+      }
+    });
+
+    // Handle messages from server
+    api.receive('anon-message', (data) => {
+      addMessageToChat(data);
+    });
+
+    // Handle user list updates
+    api.receive('anon-message-users', (data) => {
+      if (data.users) {
+        connectedUsers = data.users;
+        updateUsersList();
+      }
+    });
+
+    // Handle status updates
+    api.receive('anon-status', (data) => {
+      updateStatus(data);
+    });
+
+    // Handle errors
+    api.receive('anon-error', (data) => {
+      addSystemMessage(`Error: ${data.error}`);
+    });
+
+    // Handle ready signal (secure connection established)
+    api.receive('anon-ready', (data) => {
+      isConnected = true;
+      addSystemMessage('Secure connection established. You can now chat.');
+      document.getElementById('send-btn').disabled = false;
+      document.getElementById('message-input').placeholder = 'Type a message... (Enter to send)';
+    });
+
+    // ─── Functions ─────────────────────────────────────────────────────────────
+
+    function addMessageToChat(msg) {
+      const container = document.getElementById('messages-container');
+      const isAtBottom = container.scrollHeight - container.scrollTop <= container.clientHeight + 100;
+
+      const messageEl = document.createElement('div');
+      messageEl.className = 'message';
+
+      if (msg.isSystem) {
+        messageEl.classList.add('system');
+        messageEl.innerHTML = `
+          <div class="message-bubble">${escapeHtml(msg.text)}</div>
+        `;
+      } else {
+        const isOwn = msg.from === displayName;
+        messageEl.classList.add(isOwn ? 'own' : 'other');
+
+        const lockIcon = (msg.encrypted || isOwn) ? '<span class="lock-icon" title="End-to-end Encrypted"></span>' : '';
+
+        messageEl.innerHTML = `
+          <div class="message-header">${escapeHtml(msg.from)} ${lockIcon}</div>
+          <div class="message-bubble">${escapeHtml(msg.text)}</div>
+        `;
+      }
+
+      container.appendChild(messageEl);
+      if (isAtBottom) {
+        container.scrollTop = container.scrollHeight;
+      }
+    }
+
+    function addSystemMessage(text) {
+      addMessageToChat({
+        from: 'System',
+        text: text,
+        isSystem: true
+      });
+    }
+
+    function updateUsersList() {
+      const usersList = document.getElementById('users-list');
+      usersList.innerHTML = '';
+
+      if (!connectedUsers || connectedUsers.length === 0) {
+        usersList.innerHTML = '<div class="user-item" style="color: var(--text-muted); cursor: default;">No users</div>';
+        return;
+      }
+
+      connectedUsers.forEach(user => {
+        const userEl = document.createElement('div');
+        userEl.className = 'user-item';
+        if (user === displayName) {
+          userEl.classList.add('self');
+          userEl.innerHTML = `<div class="user-dot"></div><span>${escapeHtml(user)} (you)</span>`;
+        } else {
+          userEl.innerHTML = `<div class="user-dot"></div><span>${escapeHtml(user)}</span>`;
+        }
+        usersList.appendChild(userEl);
+      });
+    }
+
+    function updateStatus(data) {
+      const statusDot = document.getElementById('status-dot');
+      const statusText = document.getElementById('status-text');
+      const sendBtn = document.getElementById('send-btn');
+      const input = document.getElementById('message-input');
+
+      if (data.status === 'Connected') {
+        statusDot.classList.remove('offline', 'connecting');
+        statusText.textContent = `Connected`;
+      } else if (data.status === 'Connecting...') {
+        isConnected = false;
+        statusDot.classList.add('connecting');
+        statusDot.classList.remove('offline');
+        statusText.textContent = 'Connecting...';
+        sendBtn.disabled = true;
+        input.placeholder = 'Connecting...';
+      } else if (data.status === 'Disconnected') {
+        isConnected = false;
+        statusDot.classList.add('offline');
+        statusDot.classList.remove('connecting');
+        statusText.textContent = 'Disconnected';
+        sendBtn.disabled = true;
+        input.placeholder = 'Offline';
+      } else {
+        statusText.textContent = data.status || 'Unknown';
+      }
+    }
+
+    function sendMessage() {
+      if (!isConnected) return;
+      const input = document.getElementById('message-input');
+      const text = (input.value || '').trim();
+      if (!text) return;
+
+      addMessageToChat({ from: displayName, text: text, isSystem: false });
+
+      try {
+        api.send('anon-send-message', { text: text });
+      } catch (err) {
+        console.error('Error sending message:', err);
+        addSystemMessage(`Failed to send: ${err.message}`);
+      }
+
+      input.value = '';
+      input.focus();
+    }
+
+    // Keyboard shortcuts
+    document.addEventListener('keydown', (e) => {
+      const input = document.getElementById('message-input');
+      if (e.key === 'Enter') {
+        if (e.ctrlKey || e.metaKey) {
+          sendMessage();
+        } else if (document.activeElement === input) {
+          e.preventDefault();
+          sendMessage();
+        }
+      }
+    });
+
+    function escapeHtml(text) {
+      const map = {
+        '&': '&amp;',
+        '<': '&lt;',
+        '>': '&gt;',
+        '"': '&quot;',
+        "'": '&#039;'
+      };
+      return String(text).replace(/[&<>"']/g, m => map[m]);
+    }
+
+    // ─── Theme Management ────────────────────────────────────────────────────────
+
+    function setTheme(t) {
+      ThemeManager.apply(t);
+      updateThemeUI();
+    }
+
+    function updateThemeUI() {
+      const current = ThemeManager.getCurrent();
+      document.querySelectorAll('.tb-tdrop-item').forEach(el => el.classList.remove('active'));
+      const activeDrop = document.getElementById(`tdd-${current}`);
+      if (activeDrop) activeDrop.classList.add('active');
+      
+      const iconMap = { default: '🌗', light: '☀️', dark: '🌙' };
+      const tbBtn = document.getElementById('tb-theme-btn');
+      if (tbBtn) tbBtn.textContent = iconMap[current] || '🎨';
+    }
+
+    function toggleThemeDrop(e) {
+      e.stopPropagation();
+      document.getElementById('tb-theme-drop').classList.toggle('open');
+    }
+
+    function setThemeFromTb(t) {
+      setTheme(t);
+      document.getElementById('tb-theme-drop').classList.remove('open');
+    }
+
+    // Close dropdown when clicking outside
+    document.addEventListener('click', function (e) {
+      const themeWrap = document.getElementById('tb-theme-wrap');
+      if (themeWrap && !themeWrap.contains(e.target)) {
+        document.getElementById('tb-theme-drop').classList.remove('open');
+      }
+    });
+
+    // ─── Initialization ────────────────────────────────────────────────────────
+
+    try {
+      ThemeManager.loadTheme();
+      updateThemeUI();
+    } catch (e) {
+      console.error('Failed to load theme:', e);
+    }
+
+    addSystemMessage('Waiting for connection...');
+
+    // HANDSHAKE: Signal main process that we are ready
+    console.log('Renderer ready, signaling main process...');
+    api.send('anon-renderer-ready');
+  </script>
+</body>
+
+</html>
