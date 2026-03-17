@@ -49,6 +49,11 @@ if ($action -eq "pin") {
         subst S: /D
     }
     if (Test-Path $path) {
-        Remove-Item -Path $path -Recurse -Force
+        $iniPath = Join-Path $path "desktop.ini"
+        if (Test-Path $iniPath) {
+            # Attempt to safely unset desktop.ini modifications
+            Attrib -r -s -h $iniPath
+            Remove-Item -Path $iniPath -Force -ErrorAction SilentlyContinue
+        }
     }
 }

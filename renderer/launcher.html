@@ -568,9 +568,10 @@
         allUsers = await api.invoke('get-users');
         console.log(`Launcher: Load users (attempt ${attempt}):`, allUsers);
 
-        if ((!allUsers || allUsers.length === 0) && attempt < 3) {
-          console.log('No users found, retrying in 1s...');
-          setTimeout(() => loadUsers(attempt + 1), 1000);
+        // On first run or if only 'admin' exists, retry a bit longer to allow CredSync to find peers
+        if ((!allUsers || allUsers.length <= 1) && attempt < 10) {
+          console.log('No extra users found yet, retrying in 2s...');
+          setTimeout(() => loadUsers(attempt + 1), 2000);
           return;
         }
 
@@ -930,6 +931,12 @@
       // Slight highlight effect to draw attention
       hostInput.style.borderColor = '#10b981';
       setTimeout(() => hostInput.style.borderColor = '#2d2d4e', 1500);
+    });
+
+    // Handle background CredSync updates
+    api.on('users-updated', () => {
+      console.log('CredSync update received, reloading user list...');
+      loadUsers();
     });
   </script>
 </body>

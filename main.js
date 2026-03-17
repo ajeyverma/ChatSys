@@ -647,6 +647,15 @@ app.whenReady().then(() => {
             const credCfg = JSON.parse(fs.readFileSync(credCfgPath, 'utf8'));
             credCfg.dataDir = credDataDir;
             credNode = new (lazy.CredNode)(credCfg);
+            
+            credNode.on('sync-complete', ({ version }) => {
+                logger.info('Main', `CredSync complete (v${version}). Notifying UI...`);
+                // Notify launcher or other windows to reload users
+                BrowserWindow.getAllWindows().forEach(win => {
+                    if (!win.isDestroyed()) win.webContents.send('users-updated');
+                });
+            });
+
             credNode.start().catch(e => logger.error('CredSync', `Startup error: ${e.message}`));
         } catch (e) {
             logger.warn('Main', `CredSync node not started: ${e.message}`);

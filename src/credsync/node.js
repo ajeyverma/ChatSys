@@ -11,8 +11,11 @@ const Discovery = require('./discovery');
 const SyncServer = require('./syncServer');
 const { requestSync } = require('./syncClient');
 
-class CredNode {
+const { EventEmitter } = require('events');
+
+class CredNode extends EventEmitter {
     constructor(config) {
+        super();
         this.config = config;
         // dataDir: caller supplies e.g. path.join(app.getPath('userData'), 'credsync')
         this.dataDir = config.dataDir || path.join(process.cwd(), 'data');
@@ -84,7 +87,11 @@ class CredNode {
         logger.info('NODE', `Initiating sync from peer ${peer.address} v${peer.version}`);
         requestSync(peer, this.config.networkSecret, err => {
             this.syncing = false;
-            if (!err) this.discovery.updateVersion(db.getVersion());
+            if (!err) {
+                const newVer = db.getVersion();
+                this.discovery.updateVersion(newVer);
+                this.emit('sync-complete', { version: newVer, from: peer.address });
+            }
             else logger.error('NODE', `Sync failed: ${err.message}`);
         });
     }
